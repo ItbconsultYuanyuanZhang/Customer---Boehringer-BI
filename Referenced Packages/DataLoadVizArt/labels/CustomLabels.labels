@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>Datatool_actXObjRequired</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_actXObjRequired</shortDescription>
+        <value>This page need ActiveXObject activated, please change browser security settings to continue.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_btnReturn</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_btnReturn</shortDescription>
+        <value>Go back to Cycle</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_emptyHeader</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_emptyHeader</shortDescription>
+        <value>Please make sure all fields headers are not empty.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_errFileType</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_errFileType</shortDescription>
+        <value>Only a .csv file can be uploaded. Please make sure to upload a file of that type.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_errLimitMsg</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_errLimitMsg</shortDescription>
+        <value>Too many failure records, please check your file data. Upload will stop soon.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_excptNotification</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_excptNotification</shortDescription>
+        <value>Please consider the exception notification(s) and make the necessary adjustments.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_fieldNotExist</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_fieldNotExist</shortDescription>
+        <value>Please make sure to map all fields from the file being uploaded.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_fieldseparator</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_fieldseparator</shortDescription>
+        <value>It seems the fields separator should be comma.Are you sure to change?</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_isEmpty</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_isEmpty</shortDescription>
+        <value>empty.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_notMapped</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_notMapped</shortDescription>
+        <value>not mapped.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_onSaveErr</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_onSaveErr</shortDescription>
+        <value>You must put something in the File Contents or there will be nothing to save!</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_onSaved</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_onSaved</shortDescription>
+        <value>Saved!</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_onValidated</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_onValidated</shortDescription>
+        <value>The file has been validated and its data can be imported.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_rqAdditionalInput</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_rqAdditionalInput</shortDescription>
+        <value>Please make sure to insert a value for the correct mapping of the additional field.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_rqMappingInput</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_rqMappingInput</shortDescription>
+        <value>Please make sure to insert a value for the value mapping field.</value>
+    </labels>
+    <labels>
+        <fullName>Datatool_uploadEnd</fullName>
+        <categories>Data tool message</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Datatool_uploadEnd</shortDescription>
+        <value>The upload has been completed!</value>
+    </labels>
+    <labels>
+        <fullName>JobNotFoundById</fullName>
+        <categories>visualforce message</categories>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>JobNotFoundById</shortDescription>
+        <value>Upload Job not found with provided Id, please check.</value>
+    </labels>
+    <labels>
+        <fullName>JobNotFoundByIdName</fullName>
+        <categories>visualforce message</categories>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>JobNotFoundByIdName</shortDescription>
+        <value>Upload Job not found with provided Id and sObject Api Name, please check.</value>
+    </labels>
+    <labels>
+        <fullName>JobNotFoundByName</fullName>
+        <categories>visualforce message</categories>
+        <language>en_US</language>
+        <protected>true</protected>
+        <shortDescription>JobNotFoundByName</shortDescription>
+        <value>Upload Job not found with provided sObject Api Name, please check.</value>
+    </labels>
+</CustomLabels>

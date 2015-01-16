@@ -1,0 +1,16 @@
+<apex:page controller="RaphaelMySetupController" id="thePage">
+    <h1>Customise My Setup for other users</h1>
+    <br />
+    <br />
+    <h2>Hello {!$User.FirstName} {!$User.LastName}</h2>
+
+    <apex:form id="theForm">
+        <apex:pageBlock title="Configure My Setup" id="pbConfigure">
+            <apex:pageMessages />
+			<apex:pageBlockSection title="User" id="bsUser">
+				<apex:inputField label="User" id="OwnerID" value="{!rkms.ownerid}" />
+				<apex:commandButton value="Search" action="{!searchOwner}" />
+			</apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

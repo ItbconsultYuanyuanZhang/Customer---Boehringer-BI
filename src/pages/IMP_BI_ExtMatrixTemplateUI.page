@@ -1,0 +1,876 @@
+<apex:page id="thePage" standardcontroller="Lifecycle_Template_BI__c" extensions="IMP_BI_ExtMatrixTemplateUI" sidebar="false">
+    <!-- style -->  
+    <link href="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}" rel="stylesheet" type="text/css" />
+    
+    <!-- library -->    
+    <script src="{!URLFOR($Resource.jQueryUI_1_10_2, 'jquery-ui-1.10.2.custom/js/jquery-1.9.1.min.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.jQueryUI_1_10_2, 'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" type="text/javascript"></script>
+    
+    <!-- custom style -->
+    
+    <style>
+        #matrixDiv{margin-left: 20%
+        ;float:left;position:relative;}/*yy changed*/
+        #Loading{position:absolute;height:100%;width:100%;left:0;top:0px;z-index:1000; 
+            background-image: url('/changemgmt/img/spinner24.gif');
+            background-color: #FFF; opacity: 0.85; filter: alpha(opacity = 85);
+            background-repeat: no-repeat; background-position: center center;  
+        }
+        #htmlentity{display:none;}
+        #dimentionA{width:100%;text-align:center;clear:right;margin-top:15px;margin-bottom:-10px;font-weight:bold;white-space:nowrap;}/*added by YY font-weight:bold 2012-05-13;*/
+        .mContainer{position:relative;min-width:300px;}/*margin:0px auto;*/
+        #dimentionB{position:absolute;-webkit-transform:rotate(-90deg);-moz-transform:rotate(-90deg);-o-transform:rotate(-90deg);transform:rotate(-90deg);
+                    font-weight:bold;white-space:nowrap;
+                    width:30px;
+        }/*filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);margin-left:15px*/
+        /*added by YY font-weight:bold 2012/05/13;*/
+        .clear{clear:both;}
+        #matrix {list-style-type:none;}/*<!--margin:0 auto;-->*/
+        #matrix li{position:relative;margin:0px;padding:2px;float:left;width:40px;
+                    height:40px;font-size:12px;text-align:center;cursor:default;border-right:2px solid #999;border-bottom:2px solid #999;}
+        #matrix li.topRow{border-top:2px solid #455;}
+        #matrix li.leftCol{border-left:2px solid #455;}
+        #matrix li.rightBorder{border-right:2px solid #455;}
+        #matrix li.bottomBorder{border-bottom:2px solid #455;}
+        
+        .Tianlan{background:#00CCFF;}
+        .Shenlan{background:blue;color: white;}
+        
+        
+        
+        .btnTd{text-align:center;}
+        
+        .hideElem{display:none;}
+        .mask{
+                top:0px;left:0px;text-align:center;width:100%;height:100%;background-color:#FFF;
+                opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;
+                background-position:center center;
+        }
+        .ie8Rotate{filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);}
+        #slider{display:block;clear:both;min-width:300px;width:400px;margin-left:30px;}/*width: 50%;margin: 0px Auto;width: 80%;*/
+        #sliderVertical{position:absolute;margin-top: 30px;min-height:100px;}
+        #slider-horizontal{min-width:300px;width:400px;margin-left:30px;margin-bottom: -10px;}
+        
+    </style>
+    
+    <!-- custom javascript -->
+    <script>
+        var j$ = jQuery.noConflict();
+        var dim2 = 'Adoption', dim1 = 'Potential';
+        var isAdmin = '{!isAdmin}';
+        
+        
+        j$(function() {
+        
+			j$("[id $='mtCountry']").change(function() {
+				var opc = j$('option:selected', this);
+				
+				if(opc.text().toUpperCase() == 'GLOBAL'){
+					j$("[id $='mtArea']").text('Global');
+				}else{
+        			j$("[id $='mtArea']").text('Local');
+        		}
+			});
+        	
+            j$( "#slider" ).slider({
+              value:1.2,
+              min: 0.0,//min:0.1
+              max: 2.0,//max:1.9
+              step: 0.1,
+              stop: function( event, ui ) {
+                j$( "#Adoption" ).val(ui.value );
+                var pwvalue = parseFloat(ui.value);
+                var pw = 2 - parseFloat(ui.value);
+                pw = pw.toFixed(1);
+                j$( "#Potential" ).val( pw );
+                j$("#potValue").val(ui.value);
+                j$("#intValue").val(pw);
+                
+                
+                matrix.initMT();
+                j$( "#matrix [title]" ).tooltip();
+                //console.log(j$("#potValue").val());
+                //console.log(j$("#intValue").val());
+                
+              }
+            });
+            
+            
+            /*var mode = '{!editMode}';
+            if(mode == 'yes'){
+                j$( "#slider" ).slider( "option", "value", j$("#potValue").val() );
+            }*/
+            j$( "#Adoption" ).val( j$( "#slider" ).slider( "value" ) );
+            j$( "#Potential" ).val( (2 - parseFloat(j$( "#slider" ).slider( "value" ))).toFixed(1) );
+            
+            addslidervertical();
+            
+            j$( "#slider-horizontal" ).slider({
+		      orientation: "horizontal",
+		      range: "min",
+		      min: 2,
+		      max: 21,
+		      value: 11,
+			  step:1,
+		      slide: function( event, ui ) {
+		        j$( "#amounthos" ).val( ui.value );
+		        matrix.initMT();
+		        j$( "#matrix [title]" ).tooltip();
+		      }
+		    });
+		    
+		    j$( "#amounthos" ).val( j$( "#slider-horizontal" ).slider( "value" ) );
+		   	//console.log('productLifeCyle: ' + '{!theMT.isLaunch_Phase_BI__c}');
+		   	var isLaunchPhase= '{!theMT.isLaunch_Phase_BI__c}';
+		    if(isLaunchPhase == 'true'){
+		    	j$("[id $='adoptionSection']").show();
+		    	//j$("[id $='potentialSection']").show();
+		    	//Begin: added by Peng Zhu 2013-08-07
+		    	j$( "#slider-horizontal" ).slider( "option", "min", 2 );
+		    	j$( "#slider-horizontal" ).slider( "option", "max", 5 );
+		    	//End: added by Peng Zhu 2013-08-07 
+		    }
+		    else{
+		    	j$("[id $='adoptionSection']").hide();
+		    	//Begin: added by Peng Zhu 2013-08-07 for launch template min adoption 1
+		    	j$( "#slider-horizontal" ).slider( "option", "min", 2 );
+		    	//End: added by Peng Zhu 2013-08-07 
+		    	//j$("[id $='potentialSection']").hide();
+		    }
+		    
+            matrix.initMT();
+            bindIE8Rotate();
+            j$( "#matrix [title]" ).tooltip();
+            
+            //@jescobar: Disable slider if the user is not Admin
+            if(isAdmin == 'true'){
+				j$( "#slider" ).slider("enable");
+            	j$( "#slider-horizontal" ).slider("enable");
+        		j$( "#sliderVertical" ).slider("enable");            
+            }else{
+            	j$( "#slider" ).slider("disable");
+            	j$( "#slider-horizontal" ).slider("disable");
+        		j$( "#sliderVertical" ).slider("disable");
+            }
+            
+            j$("[id $='mtCountry']").parent().append(j$('<div class="erMsg" style="display:none; padding-left:1px;"><span style="color:#C00;"><strong>Error: </strong><span name="errTxt"></span></span></div>'));
+        });
+        
+        /*function addSlider(){
+            j$( "#slider" ).slider({
+              value:1.2,
+              min: 0.1,
+              max: 1.9,
+              step: 0.1,
+              stop: function( event, ui ) {
+                j$( "#Adoption" ).val(ui.value );
+                var pwvalue = parseFloat(ui.value);
+                var pw = 2 - parseFloat(ui.value);
+                pw = pw.toFixed(1);
+                j$( "#Potential" ).val( pw );
+                j$("#potValue").val(ui.value);
+                j$("#intValue").val(pw);
+                
+                matrix.initMT();
+                //calculateMatrix();
+                //console.log(j$("#potValue").val());
+                //console.log(j$("#intValue").val());
+              }
+            });
+            
+            j$( "#slider" ).slider( "option", "value", j$("#potValue").val() );
+            j$( "#Adoption" ).val( j$( "#slider" ).slider( "value" ) );
+            j$( "#Potential" ).val( (2 - parseFloat(j$( "#slider" ).slider( "value" ))).toFixed(1) );
+            
+        
+        }*/
+        
+        function addslidervertical(){
+            j$( "#sliderVertical" ).slider({
+              orientation: "vertical",
+              range: "min",
+              min: 1,
+              max: 20,
+              value: 10,
+              step:1,
+              slide: function( event, ui ) {
+                j$( "#amount" ).val( ui.value );
+                matrix.initMT();
+                j$( "#matrix [title]" ).tooltip();
+              }
+            });
+            j$( "#amount" ).val( j$( "#sliderVertical" ).slider( "value" ) );
+        }
+        
+        
+        function bindIE8Rotate(){
+            if(navigator.userAgent.indexOf("MSIE")>0) {
+                if(navigator.appVersion.substring(0,3)=='4.0' && navigator.appVersion.indexOf("MSIE 9.0")>0){
+                    j$('#dimentionB').addClass('ie8Rotate');
+                }  
+            }
+        }
+        
+        function checkProductCycle(item){
+        	j$( "#slider-horizontal" ).slider("enable");
+        	j$( "#sliderVertical" ).slider("enable");
+            var $plc = j$(item);
+            if($plc.is(':checked')){
+                //j$("[id $='rowLength']").val(5);
+                //j$("[id $='colLength']").val(5);
+                
+                //j$( "#sliderVertical" ).slider( "option", "min", '1' );
+                //j$( "#sliderVertical" ).slider( "option", "max", '5' );
+                //j$( "#sliderVertical" ).slider( "option", "value", '3' );
+                //j$( "#amount" ).val( j$( "#sliderVertical" ).slider( "value" ) );
+                
+                
+                j$( "#slider-horizontal" ).slider( "option", "min", 2 );
+                j$( "#slider-horizontal" ).slider( "option", "max", '5' );
+                j$( "#slider-horizontal" ).slider( "option", "value", '5' );
+                j$( "#amounthos" ).val( j$( "#slider-horizontal" ).slider( "value" ) );
+                j$("[id $='adoptionSection']").show();
+		    	
+                matrix.initMT();
+                //j$( "[title]" ).tooltip();
+            }
+            else{
+        		//Begin: added by Peng Zhu 2013-08-07 for launch template min adoption 1
+		    	j$( "#slider-horizontal" ).slider( "option", "min", 2 );
+		    	//End: added by Peng Zhu 2013-08-07 
+		    	
+                j$( "#slider-horizontal" ).slider( "option", "max", '21' );
+                j$("[id $='adoptionSection']").hide();
+                j$( "#slider-horizontal" ).slider( "option", "value", '10' );
+                //j$( "#slider-horizontal" ).slider( "option", "value", '5' );
+                j$( "#amounthos" ).val( j$( "#slider-horizontal" ).slider( "value" ) );
+                
+                
+                //j$( "#slider-horizontal" ).slider(  "option", "value", '5' );
+                //j$( "#slider-horizontal" ).slider(  "option", "value", '10' );
+                matrix.initMT();
+                
+                
+		    	//j$("[id $='potentialSection']").hide();
+            }
+            
+        }
+        
+        
+        var v = 0;
+        var matrix = {
+            timer:  1,
+            label:  "test",
+            mtObj: null, 
+            //isSaved:false,
+            getMT:  function() {
+                        return j$.parseJSON(j$("#htmlentity").html());
+                    },  
+            initMT: function() {
+            			j$("#matrix").children().each(function(){
+		                	j$(this).remove();
+		                });
+                        var obj = this.getMT();
+                        //console.log(obj);
+                        matrix.mtObj = obj;
+                        //console.log(j$("#htmlentity").html());
+                        //console.log(obj);
+                        //return;
+                        //var matrixWidth = 1 + parseInt(j$("[id $='colLength']").val(),10),
+                        //matrixHeight = 1 + parseInt(j$("[id $='rowLength']").val(),10),
+                        
+                        
+                        var mode = '{!editMode}';
+            			if(mode == 'yes' && v==0){
+            				v++;
+            				j$( "#slider" ).slider( "option", "value", parseFloat(obj.Adoption_Weight_Factor_BI__c) );
+            				j$( "#Adoption" ).val( obj.Adoption_Weight_Factor_BI__c );
+            				j$( "#Potential" ).val( obj.Potential_Weight_Factor_BI__c );
+            				
+            				j$( "#sliderVertical" ).slider( "option", "value", parseFloat(obj.Row_BI__c) );
+            				j$( "#amount" ).val( obj.Row_BI__c );
+            				
+            				j$( "#slider-horizontal" ).slider( "option", "value", parseFloat(obj.Column_BI__c) );
+            				j$( "#amounthos" ).val( obj.Column_BI__c );
+            				
+            				//if(j$("[id $='productLifeCycle']").is(':checked')){
+            				//	j$( "#slider-horizontal" ).slider("disable");
+            				//}
+            				
+            			}
+                        
+                        var matrixWidth = 1 + parseInt(j$( "#amounthos" ).val(),10),
+                        	matrixHeight = 1 + parseInt(j$( "#amount" ).val(),10),
+                            colNum = matrixWidth,
+                            matrixWidth = matrixWidth * 46,//what is that mean
+                            
+                            
+                            
+                            rowNum = matrixHeight,
+                            matrixHeight = matrixHeight * 46,//yy changed from 46 to 26
+                            matrixWidth = matrixWidth + 4,
+                            matrixHeight = matrixHeight + 4,
+                            //prodLifeCyc = obj.Product_Lifecycle__c,
+                            weightPot,
+                            weightInt;
+                        
+                        //Begin: commented out by Peng Zhu 2013-08-07 for wrong calculation formula
+                        //weightPot = parseFloat(j$("#Adoption").val());
+                        //weightInt = parseFloat(j$("#Potential").val());
+                        //End: commented out by Peng Zhu 2013-08-07
+                        
+                        //Begin: added by Peng Zhu 2013-08-07 for wrong calculation formula
+                        weightPot = parseFloat(j$("#Potential").val());
+                        weightInt = parseFloat(j$("#Adoption").val());
+                        //Begin: added by Peng Zhu 2013-08-07 for wrong calculation formula
+                        
+                        /*var mode = '{!editMode}';
+                        if(mode == 'yes' && v == 0){
+                            //console.log(obj.Adoption_Weight_Factor_BI__c);
+                            j$( "#slider" ).slider( "option", "value", obj.Adoption_Weight_Factor_BI__c );
+                            j$( "#Adoption" ).val( j$( "#slider" ).slider( "value" ) );
+                            j$( "#Potential" ).val( (2 - parseFloat(j$( "#slider" ).slider( "value" ))).toFixed(1) );
+                            v++;
+                        }*/
+                        //console.log(weightPot);
+                        //console.log(weightInt);
+                        var liStr=[];
+                        
+                       
+                        
+                        
+                        for(var i=0;i<rowNum;i++){
+                            
+                            for(var j=0;j<colNum;j++){
+                                if(i==0&&j==0)
+                                    liStr.push('<li class="topRow leftCol borderLi"></li>');
+                                else if(i==0){
+                                	var a5 = j$("[id $='adoption5']").val(),
+                                  		a4 = j$("[id $='adoption4']").val(),
+                                  		a3 = j$("[id $='adoption3']").val(),
+                                  		a2 = j$("[id $='adoption2']").val(),
+                                  		a1 = j$("[id $='adoption1']").val();
+                                    if(j$("[id $='productLifeCycle']").is(':checked')
+                                    	&& (a1 || a2 || a3 || a4 || a5)){
+                                    		if(a5){
+                                    			a5 = a5.length > 5?a5.substring(0,5):a5;
+                                    		}
+                                    		if(a4){
+                                    			a4 = a4.length > 5?a4.substring(0,5):a4;
+                                    		}
+                                    		if(a3){
+                                    			a3 = a3.length > 5?a3.substring(0,5):a3;
+                                    		}
+                                    		if(a2){
+                                    			a2 = a2.length > 5?a2.substring(0,5):a2;
+                                    		}
+                                    		if(a1){
+                                    			a1 = a1.length > 5?a1.substring(0,5):a1;
+                                    		}
+                                    		
+                                    		
+                                    		
+                                    		
+                                        if(j==5)
+                                        liStr.push('<li class="rightBorder topRow borderLi" title="'+j$("[id $='adoption5']").val()+'">',a5,'</li>');
+                                        else if(j ==4)
+                                        liStr.push('<li class="topRow borderLi" title="'+j$("[id $='adoption4']").val()+'">',a4,'</li>');
+                                        else if(j ==3)
+                                        liStr.push('<li class="topRow borderLi" title="'+j$("[id $='adoption3']").val()+'">',a3,'</li>');
+                                        else if(j ==2)
+                                        liStr.push('<li class="topRow borderLi" title="'+j$("[id $='adoption2']").val()+'">',a2,'</li>');
+                                        else if(j ==1)
+                                        liStr.push('<li class="topRow borderLi" title="'+j$("[id $='adoption1']").val()+'">',a1,'</li>');
+                                        
+                                        
+                                    }
+                                    else{
+                                        ////console.log(j);
+                                        if(j==colNum-1)
+                                        liStr.push('<li class="rightBorder topRow borderLi">',j-1,'</li>');
+                                        else
+                                        liStr.push('<li class="topRow borderLi">',j-1,'</li>');
+                                    }
+                                }else if(j==0){
+                                    
+                                    /*
+                                    if(j$("[id $='productLifeCycle']").is(':checked')){
+                                    	//console.log(i);
+                                    	//console.log(rowNum);
+                                    	var p5 = j$("[id $='potential5']").val(),
+                                    		p4 = j$("[id $='potential4']").val(),
+                                    		p3 = j$("[id $='potential3']").val(),
+                                    		p2 = j$("[id $='potential2']").val(),
+                                    		p1 = j$("[id $='potential1']").val();
+                                    		p5 = p5.length > 5?p5.substring(0,5):p5;
+                                    		p4 = p4.length > 5?p4.substring(0,5):p4;
+                                    		p3 = p3.length > 5?p3.substring(0,5):p3;
+                                    		p2 = p2.length > 5?p2.substring(0,5):p2;
+                                    		p1 = p1.length > 5?p1.substring(0,5):p1;
+                                        if(rowNum-i==5)
+                                        liStr.push('<li class=" leftCol borderLi" title="'+j$("[id $='potential5']").val()+'">',p5,'</li>');
+                                        else if(rowNum-i ==4)
+                                        liStr.push('<li class="leftCol borderLi" title="'+j$("[id $='potential4']").val()+'">',p4,'</li>');
+                                        else if(rowNum-i ==3)
+                                        liStr.push('<li class="leftCol borderLi" title="'+j$("[id $='potential3']").val()+'">',p3,'</li>');
+                                        else if(rowNum-i ==2)
+                                        liStr.push('<li class="leftCol borderLi" title="'+j$("[id $='potential2']").val()+'">',p2,'</li>');
+                                        else if(rowNum-i ==1)
+                                        liStr.push('<li class="bottomBorder leftCol borderLi" title="'+j$("[id $='potential1']").val()+'">',p1,'</li>');
+                                    }
+                                    else{
+                                    */
+                                        if(i==rowNum-1)
+                                        liStr.push('<li class="bottomBorder leftCol borderLi">',rowNum-i,'</li>');
+                                        else
+                                        liStr.push('<li class="leftCol borderLi">',rowNum-i,'</li>');
+                                    //}
+                                    
+                                }else {
+                                    var rowBaseNmuber = (100/(rowNum-1)).toFixed(2);
+                                    //Commented out by Peng Zhu 2013-08-07 for only on column case
+                                    //var colBaseNmuber = (100/(colNum-2)).toFixed(1);
+                                    //Begin: added by Peng Zhu 2013-08-07 for only on column case
+                                    //if((colNum-2) < 1) colBaseNmuber = 100;
+                                    //var colBaseNmuber = (100/(colNum-1)).toFixed(2);
+                                    var colBaseNmuber = 0;
+                                    if(colNum-2 > 0) colBaseNmuber = (100/(colNum-2)).toFixed(2);
+                                    //End: added by Peng Zhu 2013-08-07
+                                    
+                                    //console.log(rowNum);
+                                    //console.log(colNum);
+                                    //console.log(rowBaseNmuber);
+                                    //console.log(colBaseNmuber);
+                                    if(j==colNum-1 && i==rowNum-1)
+                                    //Modified by Peng Zhu 2013-08-30 for enhancing the weighting calculation formula
+                                    //older formula
+                                    //Math.round((rowNum-i)*weightPot*rowBaseNmuber + (j-1)*weightInt*colBaseNmuber)
+                                    liStr.push('<li class="rightBorder bottomBorder ',rowNum-i,'a',j-1,'">'+Math.round((rowNum-i)*weightPot*rowBaseNmuber + (j-1)*weightInt*colBaseNmuber)+'</li>');
+                                    else if(j==colNum-1)
+                                    liStr.push('<li class="rightBorder ',rowNum-i,'a',j-1,'">'+Math.round((rowNum-i)*weightPot*rowBaseNmuber + (j-1)*weightInt*colBaseNmuber)+'</li>');
+                                    else if(i==rowNum-1)
+                                    liStr.push('<li class="bottomBorder ',rowNum-i,'a',j-1,'">'+Math.round((rowNum-i)*weightPot*rowBaseNmuber + (j-1)*weightInt*colBaseNmuber)+'</li>');
+                                    else
+                                    liStr.push('<li class="',rowNum-i,'a',j-1,'">' +Math.round((rowNum-i)*weightPot*rowBaseNmuber + (j-1)*weightInt*colBaseNmuber)+'</li>');
+                                    
+                                }
+                            }
+                        }
+                        liStr = liStr.join('');//write a long string.
+                        
+                        j$('#matrix').width(matrixWidth)
+                                     .height(matrixHeight)
+                                     .append(liStr)
+                                     .children().each(
+                                         function(){
+                                             var $li = j$(this);
+                                             if($li.not('.borderLi')){
+                                             	
+                                                 var cls = $li.attr('class'),
+                                                     cls = cls.replace('rightBorder','').replace('bottomBorder',''),
+                                                     cls = cls.split('a');
+                                                 $li.data('row',cls[0]).data('col',cls[1]).removeClass(cls);
+                                                 //console.log(cls);
+                                                 var rowBaseNmuber2 = (100/(rowNum-1)).toFixed(2);
+                                                 //var colBaseNmuber2 = (100/(colNum-2)).toFixed(1);
+                                                 //Begin: added by Peng Zhu 2013-08-07 for only one column case
+                                                 //var colBaseNmuber2 = (100/(colNum-2)).toFixed(2);
+                                                 var colBaseNmuber2 = 0;
+                                                 if(colNum-2 > 0) colBaseNmuber2 = (100/(colNum-2)).toFixed(2);
+                                                 //End: added by Peng Zhu 2013-08-07 for only one column case
+                                                 
+                                                 //Modified by Peng Zhu 2013-08-30 for enhancing the weighting calculation formula
+                                                 var wig = Math.round(cls[0]*weightPot*rowBaseNmuber2 + parseInt(cls[1])*weightInt*colBaseNmuber2);
+                                                 
+                                                 if( wig>= 50 && wig<150){
+                                                    $li.addClass('Tianlan');
+                                                 }
+                                                 else if(wig >= 150){
+                                                    $li.addClass('Shenlan');
+                                                 }
+                                             }
+                                         }
+                                     )
+                                     .end()
+                                     .parent()
+                                     .width(matrixWidth+30);
+                        liStr = null;
+                        //START: yy added 
+                        j$('#matrixDiv').width(matrixWidth+100);
+                        /*if(colNum >= 20){
+                            j$('#matrixDiv').css("margin-left","10%");
+                        }
+                        else if(colNum >= 15){
+                            j$('#matrixDiv').css("margin-left","15%");
+                        }
+                        else if(colNum <= 5){
+                            j$('#matrixDiv').css("margin-left","25%");
+                        }*/
+                        
+                        //END: yy added 
+                        
+                        j$('#dimentionA').text(dim2);
+                        var marginTop;
+                        //if(j$("[id $='mtDim2']").val())
+                        marginTop = (matrixHeight + dim2.length)/2;
+                       // else
+                       // marginTop = matrixHeight/2;
+                        
+                        //console.log(j$('#dimentionA').css("margin-left"));
+                        j$('#dimentionB').text(dim1).css("margin-top",marginTop);
+                        
+                        
+                    },
+              constructCell:function(cls,weight,row,col){
+                  //var that = this;
+                  var obj = {
+                      "attributes":{"type":"Matrix_Cell_Template__c"},
+                      "Name":matrix.mtObj.Name + '_' + row + '_' + col,
+                      "Lifecycle_Template_BI__c":null,
+                      "Row__c":row,
+                      "Column__c":col, 
+                      //"Strategic_Weight__c":weight, 
+                      //"Segment__c":cls
+                  };
+                  return obj;
+              },
+              preventEvent:function(e){
+                  if(e.preventDefault)
+                      e.preventDefault();
+                  else 
+                      event.returnValue = false;
+                  if(e.stopPropagation)
+                      e.stopPropagation();
+                  else 
+                      event.cancelBubble = true;
+              },
+              startSave:function(e){
+                  this.preventEvent(e);
+                  this.showLoading();
+                  var obj,that = this,result = [],mtResult = {};
+                  /*j$('#matrix').children().not('.borderLi').each(function(){
+                      var $li = j$(this),
+                          cls = $li.data('segment'),
+                          row = $li.data('row'),
+                          col = $li.data('col'),
+                          weight = $li.text();
+                      obj = new that.constructCell(cls,weight,row,col);
+                      result.push(obj);
+                  });*/
+                  var shouldbreak = false;
+                  j$("[id $='mtCountry']").siblings('.erMsg').hide();
+                  /*j$("[id $='detailSection']").children().not("[id $='productLifeCycle']").each(function(){
+              		if(!j$(this).val()){
+              			alert('Please fill all the required field!')
+              			shouldbreak = true;
+              			
+              		}
+              		
+              		
+              	  });*/
+              	  
+              	  if(!j$("[id $='mtName']").val()){alert('Please fill the name!');shouldbreak = true;}
+              	  
+              	  //Begin : modified by Peng Zhu 2013-07-17 for verifying country
+              	  //commented out by Peng Zhu 2013-07-17
+              	  //if(!j$("[id $='mtCountry']").val()){alert('Please fill the country!');shouldbreak = true;}
+              	  
+              	  //added by Peng Zhu 2013-07-17
+              	  if(!j$("[id $='mtCountry']").val() || j$.trim(j$("[id $='mtCountry']").val()) == ''){alert('Please fill the country!');shouldbreak = true;}
+              	  //End : modified by Peng Zhu 2013-07-17 for verifying country
+              	  
+              	  //alert();
+              	  if(j$("[id $='mtArea']").text() == 'NONE' || j$("[id $='mtArea']").text() == ''){alert('Please fill the area!');shouldbreak = true;}
+              	  
+              	  
+                  mtResult.mt = that.mtObj;
+                  if(j$("[id $='productLifeCycle']").is(':checked')){
+                  	mtResult.mt.isLaunch_Phase_BI__c = true;
+                  	
+                  	/*if(!j$("[id $='adoption1']").val() 
+                  	  || !j$("[id $='adoption2']").val()
+                  	  || !j$("[id $='adoption3']").val()
+                  	  || !j$("[id $='adoption4']").val()
+                  	  || !j$("[id $='adoption5']").val()
+                  	  || !j$("[id $='potential5']").val()
+                  	  || !j$("[id $='potential4']").val()
+                  	  || !j$("[id $='potential3']").val()
+                  	  || !j$("[id $='potential2']").val()
+                  	  || !j$("[id $='potential1']").val()){
+                  	  alert('Please fill all adoption and potential fields!');
+                  	  shouldbreak = true;
+                  	}*/
+                  	
+                  	mtResult.mt.Adoption_Status_05_BI__c  = j$("[id $='adoption5']").val();
+                  	mtResult.mt.Adoption_Status_04_BI__c  = j$("[id $='adoption4']").val();
+                  	mtResult.mt.Adoption_Status_03_BI__c  = j$("[id $='adoption3']").val();
+                  	mtResult.mt.Adoption_Status_02_BI__c  = j$("[id $='adoption2']").val();
+                  	mtResult.mt.Adoption_Status_01_BI__c  = j$("[id $='adoption1']").val();
+                  	
+                  	/*mtResult.mt.Potential_Status_01_BI__c  = j$("[id $='potential1']").val();
+                  	mtResult.mt.Potential_Status_02_BI__c  = j$("[id $='potential2']").val();
+                  	mtResult.mt.Potential_Status_03_BI__c  = j$("[id $='potential3']").val();
+                  	mtResult.mt.Potential_Status_04_BI__c  = j$("[id $='potential4']").val();
+                  	mtResult.mt.Potential_Status_05_BI__c  = j$("[id $='potential5']").val();*/
+                  }
+                  else{
+                  	mtResult.mt.isLaunch_Phase_BI__c = false;
+                  	mtResult.mt.Adoption_Status_05_BI__c  = null;
+                  	mtResult.mt.Adoption_Status_04_BI__c  = null;
+                  	mtResult.mt.Adoption_Status_03_BI__c  = null;
+                  	mtResult.mt.Adoption_Status_02_BI__c  = null;
+                  	mtResult.mt.Adoption_Status_01_BI__c  = null;
+                  	
+                  	/*mtResult.mt.Potential_Status_01_BI__c  = null;
+                  	mtResult.mt.Potential_Status_02_BI__c  = null;
+                  	mtResult.mt.Potential_Status_03_BI__c  = null;
+                  	mtResult.mt.Potential_Status_04_BI__c  = null;
+                  	mtResult.mt.Potential_Status_05_BI__c  = null;*/
+                  }
+                  if(shouldbreak){matrix.hideLoading();return false;}
+                  
+                  mtResult.mt.Adoption_Weight_Factor_BI__c = j$("#Adoption").val();
+                  mtResult.mt.Potential_Weight_Factor_BI__c = j$("#Potential").val();
+                  mtResult.mt.Name = j$("[id $='mtName']").val();
+                  mtResult.mt.Area_BI__c = j$("[id $='mtArea']").text();
+                  
+                  //mtResult.mt.Dimension_1_Name__c = j$("[id $='mtDim1']").val();
+                  //mtResult.mt.Dimension_2_Name__c = j$("[id $='mtDim2']").val();
+                  
+                  //mtResult.mt.Row__c = j$("[id $='rowLength']").val();
+                  //mtResult.mt.Column__c = j$("[id $='colLength']").val();
+                  mtResult.mt.Row_BI__c = j$( "#amount" ).val();
+                  mtResult.mt.Column_BI__c = j$( "#amounthos" ).val();
+                  mtResult.mt.Country_BI__c = j$("[id $='mtCountry']").val();
+                  mtResult.mt.Description_BI__c = j$("[id $='mtDescription']").val();
+                  
+                  if(j$("[id $='mtActive']").is(':checked')){
+                  	mtResult.mt.Active_BI__c = true;
+                  }
+                  else{
+                  	mtResult.mt.Active_BI__c = false;
+                  }
+                  //mtResult.mt.Active_BI__c =j$("[id $='mtActive']").val();
+                  
+                  //console.log(mtResult.mt);
+                  
+                  
+                  //mtResult.list_mct = result;
+                  
+                  //console.log(mtResult);
+					if(!j$("[id$='mtCountry']").val() || j$.trim(j$("[id$='mtCountry']").val()) == ''){
+						//Begin : added by Peng Zhu 2013-07-17 for verifying country
+						IMP_BI_ExtMatrixTemplateUI.verifyCountry(j$.trim(j$("[id$='mtCountry option:selected']").val()), function(data){
+							
+	              	  		j$('#htmlEntitySpan').html(data);
+							data = j$('#htmlEntitySpan').text();
+							data = j$.parseJSON(data);
+							if(data && !data.success){
+								//shouldbreak = true;
+								//console.log('Error Message : ' + data.message);
+								var j$errMsg = j$("[id $='mtCountry']").siblings('.erMsg');
+								j$errMsg.find('span[name=errTxt]').text(data.message);
+								j$errMsg.show();
+								matrix.hideLoading();
+							}
+							else if(data && data.success){
+								if(data.countryId && j$.trim(data.countryId) != '') mtResult.mt.Country_BI__c = data.countryId;
+								matrix.saveMatrix(mtResult);		
+							}
+						});
+	              	  	//End : added by Peng Zhu 2013-07-17 for verifying country
+					}
+					else{
+						matrix.saveMatrix(mtResult);			    
+					}
+              },
+              //added by Peng Zhu 2013-07-17
+              saveMatrix: function(mtResult){
+				var mode = '{!editMode}';
+				mtResult = JSON.stringify(mtResult);
+				if(mode == 'yes'){
+					IMP_BI_ExtMatrixTemplateUI.editMT(mtResult,function(response){
+	                  		
+						//console.log(response);
+	                    if(response && (response.indexOf('false')>=0 || response.indexOf('ERROR')>=0)){
+	                        alert(response);
+	                    }else{
+	                        var country = matrix.mtObj.Country_BI__c;
+	                        if(country && country.length >15)
+	                        country = country.substr(0,15);
+	                        location.href = '/' + country;
+	                    }
+	                    matrix.hideLoading();
+	                });
+				}
+				else{
+					IMP_BI_ExtMatrixTemplateUI.saveMT(mtResult,function(response){
+						//console.log(response);
+						if(response && (response.indexOf('false')>=0 || response.indexOf('ERROR')>=0)){
+							alert(response);
+						}else{
+						//alert(response);
+							var country = matrix.mtObj.Country_BI__c;
+							if(country && country.length >15)
+								country = country.substr(0,15);
+							location.href = '/' + country;
+						}
+						matrix.hideLoading();
+					});
+				}
+              },
+              showLoading: function (){
+                  j$('#Loading').appendTo(j$('#bodyTable').parent()).show();           
+        
+              },
+              hideLoading: function (){
+                  j$('#Loading').hide();
+              }
+        }
+    </script>
+    
+    <apex:sectionHeader title="{!$Objecttype.Lifecycle_Template_BI__c.label}" subtitle="Definition"/>
+    
+    <apex:form id="mainform">
+        <div id="Loading" class="mask" style="display:none;"></div>
+        <apex:pageMessages id="topmessages" />
+        <input type="hidden" value="{!potValue}" id="potValue"></input><!-- {!Lifecycle_Template_BI__c.Adoption_Weight_Factor_BI__c} {!Lifecycle_Template_BI__c.Potential_Weight_Factor_BI__c}-->
+        <input type="hidden" value="{!intValue}" id="intValue"></input>
+
+        <apex:pageBlock mode="maindetail" id="detailPageBlock">
+            <apex:pageBlockButtons location="bottom">
+
+                <input type="button" onclick="matrix.startSave(event);" class="{!IF(mode='0','hideElem','btn')}" value="{!$Label.IMP_BI_Save}" style="display:{!IF(isAdmin, '','none')};"/><!-- YY change button to input -->
+
+                <apex:commandButton action="{!cancel}" value="{!$Label.IMP_BI_Cancel}"/>
+                <apex:actionStatus startText="" stopText="" id="theStatus">
+                    <apex:facet name="start">
+                        <div id="pageLoading" class="mask">
+                            <div class="loadingDiv" style="width:40px;margin-left:48%;margin-top:48%;position:absolute;">
+                                <img src="/img/loading.gif"/>
+                            </div>
+                        </div>
+                     </apex:facet>
+                </apex:actionStatus>
+            </apex:pageBlockButtons>
+            <!--div style="font-size: 14px;text-align: center;color: red; display:{!IF(isAdmin,'none','')}">{!$Label.IMP_BI_Admin_Edit_Global_Template}!</div-->
+            
+            <!-- EDITING SECTION -->
+            <apex:outputPanel id="detailPanel" ><!-- rendered="{!mode='1'}" -->
+                <apex:pageBlockSection title="Detail" collapsible="true" id="detailSection" rendered="{!isAdmin}"><!-- showHeader="false" -->
+                    <apex:inputField value="{!theMT.Name}" required="true" id="mtName"/>
+                    <apex:outputField value="{!theMT.Area_BI__c}" id="mtArea"/>
+                    <apex:inputField value="{!theMT.Active_BI__c}" id="mtActive"/>
+                    <!--apex:inputField value="{!theMT.Country_BI__c}" id="mtCountry"/-->
+					<apex:pageBlockSectionItem >
+						<apex:outputLabel value="{!$ObjectType.Lifecycle_Template_BI__c.fields.Country_BI__c.label}" />
+						<apex:outputPanel >
+		        			<div class="requiredInput">
+								<div class="requiredBlock"></div>
+	                    		<apex:selectList value="{!theMT.Country_BI__c}" size="1" multiselect="false" id="mtCountry">
+	                    			<apex:selectOptions value="{!countries}" />
+	                    		</apex:selectList>
+                    	   	</div>
+		        		</apex:outputPanel>
+					</apex:pageBlockSectionItem>
+                    <apex:inputField value="{!theMT.isLaunch_Phase_BI__c}" id="productLifeCycle" onchange="checkProductCycle(this);"/>
+<!--                    <apex:inputCheckbox value="{!theMT.isLaunch_Phase_BI__c}" id="productLifeCycle" onchange="checkProductCycle(this);"/>-->
+					<apex:inputField value="{!theMT.Description_BI__c}" id="mtDescription"/>
+				</apex:pageBlockSection>
+				
+			<!-- READ-ONLY SECTION -->
+				<apex:pageBlockSection title="Detail" collapsible="true" rendered="{!!isAdmin}"><!-- showHeader="false" -->
+	                <apex:outputField value="{!theMT.Name}" />
+	                <apex:outputField value="{!theMT.Area_BI__c}"/>
+	                <apex:outputField value="{!theMT.Active_BI__c}" />
+	                <apex:outputField value="{!theMT.Country_BI__c}" />
+	                <apex:outputField value="{!theMT.isLaunch_Phase_BI__c}" />
+<!--                    <apex:inputCheckbox value="{!theMT.isLaunch_Phase_BI__c}" id="productLifeCycle" onchange="checkProductCycle(this);"/>-->
+					<apex:outputField value="{!theMT.Description_BI__c}" />
+				</apex:pageBlockSection>
+			
+                <apex:outputPanel id="adoptionSection" > <!-- style="display:none" -->
+                    <apex:pageBlockSection title="Adoption" collapsible="true" rendered="{!isAdmin}">
+                        <apex:inputField value="{!theMT.Adoption_Status_01_BI__c}" id="adoption1"/>
+                        <apex:inputField value="{!theMT.Adoption_Status_02_BI__c}" id="adoption2"/>
+                        <apex:inputField value="{!theMT.Adoption_Status_03_BI__c}" id="adoption3"/>
+                        <apex:inputField value="{!theMT.Adoption_Status_04_BI__c}" id="adoption4"/>
+                        <apex:inputField value="{!theMT.Adoption_Status_05_BI__c}" id="adoption5"/>
+                    </apex:pageBlockSection>
+                    <apex:pageBlockSection title="Adoption" collapsible="true" rendered="{!!isAdmin}">
+						<apex:outputField value="{!theMT.Adoption_Status_01_BI__c}" id="adoption1"/>
+						<apex:outputField value="{!theMT.Adoption_Status_02_BI__c}" id="adoption2"/>
+						<apex:outputField value="{!theMT.Adoption_Status_03_BI__c}" id="adoption3"/>
+						<apex:outputField value="{!theMT.Adoption_Status_04_BI__c}" id="adoption4"/>
+			        	<apex:outputField value="{!theMT.Adoption_Status_05_BI__c}" id="adoption5"/>
+                	</apex:pageBlockSection>
+                </apex:outputPanel>
+<!--                <apex:outputPanel id="potentialSection" style="display:none">-->
+<!--                    <apex:pageBlockSection title="Potential" collapsible="true" > rendered="{!launchMode}" -->
+<!--                        <apex:inputField value="{!theMT.Potential_Status_01_BI__c}" id="potential1"/>-->
+<!--                        <apex:inputField value="{!theMT.Potential_Status_02_BI__c}" id="potential2"/>-->
+<!--                        <apex:inputField value="{!theMT.Potential_Status_03_BI__c}" id="potential3"/>-->
+<!--                        <apex:inputField value="{!theMT.Potential_Status_04_BI__c}" id="potential4"/>-->
+<!--                        <apex:inputField value="{!theMT.Potential_Status_05_BI__c}" id="potential5"/>-->
+<!--                    </apex:pageBlockSection>-->
+<!--                </apex:outputPanel>-->
+             </apex:outputPanel>
+        <apex:outputPanel id="outPanel" layout="block">
+        <apex:outputPanel id="matrixPanel" layout="block">
+            <div id="matrixDiv">
+                
+                <div class="mContainer">
+                	<apex:pageblocksection columns="1">
+<!--                		<apex:pageblockSectionItem >-->
+                		<div style="margin-top:10px; text-decoration : underline;">
+                		<!-- Begin: commented out by Peng Zhu 2013-08-15 -->
+                		<!-- 
+	                	<div style="float:left;margin-left: 30px;">  
+		                    <label for="Adoption">{!$Label.IMP_BI_AdoptionWeight}:</label>
+		                    <input type="text" id="Adoption" style="border: 0; color: #f6931f; font-weight: bold;width: 30px;" readonly="readonly"/>
+		                </div>
+		                <div style="float:left;margin-left: 85px;">  
+		                    <label for="Potential">{!$Label.IMP_BI_PotentialWeight}:</label>
+		                    <input type="text" id="Potential" style="border: 0; color: #f6931f; font-weight: bold;width: 30px;" readonly="readonly"/>
+		                </div>  
+		                 -->
+		                <!-- End: commented out by Peng Zhu 2013-08-15 -->
+		                <!-- Begin: added by Peng Zhu 2013-08-15  -->
+	                	<div style="float:left;margin-left: 30px;">  
+		                    <label for="Potential">{!$Label.IMP_BI_PotentialWeight}:</label>
+		                    <input type="text" id="Potential" style="border: 0; color: #f6931f; font-weight: bold;width: 30px;" readonly="readonly"/>
+		                </div>
+		                <div style="float:left;margin-left: 85px;">  
+		                    <label for="Adoption">{!$Label.IMP_BI_AdoptionWeight}:</label>
+		                    <input type="text" id="Adoption" style="border: 0; color: #f6931f; font-weight: bold;width: 30px;" readonly="readonly"/>
+		                </div>  
+		                <!-- End: added by Peng Zhu 2013-08-15  -->
+		                <div id="slider"></div>
+		                </div>
+<!--		                </apex:pageblockSectionItem>-->
+						<span style="display:block;margin-left:30px;color:gray;">____________________________________________________________</span>
+		                <input type="text" id="amounthos" style="border: 0; color: #f6931f; font-weight: bold;margin-left: 30px;width:20px;margin-top: 20px;" readonly="readonly"/>
+		                    
+		                <div id="slider-horizontal" ></div><!-- style="margin: 0px Auto;width:80%;" -->
+	                </apex:pageblocksection>
+	                <div id="dimentionA"></div>
+                    <p style="height:0px;">
+                      <input type="text" id="amount" style="border: 0; color: #f6931f; font-weight: bold;margin-left: -10px;width:20px;" readonly="readonly"/>
+                    </p>
+                     
+                    <div id="sliderVertical" style="height: 60%;margin-left: -10px;"></div>
+                    <div id="dimentionB"></div>
+                    <ol id="matrix"></ol>
+                    <!-- style="width:200px;" -->
+                </div>
+                
+            </div>
+            
+            <div class="clear"></div>
+            <div id="htmlentity">{!MT}</div>
+            <span id="htmlEntitySpan" style="display:none">&nbsp;</span>
+        </apex:outputPanel>
+        </apex:outputPanel>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

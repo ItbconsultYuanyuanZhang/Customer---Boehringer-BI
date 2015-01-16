@@ -1,0 +1,11 @@
+<apex:page standardController="Account" standardStylesheets="true" sidebar="false">
+<apex:composition template="{!$Page.VODRedirect_vod}"/>
+<script type="text/javascript"> 
+    var queryparams = "&accts=" + "{!if($CurrentPage.parameters.accts == null, Account.Id, $CurrentPage.parameters.accts)}";
+    queryparams += '&mode=e';
+    queryparams += "&location=" + "{!if($CurrentPage.parameters.location == null, "Account_vod", $CurrentPage.parameters.location)}";
+    queryparams += "&productids=" + "{!if($CurrentPage.parameters.productids == null, "", $CurrentPage.parameters.productids)}";
+	queryparams += "&Call2_vod__r.Id=" + "{!if($CurrentPage.parameters.Call2_vod__r.Id== null, "", $CurrentPage.parameters.Call2_vod__r.Id)}";
+    com.vod309.redirect.redirect("approvedEmail", queryparams);
+</script>
+</apex:page>

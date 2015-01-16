@@ -1,0 +1,172 @@
+<apex:page id="budgetAllocatinPage" standardController="Budget_Allocation_BI__c" extensions="IMP_BI_BudgetAllocationDefintion" title="{!pageTitle}" tabstyle="Budget_Allocation_BI__c" docType="html-5.0">
+	<!-- style -->
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}"/>
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" />
+    
+    <!-- Action script on Page -->
+    <script type="text/javascript">
+    	var j$ = jQuery.noConflict();
+    	
+    	//Load message errors
+    	var IMP_BI_Input_Null = '{!$Label.IMP_BI_Input_Null}';
+    	var IMP_BI_Select_Null = '{!$Label.IMP_BI_Select_Null}';
+
+    	function checkAllRequiredFields(){
+            var isValid = true;
+			
+			var j$budget = j$('#budget'); 
+			if(j$.trim(j$budget.val()) == ''){
+				j$budget.siblings('.erMsg').find('font').text(IMP_BI_Input_Null).parent().show();
+				isValid = false;
+			}else{
+				j$budget.siblings('.erMsg').hide();
+			}
+			
+			var j$product = j$('.productPanel').find('select');
+			if(j$.trim(j$product.val()) == ''){
+				j$product.siblings('.erMsg').find('font').text(IMP_BI_Select_Null).parent().show();
+				isValid = false;
+			}else{
+				j$product.siblings('.erMsg').hide();
+			}
+			
+			var j$channel = j$('.channelPanel').find('select');
+			if(j$.trim(j$channel.val()) == ''){
+				j$channel.siblings('.erMsg').find('font').text(IMP_BI_Select_Null).parent().show();
+				isValid = false;
+			}else{
+				j$channel.siblings('.erMsg').hide();
+			}            	
+		
+            return isValid; 
+        }
+        
+        function checkBudget(obj){
+            if(j$.trim(j$(obj).val()) == ''){
+                j$(obj).siblings('.erMsg').find('font').text(IMP_BI_Input_Null).parent().show();
+            }
+            else{
+                j$(obj).siblings('.erMsg').hide();
+            }
+        }
+        
+        function checkSelectList(obj){
+            if(j$.trim(j$(obj).val()) == ''){
+                j$(obj).siblings('.erMsg').find('font').text(IMP_BI_Select_Null).parent().show();
+            }
+            else{
+                j$(obj).siblings('.erMsg').hide();
+            }
+        }
+        
+        function saveBudgetAllocation(){
+        	//Load pin loding process
+        	showLoading()
+
+        	if(checkAllRequiredFields()){
+        		var budgetJSON = {};
+        		
+        		//Set values budget JSON object
+        		budgetJSON.Id = j$('#idBudget').val();
+        		budgetJSON.cycle = j$('#idCycle').val();
+        		budgetJSON.product = j$('.productPanel').find('select').val();
+        		budgetJSON.channel = j$('.channelPanel').find('select').val();
+        		budgetJSON.budget = j$('#budget').val();
+        		budgetJSON = JSON.stringify(budgetJSON);
+        		
+        		IMP_BI_BudgetAllocationDefintion.saveBudget(budgetJSON, function(data){
+            		j$('#htmlEntity').html(data);
+            		data = j$('#htmlEntity').text();
+            		data = j$.parseJSON( data );
+            
+		            if(data && !data.success){
+		                j$("div[id='errorMsg']").html(data.message);
+		                j$("div[id='errorMsg']").show();
+		                j$('#loading-curtain-div').hide();
+		            }
+		            else{
+	                	cancel();
+		            }
+	        	});
+		    }else{
+		        j$('#loading-curtain-div').hide();
+		    }
+        }
+        
+        function showLoading(){
+            j$('#loading-curtain-div').appendTo(j$('#bodyTable').parent()).show();           
+        }
+        
+        function cancelToBack(){
+            showLoading();
+            cancel();
+        }
+    </script>
+    
+    <!-- Set style on page components  -->
+    <style type="text/css">
+    	.requiredInput .erMsg {white-space:normal; width:100px;}
+    </style>
+    
+    <apex:sectionHeader title="{!sectionHeaderTitle}" subtitle="{!sectionHeaderSubTitle}" />
+    <apex:pageMessages id="msg" escape="false"/>
+    <div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');"></div>
+    
+    <apex:form id="formBudgetAllocation">
+    	<input id="idCycle" type="hidden" value="{!budgetAllocation.Cycle_BI__c}" />
+    	<input id="idBudget" type="hidden" value="{!budgetAllocation.Id}" />
+    	<div id="errorMsg" style="color:#ff0000;margin-left:60px;display:none;"></div>
+    	<span id="htmlEntity" style="display:none">&nbsp;</span>
+		<apex:pageBlock id="bgAllocation" mode="maindetail" tabStyle="Matrix_BI__c">
+		    <apex:pageBlockButtons location="bottom">
+		        <input type="button" class="btn"  value="Save" onclick="saveBudgetAllocation();"/>
+		        <input type="button" class="btn"  value="Cancel" onclick="cancelToBack();"/>
+		        <apex:actionFunction name="cancel" action="{!cancel}"/>
+		    </apex:pageBlockButtons>
+
+		    <apex:pageBlockSection title="Information" columns="2" id="pbsect" collapsible="false">
+		        <apex:outputField value="{!budgetAllocation.Cycle_BI__c}" />
+		        <apex:pageBlockSectionItem >
+		        	<apex:outputLabel value="{!$ObjectType.Budget_Allocation_BI__c.fields.Channel_BI__c.label}" />
+		        	<apex:outputPanel styleClass="channelPanel">
+	        			<div class="requiredInput">
+							<div class="requiredBlock"></div>
+							<apex:selectList value="{!budgetAllocation.Channel_BI__c}" multiselect="false" size="1" onchange="checkSelectList(this);" id="channel">
+		        				<apex:selectOptions value="{!channels}" />
+		        			</apex:selectList>
+				        	<div class="erMsg" style="display:none; font-size:12px;">
+	                           	<font color="#C00 !important"></font>
+	                       	</div>
+                       	</div>
+		        	</apex:outputPanel>
+		        </apex:pageBlockSectionItem>
+		        <apex:pageBlockSectionItem >
+		        	<apex:outputLabel value="{!$ObjectType.Budget_Allocation_BI__c.fields.Product_Catalog_BI__c.label}" />
+	        		<apex:outputPanel styleClass="productPanel">
+	        			<div class="requiredInput">
+							<div class="requiredBlock"></div>
+							<apex:selectList value="{!budgetAllocation.Product_Catalog_BI__c}" multiselect="false" size="1" id="product" onchange="checkSelectList(this);">
+				        		<apex:selectOptions value="{!productsByCountry}" />
+				        	</apex:selectList>
+				        	<div class="erMsg" style="display:none; font-size:12px;">
+	                           	<font color="#C00 !important"></font>
+	                       	</div>
+                       	</div>
+		        	</apex:outputPanel>
+		        </apex:pageBlockSectionItem>
+		        <apex:pageBlockSectionItem >
+		        	<apex:outputLabel value="{!$ObjectType.Budget_Allocation_BI__c.fields.Budget_BI__c.label}" />
+		        	<div class="requiredInput">
+                        <div class="requiredBlock"></div>
+                        <input type="text" size="20" maxlength="10" id="budget" value="{!budgetAllocation.Budget_BI__c}" onchange="checkBudget(this);" onkeyup="value=value.replace(/[^\d]/g,'')"/>
+                        <div class="erMsg" style="display:none; font-size:12px;">
+                            <font color="#C00 !important"></font>
+                        </div>
+                    </div>
+		        </apex:pageBlockSectionItem>
+		    </apex:pageBlockSection>
+		  </apex:pageBlock>
+		</apex:form>
+</apex:page>

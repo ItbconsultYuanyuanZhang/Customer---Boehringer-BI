@@ -1,0 +1,65 @@
+<!-- 
+1. Use this as example page, only copy paste the code and change the standardController property to your standard or custom object API name. Basically, copy all text from here into your copy Visualforce page and replace Account by your object API name.
+There are two instances to change:
+- standardController="Account" in <apex:page...>
+- value="{!Account.Name}" in <apex:inputHidden.../>. Here you'll need to change account into your API name. Moreover for some objects there is no Name field available, instead SFDC has a different field, e.g. for Cases you should use {!Case.Subject}
+
+2. Detail Page Button on the object with following details and put the button into the page layout:
+a) Without Passing Parameters:
+        - Display Type: Detail Page Button
+        - Content Source: Visualforce Page
+        - Visualforce Page: <Your page's name>
+        - Behavior: Display in existing window with sidebar
+b) Passing Parameters:
+You can pass parameters for parent as well as child records with the URL to modify specific fields like record type or status fields of the cloned record. For this option you'll need an URL or JavaScript Button:
+- Display Type: Detail Page Button
+- Content Source: URL
+- URL: /apex/<Your page's name>?id={!Id}&field1=value1&field2=value2&...
+  The first parameter must be the record id of the parent record passed as merge field. And following all fields you want to modify:
+  -- For parent object fields just pass the field name or prefix with object name. You might need to include field namespaces of managed packages. If you use Field Mapping object we recommend to use the object name as prefix
+  -- For child objects fields you need to pass a combination of object name and field name separated by period like Account.Name=Cloned+Changed
+     You may choose standard as well as custom fields. Also you may choose fields that are not on page layout. For objects of managed packages you'll need to
+     pass the namespace for the object and field name.
+  -- Parameter mode: You could pass a parameter mode with values "edit" or "view": /apex/<Your page's name>?id={!Id}&field1=value1&field2=value2&mode=edit
+     If you pass "edit", the cloned parent record will be opened in edit mode after save
+     If you pass "view", the cloned parent record will be opened in view mode after save. Moreover this option provides the end user the option to change the parent's name field on the confirm page
+- Behavior: Display in existing window with sidebar
+
+With URL parameters you could for example calculate target field values in JavaScript, e.g. increment a date field or any counter. 
+
+You could even pass and override the standard name field with URL parameters, but only if you run in edit mode. Because in view mode the user gets an input field to define the name value. You cannot default this value with any other value than the value of the previous record.
+
+3. Define all relevant child objects to be cloned in the custom object Clone_Child__c. You might need to add your custom objects or some special standard objects into the picklist fields for parent and child object. Note: Child Objects is a dependent multi-picklist.
+   So you might need to update the dependency definition before you can use them.
+4. Define additional field mapping changes in the Field_Mapping__c object: This allows you to set specific fields to null (Type = Null), provide a fixed value (Type = Value) or set a field to another field value (Type = Field):
+    - Standard Name Field (API Object Name) should be the object's API name. You can define those 
+    - API Field Name: The field name which you want to set via the rule
+    - Mapping Type: Null, Field, Value - Defines transformation operation
+    - Value: Pass a field name (Mapping Type = Field) or string literal (Mapping Type = Value). For string literals the tool interprets decimals if you pass decimal point as decimal separator. For date and date time we require YYYY-MM-DD hh:mm:ss format.
+    - Key: A required field which identifies a common set of rules. You must specify one, but you can give it any name, e.g. ClosedCaseOperation. Please prevent spaces in the name. A common use case might be to have a record type id or even Source.RecordTypeId|Target.RecordTypeId
+           which allows you to define different rules when you change from record type A to record type B then from B to C.
+           
+    Important: You will need to pass the key value into the URL, therefore you'll always need 2b to embed. To pass a key you pass the object's name as URL parameter name and the key value as URL parameter value, e.g. Case=A.       
+           
+    You can define these field transformations for parent as well as child objects. Note: To set a field to a value of another field only works on the same object.
+    
+    When you use field mappings you can still override with parameters like shown in 2b. URL parameters will take precedence over field mapping entries. You could even override the standard name field with field mapppings.
+ -->
+<apex:page standardController="Account" extensions="ITBclone.ExtClone" >
+    <apex:form >        
+        <apex:pageBlock >
+            <apex:pageMessages />
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton action="{!cloneParent}" value="{!$Label.itbclone__ConfirmButton}"/>
+                <apex:commandButton action="{!goBack}" value="{!$Label.itbclone__BackButton}"/>
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection rendered="{!mode != 'edit'}" columns="1">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Name" />
+                    <apex:inputText value="{!newName}" />
+                    </apex:pageBlockSectionItem>
+                <apex:inputHidden value="{!Account.Name}" />
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

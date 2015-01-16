@@ -1,0 +1,447 @@
+<apex:page standardController="V2OK_Data_Change_Request__c" extensions="VEEVA_DCR_Extension" id="thePage">
+<apex:includeScript value="{!URLFOR($Resource.jQuery, 'jquery-1.9.1.min.js')}"/>
+<style>
+
+	.center {
+		margin:auto;
+		text-align:center;
+		width:90%;
+	}
+
+	.center td {
+		color:red;
+	}
+
+</style>
+<script>
+
+    // JavaScript / JQuery function - prevent/remove newlines from description field
+    // Author: Raphael Krausz <raphael.krausz@veeva.com>
+    // Date: 2014-07-18
+
+	j$ = jQuery.noConflict();
+
+	var descriptionId = '[id$=description]';
+
+	var enterKeyPress = 13;
+	var checkEnterKeyPress = function(eventObject) {
+		var code = eventObject.keyCode || eventObject.which;
+ 		if ( code == enterKeyPress ) {
+			theText = j$(descriptionId).val();
+			newText = theText.replace(/\s*[\n\r]+\s*/g, ' ');
+			j$(descriptionId).val(newText);
+		}
+	};
+
+	j$(document).ready(function() {
+		j$(descriptionId).keyup(checkEnterKeyPress);
+	});
+
+	// End of newline removal functionality
+
+</script>
+	<apex:form id="theForm">
+	
+		<apex:messages layout="table" styleClass="center"/> 
+
+		<apex:actionRegion >
+			<input type="hidden" name="peanuts" value="{!DCR.Id}" />
+		</apex:actionRegion>
+		
+		<apex:pageBlock title="{!DCR_dcr}" mode="edit" rendered="{!edit}">
+			<apex:pageBlockButtons > 
+				<apex:commandButton action="{!summary}" value="{!DCR_Save}" id="save"/>
+				<apex:commandButton action="{!canceledit}" value="{!DCR_Cancel}" id="cancel2" immediate="true"/>
+			</apex:pageBlockButtons> 
+			<apex:pageBlockSection title="{!DCR_Dupe}" columns="1" rendered="{!dupelist}">
+				<apex:pageBlockTable value="{!dupes}" var="res">
+					  <apex:column value="{!res.Name}"/>
+					  <apex:column value="{!res.Recordtype.Name}"/>
+					  <apex:column value="{!res.Primary_Parent_vod__c}"/>
+					  <apex:column value="{!res.Status_BI__c}"/>
+					  <apex:column value="{!res.Phone}"/>
+					  <apex:column value="{!res.Country_Code_BI__c}"/>
+				</apex:pageBlockTable>
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="{!DCR_Info}" columns="2">
+				<apex:outputField value="{!DCR.RecordTypeId}"/>
+				<apex:inputField value="{!DCR.Description__c}" id="description" />
+				<apex:inputField value="{!DCR.Change_Type__c}" required="true" />
+				<apex:outputField value="{!DCR.Status__c}" />
+				<apex:inputField value="{!DCR.Notes_BI__c}" rendered="{!isDS}"/>
+				<apex:outputField value="{!DCR.Name}" rendered="{!isDS}"/>
+				<apex:outputField value="{!DCR.Data_Change_Request__c}" rendered="{!isDS}"/> 
+				<apex:outputField value="{!DCR.User_Country_BI__c}" rendered="{!isDS}"/> 
+				<apex:outputField value="{!DCR.External_ID_vod__c}" rendered="{!isDS}"/>
+			</apex:pageBlockSection>
+			
+			<apex:actionRegion renderRegionOnly="false" rendered="{!accs}"> 	
+				<apex:pageBlockSection title="{!DCR_Accounts}" columns="2" rendered="{!accs}">	
+					<apex:inputField value="{!DCR.Professional_DS__c}" rendered="{!lkpperson}" required="true" >
+						<apex:actionSupport event="onchange" 
+											action="{!hcprefresh}" 
+											rerender="hco, hcpdetail, actdetail, addrfields, pickeda" 
+											immediate="false" />
+					</apex:inputField>
+					<apex:inputField value="{!DCR.Organisation_Account__c}" rendered="{!lkpbusiness}" required="{!!wkp}" >
+						<apex:actionSupport event="onchange" 
+											action="{!hcorefresh}" 
+											rerender="hcp, hcodetail, actdetail, addrfields, pickeda"  
+											immediate="false" />
+					</apex:inputField>
+					<apex:outputField value="{!DCR.Professional_DS__c}" rendered="{!lkpperson==false}" id="hcp"/>
+					<apex:outputField value="{!DCR.Organisation_Account__c}" rendered="{!lkpbusiness==false}" id="hco"/>
+				</apex:pageBlockSection>
+			</apex:actionRegion>
+			<apex:pageBlockSection title="{!DCR_Person}" columns="2" rendered="{!person}" id="hcpdetail" >
+				<apex:inputField value="{!DCR.First_Name__c}" required="true"/>
+				<apex:inputField value="{!DCR.Middle_Name_BI__c}" />
+				<apex:inputField value="{!DCR.Last_Name__c}" required="true"/>
+				<apex:inputField value="{!DCR.Suffix_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Gender_BI__c}" />
+				<apex:inputField value="{!DCR.Gender_DS__c}" /> 
+				<apex:inputField value="{!DCR.Title_BI__c}" />
+				<apex:inputField value="{!DCR.Administrative_Title_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.PersonBirthdate_BI__c}" /> 
+				<apex:inputField value="{!DCR.Graduation_Year_BI__c}" />
+				<apex:selectList value="{!DCR.University_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!uni}" />
+		        </apex:selectList>
+				<apex:selectList value="{!DCR.Education_Specialty_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!edu}" />
+		        </apex:selectList> 
+		        <apex:selectList value="{!DCR.Education_Specialty_2_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!edu2}" /> 
+		        </apex:selectList>
+		        <apex:inputField value="{!DCR.Individual_Phone_BI__c}" />
+				<apex:inputField value="{!DCR.Preferred_Language_BI__c}" />
+				<apex:pageBlockSectionItem rendered="{!$ObjectType.V2OK_Data_Change_Request__c.fields.OK_Individual_Class_BI__c.Accessible}"> 
+				 <apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.OK_Individual_Class_BI__c.label}" />
+				 <apex:outputPanel layout="block" styleClass="requiredInput" >
+				 <apex:outputPanel styleClass="requiredBlock" rendered="{!!isDS}"/> 
+					<apex:selectList value="{!DCR.OK_Individual_Class_BI__c}" size="1" multiselect="false" required="{!!isDS}">
+			            <apex:selectOptions value="{!indclass}" />
+			        </apex:selectList>
+			   </apex:outputPanel>  
+		       </apex:pageBlockSectionItem>
+				<apex:selectList value="{!DCR.Individual_Type_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!indtyp}" />
+		        </apex:selectList>
+		        <apex:inputField value="{!DCR.Person_Type_MX_BI__c}" rendered="{!isDS}" />
+		        <apex:pageBlockSectionItem rendered="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Specialty_BI__c.Accessible}"> 
+				 <apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Specialty_BI__c.label}"/>
+				 <apex:outputPanel layout="block" styleClass="requiredInput" >
+				 <apex:outputPanel styleClass="requiredBlock" rendered="{!!isDS}" /> 
+					<apex:selectList value="{!DCR.Specialty_BI__c}" size="1" multiselect="false" required="{!!isDS}">
+			            <apex:selectOptions value="{!spec}" />
+			        </apex:selectList>
+			   </apex:outputPanel>  
+		       </apex:pageBlockSectionItem>
+		        <apex:selectList value="{!DCR.Specialty_2_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!spec}" />
+		        </apex:selectList> 
+		        <apex:selectList value="{!DCR.Specialty_3_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!spec2}" /> 
+		        </apex:selectList>
+		        <apex:selectList value="{!DCR.Medical_Interest_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!med}" /> 
+		        </apex:selectList>
+		        <apex:selectList value="{!DCR.Medical_Interest_2_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!med2}" /> 
+		        </apex:selectList>
+		        <apex:selectList value="{!DCR.Medical_Interest_3_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!med2}" /> 
+		        </apex:selectList> 
+		        <apex:selectList value="{!DCR.Qualification_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!qual}" /> 
+		        </apex:selectList>
+		        <apex:selectList value="{!DCR.Qualification_2_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!qual}" /> 
+		        </apex:selectList>
+		        <apex:selectList value="{!DCR.Qualification_3_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!qual}" /> 
+		        </apex:selectList>
+				<apex:inputField value="{!DCR.Individual_Status_BI__c}" />
+				<apex:inputField value="{!DCR.Individual_State_BI__c}" />
+				<apex:inputField value="{!DCR.OK_FIRSTSETDATE_BI__c}" />
+				<apex:inputField value="{!DCR.Do_Not_Phone_BI__c}" />
+				<apex:inputField value="{!DCR.Do_Not_Call_BI__c}" />
+				<apex:inputField value="{!DCR.Do_Not_Mail_BI__c}" />
+				<apex:inputField value="{!DCR.License_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.License_2_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.License_3_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Degree_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Degree_2_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Professional_Area_BI__c}" rendered="{!isDS}" />
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection title="{!DCR_Org}" columns="2" rendered="{!business}" id="hcodetail">	
+				<apex:inputField value="{!DCR.New_Account_Name__c}" required="true"/>
+				<apex:inputField value="{!DCR.Preferred_Name_BI__c}" rendered="{!isDS}" />
+				<apex:pageBlockSectionItem rendered="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Record_Type_BI__c.Accessible && isDS}"> 
+				 <apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Record_Type_BI__c.label}"/>
+				 <apex:outputPanel layout="block" styleClass="requiredInput" >
+				 <apex:outputPanel styleClass="requiredBlock" /> 
+					<apex:selectList value="{!DCR.Record_Type_BI__c}" size="1" multiselect="false" required="{!isDS}">
+			            <apex:selectOptions value="{!wkprectype}" /> 
+			        </apex:selectList>
+			   </apex:outputPanel>  
+		       </apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem rendered="{!$ObjectType.V2OK_Data_Change_Request__c.fields.OK_Workplace_Class_BI__c.Accessible}"> 
+				 <apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.OK_Workplace_Class_BI__c.label}"/>
+				 <apex:outputPanel layout="block" styleClass="requiredInput" >
+				 <apex:outputPanel styleClass="requiredBlock" rendered="{!!isDS}" /> 
+					<apex:selectList value="{!DCR.OK_Workplace_Class_BI__c}" size="1" multiselect="false" required="{!!isDS}">
+			            <apex:selectOptions value="{!wkpclass}" /> 
+			        </apex:selectList>
+			   </apex:outputPanel>  
+		       </apex:pageBlockSectionItem>
+				<apex:inputField value="{!DCR.Workplace_Activity_BI__c}" />
+				<apex:selectList value="{!DCR.OK_Workplace_Type_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!wkptyp}" /> 
+		        </apex:selectList>
+		        <apex:inputField value="{!DCR.Account_Sub_Type_BI__c}" rendered="{!isDS}" />
+		        <apex:inputField value="{!DCR.Channel_Type_BI__c}" rendered="{!isDS}" />
+		        <apex:inputField value="{!DCR.Health_Insurance_BI__c}" rendered="{!isDS}" />
+				<apex:pageBlockSectionItem rendered="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Workplace_Specialty_BI__c.Accessible}"> 
+				 <apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Workplace_Specialty_BI__c.label}"/>
+				 <apex:outputPanel layout="block" styleClass="requiredInput" >
+				 <apex:outputPanel styleClass="requiredBlock" rendered="{!!isDS}" /> 
+					<apex:selectList value="{!DCR.Workplace_Specialty_BI__c}" size="1" multiselect="false" required="{!!isDS}">
+			            <apex:selectOptions value="{!spec}" /> 
+			        </apex:selectList>
+			   </apex:outputPanel>  
+		       </apex:pageBlockSectionItem>
+				<apex:selectList value="{!DCR.Workplace_Specialty_2_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!spec}" /> 
+		        </apex:selectList>
+				<apex:selectList value="{!DCR.Workplace_Specialty_3_BI__c}" size="1" multiselect="false">
+		            <apex:selectOptions value="{!spec}" /> 
+		        </apex:selectList>
+				<apex:inputField value="{!DCR.Parent_Account__c}" />
+				<apex:inputField value="{!DCR.Phone__c}" required="{!wkp&&!isDS}"/> 
+				<apex:inputField value="{!DCR.Fax__c}" />
+				<apex:inputField value="{!DCR.Website_BI__c}" />
+				<apex:inputField value="{!DCR.Beds_BI__c}" />
+				<apex:inputField value="{!DCR.Workplace_Number_of_Patients_BI__c}" />
+				<apex:inputField value="{!DCR.Total_Pharmacists_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Workplace_Status_BI__c}" />
+				<apex:inputField value="{!DCR.Workplace_State_BI__c}" />
+				<apex:inputField value="{!DCR.Sector_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Type_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Security_Level_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.BI_External_ID_2__c}" rendered="{!isDS}" />
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection title="{!DCR_Activity}" columns="2" rendered="{!activ}" id="actdetail">
+				<apex:pageBlockSectionItem rendered="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Role_BI__c.Accessible}"> 
+				 <apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Role_BI__c.label}"/>
+					<apex:selectList value="{!DCR.Role_BI__c}" size="1" multiselect="false">
+			            <apex:selectOptions value="{!role}" /> 
+			        </apex:selectList>
+		       </apex:pageBlockSectionItem>
+		        <apex:selectList value="{!DCR.Role_2_BI__c}" size="1" multiselect="false" rendered="{!isDS}">
+		            <apex:selectOptions value="{!role}" /> 
+		        </apex:selectList> 
+				<apex:inputField value="{!DCR.Working_Status_BI__c}" />
+				<apex:inputField value="{!DCR.Activity_Status_BI__c}" />
+				<apex:inputField value="{!DCR.Activity_State_BI__c}" />
+			</apex:pageBlockSection>
+			
+			<apex:pageBlockSection title="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Address__c.label}" rendered="{!showAddrSelect}" columns="1">
+					<apex:pageBlockSectionItem rendered="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Address__c.Accessible}">
+					 <apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Address__c.label}"/>
+					 <apex:outputPanel layout="block" styleClass="requiredInput">
+					 <apex:outputPanel styleClass="requiredBlock" /> 
+					 <apex:actionRegion renderRegionOnly="false" rendered="{!showAddrSelect}"> 
+						<apex:selectList value="{!addrvalue}" size="1" multiselect="false" required="true"  id="pickeda">
+				            <apex:selectOptions value="{!addrsel}" />
+				            <apex:actionSupport event="onchange" action="{!addrefresh}" rerender="addrfields" immediate="false" >
+				            </apex:actionSupport>
+				        </apex:selectList>
+				        </apex:actionRegion> 
+				   	</apex:outputPanel>  
+			       </apex:pageBlockSectionItem>
+		    </apex:pageBlockSection>
+			<apex:pageBlockSection title="{!DCR_Address}" columns="2" rendered="{!address}" id="addrfields">	
+				
+				<apex:inputField value="{!DCR.New_Address_Line_1__c}" id="line1" required="true" />
+				<apex:inputField value="{!DCR.Address_line_2_BI__c}" />
+				<apex:inputField value="{!DCR.Country_DS__c}" required="true"/>
+				<apex:inputField value="{!DCR.City_vod__c}" required="true"/>
+				<apex:inputField value="{!DCR.Zip_vod__c}" />
+				<apex:pageBlockSectionItem rendered="{!$ObjectType.V2OK_Data_Change_Request__c.fields.OK_State_Province_BI__c.Accessible}" > 
+				 <apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.OK_State_Province_BI__c.label}"/>
+				 <apex:outputPanel layout="block" styleClass="requiredInput" >
+				 <apex:outputPanel styleClass="requiredBlock" /> 
+					<apex:selectList value="{!DCR.OK_State_Province_BI__c}" size="1" multiselect="false" required="true">
+			            <apex:selectOptions value="{!prov}" /> 
+			        </apex:selectList>
+			   </apex:outputPanel>  
+		       </apex:pageBlockSectionItem>
+				<apex:inputField value="{!DCR.Brick_BI__c}" />
+				<apex:inputField value="{!DCR.BI_Preferred_Address_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.District_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Ward_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Phone_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Phone_2_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Fax_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Cost_of_Medical_Consultation_BI__c}" rendered="{!isDS}" />
+				<apex:inputField value="{!DCR.Number_of_Patients_BI__c}" rendered="{!isDS}" />				
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+		 
+		
+		<apex:pageBlock title="{!DCR_Summary}" mode="detail" rendered="{!detail}">
+			<apex:pageBlockButtons > 
+				<apex:commandButton action="{!editDCR}" value="{!DCR_Edit}" id="edit" rendered="{!DCR.Status__c!='Verified'}"/>
+				<apex:commandButton action="{!cloneDCR}" value="Clone" id="clone" rendered="false"/>
+				<apex:commandButton action="{!del}" value="{!DCR_Delete}" id="delete"/>
+				<apex:commandButton action="{!retlist}" value="{!DCR_retlist}" id="ret1"/>
+				<apex:commandButton action="{!retacc}" value="{!DCR_retacc}" id="ret2" rendered="{!fromacc}"/>
+			</apex:pageBlockButtons>
+			<apex:pageBlockSection title="{!DCR_Info}" columns="2">
+				<apex:outputField value="{!DCR.RecordTypeId}" styleClass="highlight" />
+				<apex:outputField value="{!DCR.Description__c}" styleClass="highlight" />
+
+				<apex:outputField value="{!DCR.Change_Type__c}" styleClass="highlight" />
+				<apex:outputField value="{!DCR.Status__c}" styleClass="highlight" />
+				<apex:outputField value="{!DCR.Notes_BI__c}" rendered="{!isDS}"/>
+				<apex:outputField value="{!DCR.Name}" rendered="{!isDS}"/>
+				<apex:outputField value="{!DCR.Data_Change_Request__c}" rendered="{!isDS}"/>
+				<apex:outputField value="{!DCR.User_Country_BI__c}" rendered="{!isDS}"/> 
+				<apex:outputField value="{!DCR.External_ID_vod__c}" rendered="{!isDS}"/>
+				<apex:outputField value="{!DCR.Changed_Fields_BI__c}" rendered="{!isDS}" />
+			</apex:pageBlockSection>
+
+			<apex:pageBlockSection title="{!DCR_Accounts}" columns="2" rendered="{!accs}">	
+				<apex:outputField value="{!DCR.Professional_DS__c}" />
+				<apex:outputField value="{!DCR.Organisation_Account__c}" />
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="{!DCR_Person}" columns="2" rendered="{!person}" >
+				<apex:outputField value="{!DCR.First_Name__c}" styleClass="highlight" />
+				<apex:outputField value="{!DCR.Middle_Name_BI__c}" />
+				<apex:outputField value="{!DCR.Last_Name__c}" />
+				<apex:outputField value="{!DCR.Suffix_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Gender_BI__c}" />
+				<apex:outputField value="{!DCR.Gender_DS__c}" /> 
+				<apex:outputField value="{!DCR.Title_BI__c}" />
+				<apex:outputField value="{!DCR.Administrative_Title_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.PersonBirthdate_BI__c}" /> 
+				<apex:outputField value="{!DCR.Graduation_Year_BI__c}" />
+				<apex:pageBlockSectionItem rendered="{!uniR}">
+					<apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.University_BI__c.label}"/>
+					<apex:outputText value="{!codemap[DCR.University_BI__c]}" /> 
+				</apex:pageBlockSectionItem>
+				<apex:outputField value="{!DCR.Education_Specialty_BI__c}"/>
+				<apex:pageBlockSectionItem rendered="{!eduR}">
+					<apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Education_Specialty_2_BI__c.label}"/>
+					<apex:outputText value="{!codemap[DCR.Education_Specialty_2_BI__c]}" /> 
+				</apex:pageBlockSectionItem>
+		        <apex:outputField value="{!DCR.Individual_Phone_BI__c}" />
+				<apex:outputField value="{!DCR.Preferred_Language_BI__c}" />
+				<apex:outputField value="{!DCR.OK_Individual_Class_BI__c}"/>
+				<apex:pageBlockSectionItem rendered="{!indTypR}">
+					<apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Individual_Type_BI__c.label}"/>
+					<apex:outputText value="{!codemap[DCR.Individual_Type_BI__c]}" /> 
+				</apex:pageBlockSectionItem>
+				<apex:outputField value="{!DCR.Person_Type_MX_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Specialty_BI__c}"/>
+		        <apex:outputField value="{!DCR.Specialty_2_BI__c}"/>
+		        <apex:pageBlockSectionItem rendered="{!specR}" >
+					<apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Specialty_3_BI__c.label}"/>
+					<apex:outputText value="{!codemap[DCR.Specialty_3_BI__c]}" /> 
+				</apex:pageBlockSectionItem>
+		        <apex:outputField value="{!DCR.Medical_Interest_BI__c}"/>
+		        <apex:pageBlockSectionItem rendered="{!med2R}">
+					<apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Medical_Interest_2_BI__c.label}"/>
+					<apex:outputText value="{!codemap[DCR.Medical_Interest_2_BI__c]}" /> 
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem rendered="{!med3R}" >
+					<apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Medical_Interest_3_BI__c.label}"/>
+					<apex:outputText value="{!codemap[DCR.Medical_Interest_3_BI__c]}" /> 
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem rendered="{!qualR}">
+					<apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Qualification_BI__c.label}"/>
+					<apex:outputText value="{!codemap[DCR.Qualification_BI__c]}" /> 
+				</apex:pageBlockSectionItem>
+		        <apex:outputField value="{!DCR.Qualification_2_BI__c}"/>
+		        <apex:outputField value="{!DCR.Qualification_3_BI__c}"/>
+				<apex:outputField value="{!DCR.Individual_Status_BI__c}" />
+				<apex:outputField value="{!DCR.Individual_State_BI__c}" />
+				<apex:outputField value="{!DCR.OK_FIRSTSETDATE_BI__c}" />
+				<apex:outputField value="{!DCR.Do_Not_Phone_BI__c}" />
+				<apex:outputField value="{!DCR.Do_Not_Call_BI__c}" />
+				<apex:outputField value="{!DCR.Do_Not_Mail_BI__c}" />
+				<apex:outputField value="{!DCR.License_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.License_2_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.License_3_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Degree_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Degree_2_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Professional_Area_BI__c}" rendered="{!isDS}" />
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="{!DCR_Org}" columns="2" rendered="{!business}" >	
+				<apex:outputField value="{!DCR.New_Account_Name__c}" />
+				<apex:outputField value="{!DCR.Preferred_Name_BI__c}" rendered="{!isDS}" />
+				<apex:pageBlockSectionItem rendered="{!rectype && isDS}">
+					<apex:outputLabel value="{!$ObjectType.V2OK_Data_Change_Request__c.fields.Record_Type_BI__c.label}"/>
+					<apex:outputText value="{!codemap[DCR.Record_Type_BI__c]}" /> 
+				</apex:pageBlockSectionItem>
+				<apex:outputField value="{!DCR.OK_Workplace_Class_BI__c}"/>
+				<apex:outputField value="{!DCR.Workplace_Activity_BI__c}" />
+				<apex:outputField value="{!DCR.OK_Workplace_Type_BI__c}"/>
+				<apex:outputField value="{!DCR.Account_Sub_Type_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Channel_Type_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Health_Insurance_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Workplace_Specialty_BI__c}"/>
+				<apex:outputField value="{!DCR.Workplace_Specialty_2_BI__c}"/>
+				<apex:outputField value="{!DCR.Workplace_Specialty_3_BI__c}"/>
+				<apex:outputField value="{!DCR.Parent_Account__c}" />
+				<apex:outputField value="{!DCR.Phone__c}" />
+				<apex:outputField value="{!DCR.Fax__c}" />
+				<apex:outputField value="{!DCR.Website_BI__c}" /> 
+				<apex:outputField value="{!DCR.Beds_BI__c}" />
+				<apex:outputField value="{!DCR.Workplace_Number_of_Patients_BI__c}" />
+				<apex:outputField value="{!DCR.Total_Pharmacists_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Workplace_Status_BI__c}" />
+				<apex:outputField value="{!DCR.Workplace_State_BI__c}" />
+				<apex:outputField value="{!DCR.Sector_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Type_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Security_Level_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.BI_External_ID_2__c}" rendered="{!isDS}" />
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="{!DCR_Activity}" columns="2" rendered="{!activ}" >
+				<apex:outputField value="{!DCR.Role_BI__c}" />
+				<apex:outputField value="{!DCR.Role_2_BI__c}" rendered="{!isDS}"/>
+				<apex:outputField value="{!DCR.Working_Status_BI__c}" />
+				<apex:outputField value="{!DCR.Activity_Status_BI__c}" />
+				<apex:outputField value="{!DCR.Activity_State_BI__c}" />
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="{!DCR_Address}" columns="2" rendered="{!address}">	
+				<apex:outputField value="{!DCR.New_Address_Line_1__c}" />
+				<apex:outputField value="{!DCR.Address_line_2_BI__c}" />
+				<apex:outputField value="{!DCR.Country_DS__c}" />
+				<apex:outputField value="{!DCR.City_vod__c}" />
+				<apex:outputField value="{!DCR.Zip_vod__c}" />
+				<apex:outputField value="{!DCR.OK_State_Province_BI__c}"/>
+				<apex:outputField value="{!DCR.Brick_BI__c}" />
+				<apex:outputField value="{!DCR.BI_Preferred_Address_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.District_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Ward_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Phone_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Phone_2_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Fax_BI__c}" rendered="{!isDS}"/>
+				<apex:outputField value="{!DCR.Cost_of_Medical_Consultation_BI__c}" rendered="{!isDS}" />
+				<apex:outputField value="{!DCR.Number_of_Patients_BI__c}" rendered="{!isDS}"/>
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="{!DCR_Response}" columns="2" rendered="{!!isDS}">
+				<apex:outputField value="{!DCR.Request_sent__c}" />
+				<apex:outputField value="{!DCR.Request_Date__c}" />
+				<apex:outputField value="{!DCR.Data_Request_Response__c}" />
+				<apex:outputField value="{!DCR.Response_Comment__c}" />
+				<apex:outputField value="{!DCR.Response_Date__c}" />
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+	<apex:relatedList list="ProcessSteps"  rendered="{!applist}" />
+</apex:page>

@@ -1,0 +1,18 @@
+<apex:page standardController="DataLoadVizArt__Upload_Job__c" extensions="ITBclone.ExtClone" >
+    <apex:form >        
+        <apex:pageBlock >
+            <apex:pageMessages />
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton action="{!cloneParent}" value="{!$Label.ITBclone__ConfirmButton}"/>
+                <apex:commandButton action="{!goBack}" value="{!$Label.ITBclone__BackButton}"/>
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection rendered="{!mode != 'edit'}" columns="1">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Name" />
+                    <apex:inputText value="{!newName}" />
+                    </apex:pageBlockSectionItem>
+                <apex:inputHidden value="{!DataLoadVizArt__Upload_Job__c.Name}" />
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

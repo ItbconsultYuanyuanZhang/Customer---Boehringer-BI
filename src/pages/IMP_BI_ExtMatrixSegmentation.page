@@ -1,0 +1,2290 @@
+<apex:page id="thePage" standardcontroller="Matrix_BI__c" extensions="IMP_BI_ExtMatrixSegment" sidebar="false" title="{!pageTitle}" tabStyle="Matrix_BI__c">
+    <!-- style -->  
+    <!-- <apex:stylesheet value="{!$Resource.jquicss}"/> -->
+    <!-- <apex:stylesheet value="{!$Resource.GooPieCss}"/> -->
+    <apex:stylesheet value="{!URLFOR($Resource.IMP_BI_ExtMatrixSegmentation_All, 'style/jquicss.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.IMP_BI_ExtMatrixSegmentation_All, 'style/GooPieCss.css')}"/>
+    <!-- <apex:stylesheet value="{!$Resource.MatrixSegementStyle}"/> -->
+    <apex:stylesheet value="{!$Resource.IMP_BI_MatrixSegementStyle}"/>
+    
+    <!-- library -->    
+    <!-- <apex:includeScript value="{!$Resource.jq172}" /> -->
+    <!-- <apex:includeScript value="{!$Resource.jquijs}" /> -->
+    <apex:includeScript value="{!URLFOR($Resource.IMP_BI_ExtMatrixSegmentation_All,'javascript/jq172.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.IMP_BI_ExtMatrixSegmentation_All,'javascript/jquijs.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.IMP_BI_ExtMatrixSegmentation_All,'javascript/GooPieFunc.js')}" />
+    <!-- <apex:includeScript value="{!URLFOR($Resource.IMP_BI_ExtMatrixSegmentation_All,'javascript/GooPieChart.js')}" /> -->
+    <!--[if IE]><script type="text/javascript" src="{!URLFOR($Resource.IMP_BI_ExtMatrixSegmentation_All,'javascript/GooPieIE.js')}"></script><![endif]-->
+    <!-- <script src="{!$Resource.GooPieFunc}" type="text/javascript"></script> -->
+    <script src="{!$Resource.GooPieChart}" type="text/javascript"></script>
+    <!-- custom javascript -->
+    <!-- <script src="{!$Resource.MatrixMultiSelectCellJS}" type="text/javascript"></script> -->
+    <script src="{!$Resource.IMP_BI_MatrixMultiSelectCellJS}" type="text/javascript"></script>
+    <!--
+    <apex:includeScript value="{!URLFOR($Resource.IMP_BI_Supertable, 'DataTable/js/jquery.dataTables.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.IMP_BI_Supertable, 'DataTable/js/dataTables.editor.js')}" />
+    -->
+    <apex:includeScript value="{!URLFOR($Resource.IMP_BI_TableSorter, 'js/jquery.tablesorter.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.IMP_BI_TableSorter, 'js/jquery.tablesorter.widgets.min.js')}" />
+    <apex:stylesheet value="{!URLFOR($Resource.IMP_BI_TableSorter, 'css/theme.blue.css')}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.IMP_BI_TableSorter, 'addons/pager/jquery.tablesorter.pager.css')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.IMP_BI_TableSorter, 'addons/pager/jquery.tablesorter.pager.min.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.IMP_BI_TableSorter, 'js/widgets/widget-pager.js')}" />
+    <!--[if lte IE 8]>
+        <style>
+            .hdvhc {
+                filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+                -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=3)";
+            }
+        </style>
+    <![endif]-->
+        
+            
+    <style>
+        .hdvhc.h{width:30px; *width:90px;/*IE7,IE8*/}
+        .rightSec ol.MatrixOl {list-style-type: none; margin: 0; padding: 0;}
+        .leftDiv{position:absolute; margin-top:{!realHeight*0.5-60}px;}
+        .hdvhc {
+            white-space:nowrap;
+            -webkit-transform: rotate(-90deg);
+            -moz-transform: rotate(-90deg);
+            -o-transform: rotate(-90deg);
+            -ms-transform: rotate(-90deg);
+            transform: rotate(-90deg);
+            display: block;
+            /*
+            margin-top: 150px;
+            */
+            font-weight: bold;
+            left: 50px; 
+            font-size: 12px; 
+            position: relative;
+        }
+        
+        .matriHeaderName {width:{!realWidth+290}px;margin:0px auto;font-weight:bold;font-size:12px;margin-bottom:2px;color:#4A4A56;}
+        .matriHeaderName span {margin-left:{!realWidth*0.55}px;}
+        #matrixBody {width:{!IF((realWidth+450) > 1200, realWidth+450, '1200')}px !important}
+        
+        .leftSection {height:{!realHeight+15}px;}
+        .leftSection{width:72px;margin-left:20px;margin-right:4px;position:relative;float:left;margin-right: 18 px;}
+        .leftSection .hdlr{text-align:right;margin:10px 0px;font-weight:bold;}
+        
+        #theMatrixDescriptionBITa {margin-left:0px; margin-right:2px; width:300px;}
+        
+        .rightSec ol li {width:54px !important; height:46px !important;}
+        
+        #popdata {table-layout:fixed;}
+        #popdata tr, #popdata td {white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+        
+        .pie_note b.note_legend {display:block; width:70px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}
+        body .bPageBlock .detailList div#matrixBody .kpiDiv .kpiTableDiv table td.tdSegments{width:65px;}
+        .ptBreadcrumb a {color: #015BA7; text-decoration: none;}
+        
+        #individualFilter {display:none;position:absolute;z-index:8000;min-width:600px;height:600px;background-color:#DDDDDD;}
+        #rightSec {min-height: 0px;}
+        
+        #filterTable > thead tr th{text-align:center;white-space: nowrap;text-overflow:ellipsis; overflow:hidden; font-size:12px; padding:3px 10px;}
+        #filterTable > tbody tr td{text-align:center;white-space: nowrap;text-overflow:ellipsis; overflow:hidden; font-size:12px; padding:3px 10px;}
+        .kpiSubtd {font-style: italic;}
+        #parseJson {display:none;}
+        .lgBd {height:90px;}
+    </style>
+    <script>
+        var matrixDrillDownReportUrl = '{!matrixDrillDownReportUrl}';
+        var isFinal = '{!isFinal}';
+        var accMatrix = '{!matrix.Account_Matrix_BI__c}';
+        //GooPie chart --begin
+        var canvas;
+        var Gprop={
+            con_width:250,
+            con_height:130,
+            canvas_width:150,
+            canvas_height:130,
+            canvas_top:0,
+            canvas_left:10,
+            core_x:75,
+            core_y:65,
+            radius:60
+        };
+        var Glegd={
+            note_width:100,
+            note_height:120,
+            note_top:0,
+            note_left:160,
+            sort_type:"v",
+            text_color:"#ffffff",
+            items:[
+                //{id:"c1",color:"#F8B818",label:"Gain"},
+                //{id:"c2",color:"#FCFC04;",label:"Build"},
+                //{id:"c3",color:"#20A020",label:"Defend"},
+                //{id:"c4",color:"#FC0404",label:"Observe"},
+                //{id:"c5",color:"#2060A0;",label:"Maintain"}
+                {id:"c0",color:"#FFF",label:"Blank"},
+                {id:"c1",color:"#F8B818",label:"{!IF(matrix.Segment_1_Label_BI__c != null && matrix.Segment_1_Label_BI__c != '', matrix.Segment_1_Label_BI__c, $Label.channel_budget_page_lab11)}"},
+                {id:"c2",color:"#FCFC04",label:"{!IF(matrix.Segment_2_Label_BI__c != null && matrix.Segment_2_Label_BI__c != '', matrix.Segment_2_Label_BI__c, $Label.channel_budget_page_lab12)}"},
+                {id:"c3",color:"#20A020",label:"{!IF(matrix.Segment_3_Label_BI__c != null && matrix.Segment_3_Label_BI__c != '', matrix.Segment_3_Label_BI__c, $Label.channel_budget_page_lab13)}"},
+                {id:"c4",color:"#FC0404",label:"{!IF(matrix.Segment_4_Label_BI__c != null && matrix.Segment_4_Label_BI__c != '', matrix.Segment_4_Label_BI__c, $Label.channel_budget_page_lab14)}"},
+                {id:"c5",color:"#2060A0",label:"{!IF(matrix.Segment_5_Label_BI__c != null && matrix.Segment_5_Label_BI__c != '', matrix.Segment_5_Label_BI__c, $Label.channel_budget_page_lab15)}"}
+            ]
+        };
+        //GooPie chart --end
+        $(function(){
+            var clps = $(document.getElementById('{!$Component.thepb.pbsect}')).children('.pbSubheader').children('img')[0];
+            if(clps && clps.nodeType == 1)twistSection(clps);
+            
+           
+            var scen = $(document.getElementById('{!$Component.thepb.scensect}')).children('.pbSubheader').children('img')[0];
+            if(scen && scen.nodeType == 1)twistSection(scen);
+            
+            var clps2 = $(document.getElementById('{!$Component.thepb2.pbsect}')).children('.pbSubheader').children('img')[0];
+            if(clps2 && clps2.nodeType == 1)twistSection(clps2);
+            
+           
+            var scen2 = $(document.getElementById('{!$Component.thepb2.scensect}')).children('.pbSubheader').children('img')[0];
+            if(scen2 && scen2.nodeType == 1)twistSection(scen2);
+            
+            if (accMatrix == 'true') {
+                calLi(false);
+                calKpi();
+                $("#kpiHeaderLeft").css("width", parseFloat($(".kpiHeader").css("width").replace('px','')) - 251); 
+                $(".kpiTableDiv").css("width", parseFloat($("#KPITableParentDiv").css("width").replace('px','')) - 251);
+            } else {
+                calLi2(false);
+                calKpi2();
+            }
+               
+            
+            //Begin: added by Peng Zhu 2013-05-21     
+            $("span[id$=theMatrixDescOf]").text('');
+            var innerHtml = '<textarea id=\"theMatrixDescriptionBITa\" maxlength=\"5000\" onchange=\"copyMatrixDescBIValue(this);\"  rows=\"5\" type=\"text\" wrap=\"soft\"></textarea>';
+            $("span[id$=theMatrixDescOf]").append($(innerHtml).html($("textarea[id$=theMatrixDescIfHidden]").html()));
+            
+            $("li[class*='adoptionHd']").each(function(){
+                var $span = $(this).find('span');
+                var spanText = $span.text();
+                if(spanText && spanText.length > 5){
+                    $span.attr('title', spanText);
+                    $span.text(spanText.substring(0, 5));
+                }
+            });
+            //$("span[id$=theMatrixDescOf]").append($(innerHtml));     
+            
+            $('#popdata td.pdlf').bind('mouseenter', function(){
+                var $this = $(this);
+            
+                if (this.offsetWidth < this.scrollWidth && !$this.attr('title')){
+                    $this.attr('title', $.trim($this.text())); 
+                }
+            });           
+            //End: added by Peng Zhu 2013-05-21  
+            
+            
+                             
+        });
+        function calLi(hasData){
+            var maCols,
+                $matrix = $('#matrixData'),
+                $li,
+                $sp,                
+                tmp,
+                ca,
+                cemk,
+                colidx,
+                colmax,
+                rowmax,
+                rowTotal = {'da':0,'db':0,'dc':0,'dd':0,'de':0},
+                colTotal = [];
+            
+            //Begin: added by Peng Zhu 2013-05-24 for using Matrix_BI__c.Row_BI__c and Matrix_BI__c.Column_BI__c
+            var matrixRow = parseInt("{!matrix.Row_BI__c}");
+            var matrixColumn = parseInt("{!matrix.Column_BI__c}");
+            maCols = matrixColumn + 2, rowmax = maCols*(matrixRow + 1);
+            ////console.log('maCols : ' + maCols + ', rowmax : ' + rowmax);
+            //End: added by Peng Zhu 2013-05-24
+            colmax = maCols-1;
+            if(hasData){
+                if($('#cktotal').hasClass('isTotalOn')){
+                    hasData = 1;
+                }else if($('#ckaverage').hasClass('isAverageOn')){
+                    hasData = 2;
+                }else{
+                    hasData = 3;        
+                }
+            }
+            //console.log(hasData);
+            if(hasData == 1){//total
+                $matrix.children('li').each(function(idx){
+                    if(idx > colmax){
+                        colidx = idx%maCols;                                    
+                        if(colidx > 0){
+                            $li = $(this),
+                            $sp = $li.children('span'); 
+                            /*                      
+                            $sp.eq(0).text($li.data('dta'));
+                            $sp.eq(1).text($li.data('dtb'));
+                            $sp.eq(2).text($li.data('dtc'));
+                            $sp.eq(3).text($li.data('dtd'));
+                            */
+                            $li.find('.sp1').text($li.data('dta'));
+                            $li.find('.sp2').text($li.data('dtb'));
+                            $li.find('.sp3').text($li.data('dtc'));
+                            $li.find('.sp4').text($li.data('dtd'));
+                            $li.find('.sp5').text($li.data('dte'));
+                        }
+                    }
+                });
+                $('#KPItbody').find('span').show();
+                $('#chart_div').show();
+            }else if(hasData == 2){//average
+                $matrix.children('li').each(function(idx){
+                    if(idx > colmax){
+                        colidx = idx%maCols;                                    
+                        if(colidx > 0){
+                            $li = $(this),
+                            $sp = $li.children('span'); 
+                            /*                      
+                            $sp.eq(0).text($li.data('dta'));
+                            $sp.eq(1).text($li.data('dab'));
+                            $sp.eq(2).text($li.data('dac'));
+                            $sp.eq(3).text($li.data('dtd'));
+                            */
+                            $li.find('.sp1').text($li.data('dta'));
+                            $li.find('.sp2').text($li.data('dab'));
+                            $li.find('.sp3').text($li.data('dac'));
+                            $li.find('.sp4').text($li.data('dtd'));
+                            $li.find('.sp5').text($li.data('dte'));
+                        }
+                    }
+                });
+                $('#KPItbody').find('span').show();
+                $('#chart_div').show();
+            }else if(hasData == 3){//deselect both checkbox,so set all cells empty
+                $matrix.children('li').each(function(idx){
+                    if(idx > colmax){
+                        colidx = idx%maCols;
+                        if(colidx > 0){
+                            $li = $(this),
+                            $sp = $li.children('span');
+                            /*                           
+                            $sp.eq(0).text('');
+                            $sp.eq(1).text('');
+                            $sp.eq(2).text('');
+                            $sp.eq(3).text('');
+                            */
+                            $li.find('.sp1').text('');
+                            $li.find('.sp2').text('');
+                            $li.find('.sp3').text('');
+                            $li.find('.sp4').text('');
+                            $li.find('.sp5').text('');
+                        }                       
+                    }
+                });
+                $('#KPItbody').find('span').hide();
+                $('#chart_div').hide();
+            }else{
+                var ths = getTreshold();
+                for(var i=0;i<maCols;i++){
+                    colTotal.push({'da':0,'db':0,'dc':0,'dd':0,'de':0});
+                }
+                $matrix.children('li').each(function(idx){
+                    $li = $(this),
+                    colidx = idx%maCols;
+                    $li.children('.hf').attr('title',ths['t'+(colidx-1)]);
+                    
+                    if(idx > colmax){    
+                        //console.log('idx > colmax');                   
+                        if(idx < rowmax){ 
+                            //console.log('idx < rowmax');                                          
+                            if(colidx > 0){
+                                //console.log('colidx');
+                                $sp = $li.children('span');
+                                if(colidx < colmax){//data li
+                                    //console.log('colidx < colmax');
+                                    //tmp = parseFloat($sp.eq(0).text());
+                                    tmp = parseFloat($li.find('.sp1').text());
+                                    //console.log($sp);
+                                    
+                                    if(isNaN(tmp)) tmp = 0;                         
+                                    rowTotal.da += tmp;
+                                    colTotal[colidx].da += tmp;
+                                    $li.data('da',tmp);
+                                    $li.data('dta',roundNumToKM(tmp,thelocale,9999,0));
+                                    //$sp.eq(0).text($li.data('dta'));
+                                    $li.find('.sp1').text($li.data('dta'));
+                            
+                                    ca = tmp;
+                                    
+                                    //tmp = parseFloat($sp.eq(1).text());
+                                    tmp = parseFloat($li.find('.sp2').text());
+                                    if(isNaN(tmp)) tmp = 0; 
+                                    rowTotal.db += tmp;
+                                    colTotal[colidx].db += tmp;
+                                    $li.data('db',tmp);
+                                    $li.data('dtb',roundNumToKM(tmp,thelocale,9999,0));
+                                    if(ca!=0)
+                                    $li.data('dab',roundNumToKM(tmp/ca,thelocale,9999,1));
+                                    else
+                                    $li.data('dab','0');
+                                    //$sp.eq(1).text($li.data('dtb'));
+                                    $li.find('.sp2').text($li.data('dtb'));
+                            
+                                        
+                                    //tmp = parseFloat($sp.eq(2).text());
+                                    tmp = parseFloat($li.find('.sp3').text());
+                                    if(isNaN(tmp)) tmp = 0; 
+                                    rowTotal.dc += tmp;
+                                    colTotal[colidx].dc += tmp;
+                                    $li.data('dc',tmp);
+                                    $li.data('dtc',roundNumToKM(tmp,thelocale,9999,0));
+                                    if(ca!=0)
+                                    $li.data('dac',roundNumToKM(tmp/ca,thelocale,9999,1));
+                                    else
+                                    $li.data('dac','0');
+                                    //$sp.eq(2).text($li.data('dtc'));
+                                    $li.find('.sp3').text($li.data('dtc'));
+                           
+                                    
+                                    //tmp = parseFloat($sp.eq(2).attr('id'));
+                                    //$sp.eq(2).removeAttr('id');
+                                    tmp = parseFloat($li.find('.sp3').attr('id'));
+                                    $li.find('.sp3').removeAttr('id')
+                                    if(isNaN(tmp)) tmp = 0; 
+                                    $li.data('dd',tmp);
+                                    
+                                    //tmp = $sp.eq(3).text();
+                                    tmp = $li.find('.sp4').text();
+                                    $li.data('dtd', tmp);
+                                    
+                                    //for doctor
+                                    tmp = parseFloat($li.find('.sp5').text());
+                                    if(isNaN(tmp)) tmp = 0; 
+                                    $li.data('dte', tmp);
+                                    rowTotal.de += tmp;
+                                    colTotal[colidx].de += tmp;
+                                    $li.find('.sp5').text($li.data('dte'));
+
+                                }else{//row total li
+                                    
+                                    $li.data('dta',roundNumToKM(rowTotal.da,thelocale,9999,0));
+                                    $li.data('dtb',roundNumToKM(rowTotal.db,thelocale,9999,0));
+                                    $li.data('dtc',roundNumToKM(rowTotal.dc,thelocale,9999,0));
+                                    
+                                    if(rowTotal.da != 0){
+                                        $li.data('dab',roundNumToKM(rowTotal.db/rowTotal.da,thelocale,9999,1));
+                                        $li.data('dac',roundNumToKM(rowTotal.dc/rowTotal.da,thelocale,9999,1));
+                                    }else{
+                                        $li.data('dab','0');
+                                        $li.data('dac','0');
+                                    }
+                                    
+                                    //Calculate Market Share total rows
+                                    var prx = parseFloat(rowTotal.dc),mrx = parseFloat(rowTotal.db);
+                                    var ms = (mrx == null || mrx == 0 ) ? 0 : (100*prx/mrx);
+                                    $li.data('dtd',FormatNums(ms,thelocale,false,2) + ' %');
+                                    $li.data('dte',FormatNums(rowTotal.de,thelocale,false,0));
+                                    /*
+                                    $sp.eq(0).text($li.data('dta'));
+                                    $sp.eq(1).text($li.data('dtb'));
+                                    $sp.eq(2).text($li.data('dtc'));
+                                    $sp.eq(3).text($li.data('dtd'));
+                                    */
+                                    $li.find('.sp1').text($li.data('dta'));
+                                    $li.find('.sp2').text($li.data('dtb'));
+                                    $li.find('.sp3').text($li.data('dtc'));
+                                    $li.find('.sp4').text($li.data('dtd'));
+                                    $li.find('.sp5').text($li.data('dte'));
+                                    
+                                    //Restart values
+                                    rowTotal.da = rowTotal.db = rowTotal.dc = rowTotal.dd = rowTotal.de = 0 ;
+                                }
+                            }
+                        }else{//grand total
+                            if(colidx > 0){
+                                $li = $(this),
+                                $sp = $li.children('span');
+                                if(colidx < colmax){
+                                    $li.data('dta',roundNumToKM(colTotal[colidx].da,thelocale,9999,0));
+                                    $li.data('dtb',roundNumToKM(colTotal[colidx].db,thelocale,9999,0));
+                                    $li.data('dtc',roundNumToKM(colTotal[colidx].dc,thelocale,9999,0));
+                                    
+                                    if(colTotal[colidx].da!=0){
+                                        $li.data('dab',roundNumToKM(colTotal[colidx].db/colTotal[colidx].da,thelocale,9999,1));
+                                        $li.data('dac',roundNumToKM(colTotal[colidx].dc/colTotal[colidx].da,thelocale,9999,1));
+                                    }else{
+                                        $li.data('dab','0');
+                                        $li.data('dac','0');
+                                    }
+                                    
+                                    //Calculate Market Share total columns
+                                    var prx = parseFloat(colTotal[colidx].dc),mrx = parseFloat(colTotal[colidx].db);
+                                    var ms = (mrx == null || mrx == 0 ) ? 0 : (100*prx/mrx);
+                                    $li.data('dtd',FormatNums(ms,thelocale,false,2) + ' %');
+                                    
+                                    //for doctor
+                                    $li.data('dte',FormatNums(colTotal[colidx].de,thelocale,false,0));
+                                    /*    
+                                    $sp.eq(0).text($li.data('dta'));
+                                    $sp.eq(1).text($li.data('dtb'));
+                                    $sp.eq(2).text($li.data('dtc'));
+                                    $sp.eq(3).text($li.data('dtd'));
+                                    */
+                                    $li.find('.sp1').text($li.data('dta'));
+                                    $li.find('.sp2').text($li.data('dtb'));
+                                    $li.find('.sp3').text($li.data('dtc'));
+                                    $li.find('.sp4').text($li.data('dtd'));
+                                    $li.find('.sp5').text($li.data('dte'));
+                                        
+                                    rowTotal.da += colTotal[colidx].da;
+                                    rowTotal.db += colTotal[colidx].db;
+                                    rowTotal.dc += colTotal[colidx].dc;
+                                    rowTotal.dd += colTotal[colidx].dd;
+                                    rowTotal.de += colTotal[colidx].de;
+                                
+                                }else{
+                                    $li.data('dta',roundNumToKM(rowTotal.da,thelocale,9999,0));
+                                    $li.data('dtb',roundNumToKM(rowTotal.db,thelocale,9999,0));
+                                    $li.data('dtc',roundNumToKM(rowTotal.dc,thelocale,9999,0));
+                                    $li.data('dtd',FormatNums(rowTotal.dd,thelocale,false,2));
+                                    $li.data('dte',FormatNums(rowTotal.de,thelocale,false,0));
+                                    
+                                    if(rowTotal.da!=0){
+                                        $li.data('dab',roundNumToKM(rowTotal.db/rowTotal.da,thelocale,9999,1));
+                                        $li.data('dac',roundNumToKM(rowTotal.dc/rowTotal.da,thelocale,9999,1));
+                                    }else{
+                                        $li.data('dab','0');
+                                        $li.data('dac','0');
+                                    }
+                                    
+                                    //Calculate Market Share total matrix
+                                    var prx = parseFloat(rowTotal.dc),mrx = parseFloat(rowTotal.db);
+                                    var ms = (mrx == null || mrx == 0 ) ? 0 : (100*prx/mrx);
+                                    $li.data('dtd',FormatNums(ms,thelocale,false,2) + ' %');
+                                    /*                                    
+                                    $sp.eq(0).text($li.data('dta'));
+                                    $sp.eq(1).text($li.data('dtb'));
+                                    $sp.eq(2).text($li.data('dtc'));
+                                    $sp.eq(3).text($li.data('dtd'));
+                                    */
+                                    $li.find('.sp1').text($li.data('dta'));
+                                    $li.find('.sp2').text($li.data('dtb'));
+                                    $li.find('.sp3').text($li.data('dtc'));
+                                    $li.find('.sp4').text($li.data('dtd'));
+                                    $li.find('.sp5').text($li.data('dte'));   
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function calKpi(){
+            var segData =  {'Blank':{'da':0,'db':0,'dc':0},
+                            'Gain':{'da':0,'db':0,'dc':0},
+                            'Build':{'da':0,'db':0,'dc':0},
+                            'Defend':{'da':0,'db':0,'dc':0},
+                            'Observe':{'da':0,'db':0,'dc':0},
+                            'Maintain':{'da':0,'db':0,'dc':0}
+                            },
+                $li,
+                tmp,
+                cls,
+                $row,
+                $matrix = $('#matrixData');
+            $matrix.children('li').not('.tdhd').each(function(idx){
+                $li = $(this);
+                
+                if($li.hasClass('Blank')){
+                    segData.Blank.da += $li.data('da');
+                    segData.Blank.db += $li.data('db');
+                    segData.Blank.dc += $li.data('dc');
+                }
+                else if($li.hasClass('Gain')){
+                    segData.Gain.da += $li.data('da');
+                    segData.Gain.db += $li.data('db');
+                    segData.Gain.dc += $li.data('dc');
+                }else if($li.hasClass('Build')){
+                    segData.Build.da += $li.data('da');
+                    segData.Build.db += $li.data('db');
+                    segData.Build.dc += $li.data('dc');
+                }else if($li.hasClass('Defend')){
+                    segData.Defend.da += $li.data('da');
+                    segData.Defend.db += $li.data('db');
+                    segData.Defend.dc += $li.data('dc');
+                }else if($li.hasClass('Observe')){
+                    segData.Observe.da += $li.data('da');
+                    segData.Observe.db += $li.data('db');
+                    segData.Observe.dc += $li.data('dc');
+                }else if($li.hasClass('Maintain')){
+                    segData.Maintain.da += $li.data('da');
+                    segData.Maintain.db += $li.data('db');
+                    segData.Maintain.dc += $li.data('dc');
+                }
+            });
+            var total = {'da':0,'db':0,'dc':0};
+            for(var k in segData){
+                if(segData[k] && segData[k].da){
+                    total.da += segData[k].da;
+                    total.db += segData[k].db;
+                    total.dc += segData[k].dc;
+                }
+            }
+            segData.gtotal = total;
+            var i = 0;     
+            /* don't calculate kpi on page load
+            $('#KPItbody').children().each(function(){
+                
+                $row = $(this);
+                cls = $row.attr('class');
+                ////console.log(':: Class: ' + cls);
+                if(cls != 'gtotal' && segData[cls]){
+                    $row = $row.children();
+                    $row.eq(1).children('span').text(roundNumToKM(segData[cls].da,thelocale,9999,0));
+                    
+                    if(segData.gtotal.da == 0)
+                    $row.eq(2).children('span').text(FormatNums(0,thelocale,false,2));
+                    else
+                    $row.eq(2).children('span').text(FormatNums((100*segData[cls].da/segData.gtotal.da),thelocale,false,2));
+                    $row.eq(3).children('span').text(roundNumToKM(segData[cls].db,thelocale,9999,0));
+                    if(segData.gtotal.db == 0)
+                        $row.eq(4).children('span').text(FormatNums(0,thelocale,false,2));
+                    else
+                       $row.eq(4).children('span').text(FormatNums((100*segData[cls].db/segData.gtotal.db),thelocale,false,2));
+                    $row.eq(5).children('span').text(roundNumToKM(segData[cls].dc,thelocale,9999,0));
+                    
+                    if(segData.gtotal.dc == 0)
+                    $row.eq(6).children('span').text(FormatNums(0,thelocale,false,2));
+                    else
+                    $row.eq(6).children('span').text(FormatNums((100*segData[cls].dc/segData.gtotal.dc),thelocale,false,2));
+                    
+                    //@jescobar 2014-01-29: Add market share value
+                    var marketRX = segData[cls].db;
+                    var productRX = segData[cls].dc; 
+                    var marketShare = 0;
+                    
+                    marketShare = (marketRX == 0 ) ? 0 : productRX/marketRX; 
+                    
+                    $row.eq(7).children('span').text(FormatNums((100*marketShare),thelocale,false,2));
+                    
+                    //Begin: commented out by Peng Zhu 2013-07-16
+                    //if(segData.gtotal.da == 0)
+                    //$row.eq(8).children('span').text(roundNumToKM(0,thelocale,9999,1));
+                    //else
+                    //$row.eq(8).children('span').text(roundNumToKM((segData[cls].dc/segData.gtotal.da),thelocale,9999,1));
+                    //End: comment out by Peng Zhu 2013-07-16
+                    //Begin: added by Peng Zhu 2013-07-16
+                    if(segData[cls].da == 0)
+                    $row.eq(8).children('span').text(roundNumToKM(0,thelocale,9999,1));
+                    else
+                    $row.eq(8).children('span').text(roundNumToKM((segData[cls].dc/segData[cls].da),thelocale,9999,1));
+                    //End: added by Peng Zhu 2013-07-16
+                }else if(cls == 'gtotal'){
+                    $row = $row.children();
+                    
+                    $row.eq(1).children('span').text(roundNumToKM(segData.gtotal.da,thelocale,9999,0));
+                    $row.eq(3).children('span').text(roundNumToKM(segData.gtotal.db,thelocale,9999,0));
+                    $row.eq(5).children('span').text(roundNumToKM(segData.gtotal.dc,thelocale,9999,0));
+                }
+            });
+            */
+            if(typeof canvas != 'undefined' && canvas.clearCanvas){
+                canvas.clearCanvas();               
+            }else{
+                canvas = $.createGooPieChart($("#chart_div"),Gprop);
+            }
+            var data = [
+                {id:"c0",num:segData.Blank.da},
+                {id:"c1",num:segData.Gain.da},
+                {id:"c2",num:segData.Build.da},
+                {id:"c3",num:segData.Defend.da},
+                {id:"c4",num:segData.Observe.da},
+                {id:"c5",num:segData.Maintain.da}
+              ];  
+              
+            canvas.setDataKind(Glegd);
+            canvas.loadPieData(data,"percent",null);
+            
+            //Begin: added by Peng Zhu 2013-07-10 for pie-note legend overflow
+            $('div[class=pie_note] b:not(.icon)').each(function(){
+                var $this = $(this);
+                if(!$this.hasClass("note_legend")){
+                    $this.addClass("note_legend");
+                }
+                
+                $this.off('mouseenter').on('mouseenter', function(){
+                    if (this.offsetWidth < this.scrollWidth && !$(this).attr('title')){
+                        $(this).attr('title', $.trim($(this).text())); 
+                    }
+                });
+            });
+            //End: added by Peng Zhu 2013-07-10
+        }
+        function getTreshold(){
+            return {
+                t1:'{!matrix.Threshold_1_BI__c}',
+                t2:'{!matrix.Threshold_2_BI__c}',
+                t3:'{!matrix.Threshold_3_BI__c}',
+                t4:'{!matrix.Threshold_4_BI__c}',
+                t5:'{!matrix.Threshold_5_BI__c}',
+                t6:'{!matrix.Threshold_6_BI__c}',
+                t7:'{!matrix.Threshold_7_BI__c}',
+                t8:'{!matrix.Threshold_8_BI__c}',
+                t9:'{!matrix.Threshold_9_BI__c}',
+                t10:'{!matrix.Threshold_10_BI__c}'
+            }
+        }
+        
+        //Added by Peng Zhu 2013-05-21 for updating the field Matrix.Matrix_Description_BI__c
+        function copyMatrixDescBIValue(oTa){
+            ////console.log('Log BI value2 : ' + $(oTa).val());
+            ////console.log('Log BI value3 : ' + $("textarea[id=theMatrixDescriptionBITa]").val());
+            $("textarea[id$=theMatrixDescIfHidden]").val($(oTa).val());
+        }
+        
+        function showLoading() {
+            $('#loading-curtain-div').show();
+        }
+        
+        function showLoading2() {
+            $('#loading-curtain-div2').show();
+            $('#updatingCD').show();
+        }
+
+        function hideLoading() {
+            $('#loading-curtain-div').hide();
+            $('#loading-curtain-div2').hide();
+            $('#updatingCD').hide();
+        }
+        
+        function closeFilter(){
+            $('#loading-curtain-div3').hide();
+            $('#individualFilter').hide();
+            hideLoading();
+        }
+        
+        function setSelected(selected){
+            if (!selected) {
+                if (!confirm('All related cycle data will recalculate. Are you sure?')) {
+                    return false;
+                } else {
+                    showLoading2();
+                }
+            } else {
+                showLoading();
+            }
+            if (selected) {
+                $('[id$="matrixSelected"]').val('selected');
+            } else {
+                $('[id$="matrixSelected"]').val('deselected');
+            }
+            var matrixCellIds = '';
+            selectedMC = $('#matrixData').children('li.ui-selected').not('.tdhd');
+            selectedMC.each(function(){
+                matrixCellIds = matrixCellIds == '' ? $(this).attr('name') : matrixCellIds + ',' + $(this).attr('name');
+            });
+            $('[id$="matrixCellIds"]').val(matrixCellIds);
+            updateMatrixCellSelected();
+        }
+        
+        function checkGoOn() {
+            if ($('[id$="matrixSelected"]').val() === 'deselected') {
+                if ($('[id$="cycleDataId"]').val() != '') {
+                    updateCycleData();
+                } else {
+                    endProcess();
+                }
+            } else {
+                endProcess();
+            }
+        }
+        
+        function endProcess() {
+            /*
+            selectedMC.each(function(){
+                $(this).addClass('ui-selected');
+            });
+            */
+            
+            var isSelected = $('[id$="matrixSelected"]').val() === 'selected' ? true : false;
+            //console.log(isSelected);
+            selectedMC.each(function(){
+                var sp0 = $(this).find('.sp0');
+                if (isSelected) {
+                    sp0.find('#hook').show();
+                    sp0.find('#fork').hide();
+                } else {
+                    sp0.find('#hook').hide();
+                    sp0.find('#fork').show();
+                }
+                $(this).find('[id$="cellSelected"]').val(isSelected);
+            });
+            
+            
+            hideLoading();
+        }
+        
+        var selectedMC;
+        
+        function getFilterTableData () {
+            //$("#filterContent").empty();
+            showLoading();
+            var matrixCellIds = '';
+            selectedMC = $('#matrixData').children('li.ui-selected').not('.tdhd');
+            selectedMC.each(function(){
+                matrixCellIds = matrixCellIds == '' ? $(this).attr('name') : matrixCellIds + ',' + $(this).attr('name');
+            });
+            $('[id$="matrixCellIds"]').val(matrixCellIds);
+            getFilterCDData();
+        }
+        
+        function showFilterTable(){
+            
+            var colorbody = $("#colorbody");
+            var coleft = colorbody.offset().left;
+            var cotop = colorbody.offset().top;
+            var rwidth = parseFloat($("#rightSec").css("width").replace('px',''));
+            var rheight = parseFloat($("#rightSec").css("height").replace('px',''));
+            var rtop = $("#rightSec").offset().top;
+            var rleft = $("#rightSec").offset().left;
+            
+            /*
+            $.tablesorter.addParser({
+                id: 'checkbox',
+                is: function(s) {
+                    return false;
+                },
+                format: function(s, table, cell, cellIndex) {
+                    var $c = $(cell);
+                    // return 1 for true, 2 for false, so true sorts before false
+                    if (!$c.hasClass('updateCheckbox')) {
+                        $c
+                        .addClass('updateCheckbox')
+                        .bind('change', function() {
+                            $(table).trigger('updateCell', [cell]);
+                        });
+                    }
+                    return ($c.find('input[type=checkbox]')[0].checked) ? 1 : 2;
+                },
+                type: 'numeric'
+            });*/
+            
+            
+            
+            $("#filterTable").tablesorter({
+                  theme : 'blue',
+                  // this is the default setting
+                  cssChildRow: "tablesorter-childRow",
+            
+                  // initialize zebra and filter widgets
+                  widgets: ["zebra", "filter", "pager"],
+            
+                  widgetOptions: {
+                    // output default: '{page}/{totalPages}'
+                    // possible variables: {page}, {totalPages}, {filteredPages}, {startRow}, {endRow}, {filteredRows} and {totalRows}
+                    pager_output: '{startRow} - {endRow} / {filteredRows} ({totalRows})', // '{page}/{totalPages}'
+                    pager_removeRows: false,
+            
+            
+                    // include child row content while filtering, if true
+                    filter_childRows  : true,
+                    // class name applied to filter row and each input
+                    filter_cssFilter  : 'tablesorter-filter',
+                    // search from beginning
+                    filter_startsWith : false,
+                    // Set this option to false to make the searches case sensitive 
+                    filter_ignoreCase : true
+                  },
+                  // third click on the header will reset column to default - unsorted
+                  sortReset   : true,
+                  // Resets the sort direction so that clicking on an unsorted column will sort in the sortInitialOrder direction.
+                  sortRestart : true,
+                  headers: {
+                      0: {sorter: true,filter: true}
+                  }
+                 
+              });
+              
+              $('#filterTable input[type="checkbox"]').click(function() {
+                     var order = this.checked ? '1' : '0';
+                     $(this).prev().html(order);
+                     $(this).parents("table").trigger("update");
+              });
+              
+              
+            
+            var fwidth = parseFloat($("#individualFilter").css("width").replace('px',''));            
+            var indfleft = coleft <  fwidth + 50 ? 50 : coleft - fwidth - 50;
+            
+            $("#loading-curtain-div3").show();
+            $("#individualFilter").offset({left: indfleft}).show();
+            //rows = $('#filterTable')[0].config.rowsCopy;
+            
+            hideLoading();
+        }
+        var rows;
+        function showSelected(issel){
+            //console.log('a');
+            
+            $('#filterTable tbody tr').each(function(){
+                $(this).show();
+                var thischk = $(this).find(':checkbox').eq(0)[0];
+                
+                if (issel) {
+                    if (!thischk.checked) {
+                        $(this).hide();
+                    }
+                } else {
+                    if (thischk.checked) {
+                        $(this).hide();
+                    }
+                }
+            });
+            $('#filterTable').trigger("appendCache").trigger('applyWidgets');
+            $('#filterTable').trigger('update');
+        }
+        
+        
+        function calculateKPI(){
+            showLoading();
+            if (confirm('KPI calculation will take a long time. Are you sure?')) {
+                var matrixId = $("[id$='matrixId']").val();
+                //console.log(matrixId);
+                Visualforce.remoting.Manager.invokeAction(
+                                "{!$RemoteAction.IMP_BI_ExtMatrixSegment.calculateKPI}",
+                                matrixId,
+                                function(response, event) {
+                                    if (event.status) {
+                                        
+                                        response = $("#parseJson").html(response).text();
+                                        
+                                        var map_cell = JSON.parse(response);
+                                        //console.log(map_cell);
+                                        calculateMapcell(map_cell);
+                                    }else {
+                                        alert('communication error');
+                                    }
+                                }
+                );
+            } else {
+                hideLoading();
+            }
+        }
+        
+        function calculateMapcell(item){
+            try{
+                              
+            var segData =  {'Blank':{'da':0,'db':0,'dc':0},
+                            'BlankSel':{'da':0,'db':0,'dc':0},
+                            'BlankDesel':{'da':0,'db':0,'dc':0},
+                            'Gain':{'da':0,'db':0,'dc':0},
+                            'GainSel':{'da':0,'db':0,'dc':0},
+                            'GainDesel':{'da':0,'db':0,'dc':0},
+                            'Build':{'da':0,'db':0,'dc':0},
+                            'BuildSel':{'da':0,'db':0,'dc':0},
+                            'BuildDesel':{'da':0,'db':0,'dc':0},
+                            'Defend':{'da':0,'db':0,'dc':0},
+                            'DefendSel':{'da':0,'db':0,'dc':0},
+                            'DefendDesel':{'da':0,'db':0,'dc':0},
+                            'Observe':{'da':0,'db':0,'dc':0},
+                            'ObserveSel':{'da':0,'db':0,'dc':0},
+                            'ObserveDesel':{'da':0,'db':0,'dc':0},
+                            'Maintain':{'da':0,'db':0,'dc':0},
+                            'MaintainSel':{'da':0,'db':0,'dc':0},
+                            'MaintainDesel':{'da':0,'db':0,'dc':0}
+                            },
+                $li,
+                tmp,
+                cls,
+                $row,
+                $matrix = $('#matrixData');
+            $matrix.children('li').not('.tdhd').each(function(idx){
+                $li = $(this);
+                var cellId = $li.attr('name');
+                var cell;
+                var hasfind = false;
+                for (k in item) {
+                                        
+                    if (k == cellId) {
+                        hasfind = true;
+                        cell = item[k];
+                        break;
+                    }
+                }
+                if(hasfind){
+                    if($li.hasClass('Blank')){
+                        for (var i = 0; i < cell.length; i++) {
+                            segData.Blank.da += parseFloat(cell[i].noOfCust);
+                            segData.Blank.db += parseFloat(cell[i].marketRx);
+                            segData.Blank.dc += parseFloat(cell[i].prodRx);
+                        }
+                        segData.BlankSel.da += parseFloat(cell[0].noOfCust);
+                        segData.BlankSel.db += parseFloat(cell[0].marketRx);
+                        segData.BlankSel.dc += parseFloat(cell[0].prodRx);
+                        segData.BlankDesel.da += parseFloat(cell[1].noOfCust);
+                        segData.BlankDesel.db += parseFloat(cell[1].marketRx);
+                        segData.BlankDesel.dc += parseFloat(cell[1].prodRx);
+                    }
+                    else if($li.hasClass('Gain')){
+                        for (var i = 0; i < cell.length; i++) {
+                            segData.Gain.da += parseFloat(cell[i].noOfCust);
+                            segData.Gain.db += parseFloat(cell[i].marketRx);
+                            segData.Gain.dc += parseFloat(cell[i].prodRx);
+                        }
+                        segData.GainSel.da += parseFloat(cell[0].noOfCust);
+                        segData.GainSel.db += parseFloat(cell[0].marketRx);
+                        segData.GainSel.dc += parseFloat(cell[0].prodRx);
+                        segData.GainDesel.da += parseFloat(cell[1].noOfCust);
+                        segData.GainDesel.db += parseFloat(cell[1].marketRx);
+                        segData.GainDesel.dc += parseFloat(cell[1].prodRx);
+                    }
+                    else if($li.hasClass('Build')){
+                        for (var i = 0; i < cell.length; i++) {
+                            segData.Build.da += parseFloat(cell[i].noOfCust);
+                            segData.Build.db += parseFloat(cell[i].marketRx);
+                            segData.Build.dc += parseFloat(cell[i].prodRx);
+                        }
+                        segData.BuildSel.da += parseFloat(cell[0].noOfCust);
+                        segData.BuildSel.db += parseFloat(cell[0].marketRx);
+                        segData.BuildSel.dc += parseFloat(cell[0].prodRx);
+                        segData.BuildDesel.da += parseFloat(cell[1].noOfCust);
+                        segData.BuildDesel.db += parseFloat(cell[1].marketRx);
+                        segData.BuildDesel.dc += parseFloat(cell[1].prodRx);
+                    }
+                    else if($li.hasClass('Defend')){
+                        for (var i = 0; i < cell.length; i++) {
+                            segData.Defend.da += parseFloat(cell[i].noOfCust);
+                            segData.Defend.db += parseFloat(cell[i].marketRx);
+                            segData.Defend.dc += parseFloat(cell[i].prodRx);
+                        }
+                        segData.DefendSel.da += parseFloat(cell[0].noOfCust);
+                        segData.DefendSel.db += parseFloat(cell[0].marketRx);
+                        segData.DefendSel.dc += parseFloat(cell[0].prodRx);
+                        segData.DefendDesel.da += parseFloat(cell[1].noOfCust);
+                        segData.DefendDesel.db += parseFloat(cell[1].marketRx);
+                        segData.DefendDesel.dc += parseFloat(cell[1].prodRx);
+                    }
+                    else if($li.hasClass('Observe')){
+                        
+                        for (var i = 0; i < cell.length; i++) {
+                            segData.Observe.da += parseFloat(cell[i].noOfCust);
+                            segData.Observe.db += parseFloat(cell[i].marketRx);
+                            segData.Observe.dc += parseFloat(cell[i].prodRx);
+                            
+                        }
+                        segData.ObserveSel.da += parseFloat(cell[0].noOfCust);
+                        segData.ObserveSel.db += parseFloat(cell[0].marketRx);
+                        segData.ObserveSel.dc += parseFloat(cell[0].prodRx);
+                        segData.ObserveDesel.da += parseFloat(cell[1].noOfCust);
+                        segData.ObserveDesel.db += parseFloat(cell[1].marketRx);
+                        segData.ObserveDesel.dc += parseFloat(cell[1].prodRx);
+                    }
+                    else if($li.hasClass('Maintain')){
+                        for (var i = 0; i < cell.length; i++) {
+                            segData.Maintain.da += parseFloat(cell[i].noOfCust);
+                            segData.Maintain.db += parseFloat(cell[i].marketRx);
+                            segData.Maintain.dc += parseFloat(cell[i].prodRx);
+                        }
+                        segData.MaintainSel.da += parseFloat(cell[0].noOfCust);
+                        segData.MaintainSel.db += parseFloat(cell[0].marketRx);
+                        segData.MaintainSel.dc += parseFloat(cell[0].prodRx);
+                        segData.MaintainDesel.da += parseFloat(cell[1].noOfCust);
+                        segData.MaintainDesel.db += parseFloat(cell[1].marketRx);
+                        segData.MaintainDesel.dc += parseFloat(cell[1].prodRx);
+                    }
+                }
+            });
+            var total = {'da':0,'db':0,'dc':0};
+            
+            for(var k in segData){
+                //console.log(k);
+                //console.log(k.indexOf('sel'));
+                if(segData[k] && segData[k].da
+                    && k.indexOf('sel') == -1 && k.indexOf('Sel') == -1){
+                    total.da += segData[k].da;
+                    total.db += segData[k].db;
+                    total.dc += segData[k].dc;
+                }
+            }
+            segData.gtotal = total;
+            var i = 0;     
+            $('#KPItbody').children().each(function(){
+                
+                $row = $(this);
+                cls = $row.attr('class');
+                //console.log(':: Class: ' + cls);
+                //console.log(segData[cls]);
+                if(cls != 'gtotal' && segData[cls]){
+                    $row = $row.children();
+                    $row.eq(1).children('span').text(roundNumToKM(segData[cls].da,thelocale,9999,0));
+                    
+                    if(segData.gtotal.da == 0)
+                    $row.eq(2).children('span').text(FormatNums(0,thelocale,false,2));
+                    else
+                    $row.eq(2).children('span').text(FormatNums((100*segData[cls].da/segData.gtotal.da),thelocale,false,2));
+                    $row.eq(3).children('span').text(roundNumToKM(segData[cls].db,thelocale,9999,0));
+                    if(segData.gtotal.db == 0)
+                        $row.eq(4).children('span').text(FormatNums(0,thelocale,false,2));
+                    else
+                       $row.eq(4).children('span').text(FormatNums((100*segData[cls].db/segData.gtotal.db),thelocale,false,2));
+                    $row.eq(5).children('span').text(roundNumToKM(segData[cls].dc,thelocale,9999,0));
+                    
+                    if(segData.gtotal.dc == 0)
+                    $row.eq(6).children('span').text(FormatNums(0,thelocale,false,2));
+                    else
+                    $row.eq(6).children('span').text(FormatNums((100*segData[cls].dc/segData.gtotal.dc),thelocale,false,2));
+                    
+                    
+                    var marketRX = segData[cls].db;
+                    var productRX = segData[cls].dc; 
+                    var marketShare = 0;
+                    
+                    marketShare = (marketRX == 0 ) ? 0 : productRX/marketRX; 
+                    
+                    $row.eq(7).children('span').text(FormatNums((100*marketShare),thelocale,false,2));
+                    
+                    if(segData[cls].da == 0)
+                    $row.eq(8).children('span').text(roundNumToKM(0,thelocale,9999,1));
+                    else
+                    $row.eq(8).children('span').text(roundNumToKM((segData[cls].dc/segData[cls].da),thelocale,9999,1));
+                    
+                    
+                    
+                }else if(cls == 'gtotal'){
+                    $row = $row.children();
+                    
+                    $row.eq(1).children('span').text(roundNumToKM(segData.gtotal.da,thelocale,9999,0));
+                    $row.eq(3).children('span').text(roundNumToKM(segData.gtotal.db,thelocale,9999,0));
+                    $row.eq(5).children('span').text(roundNumToKM(segData.gtotal.dc,thelocale,9999,0));
+                }
+            });
+            if(typeof canvas != 'undefined' && canvas.clearCanvas){
+                canvas.clearCanvas();               
+            }else{
+                canvas = $.createGooPieChart($("#chart_div"),Gprop);
+            }
+            var data = [
+                {id:"c0",num:segData.Blank.da},
+                {id:"c1",num:segData.Gain.da},
+                {id:"c2",num:segData.Build.da},
+                {id:"c3",num:segData.Defend.da},
+                {id:"c4",num:segData.Observe.da},
+                {id:"c5",num:segData.Maintain.da}
+              ];  
+              
+            canvas.setDataKind(Glegd);
+            canvas.loadPieData(data,"percent",null);
+            
+            //Begin: added by Peng Zhu 2013-07-10 for pie-note legend overflow
+            $('div[class=pie_note] b:not(.icon)').each(function(){
+                var $this = $(this);
+                if(!$this.hasClass("note_legend")){
+                    $this.addClass("note_legend");
+                }
+                
+                $this.off('mouseenter').on('mouseenter', function(){
+                    if (this.offsetWidth < this.scrollWidth && !$(this).attr('title')){
+                        $(this).attr('title', $.trim($(this).text())); 
+                    }
+                });
+            });
+            //End: added by Peng Zhu 2013-07-10
+            hideLoading();
+            }
+            catch(e){
+                alert(e);
+                hideLoading();
+            }
+        }
+        
+        function calLi2(hasData){
+            var maCols,
+                $matrix = $('#matrixData'),
+                $li,
+                $sp,                
+                tmp,
+                ca,
+                cemk,
+                colidx,
+                colmax,
+                rowmax,
+                rowTotal = {'da':0,'db':0,'dc':0,'dd':0},
+                colTotal = [];
+            //Begin: commented by Peng Zhu 2013-05-24 for using Matrix_BI__c.Row_BI__c and Matrix_BI__c.Column_BI__c
+            //var matrixSize = "{!matrix.Size_BI__c}";
+            //if(matrixSize == '10x11'){
+            //    maCols = 13,
+            //    rowmax = 143;
+            //}else if(matrixSize == '5x6'){
+            //    maCols = 8,
+            //    rowmax = 48;
+            //}
+            //End: commented by Peng Zhu 2013-05-24
+            //Begin: added by Peng Zhu 2013-05-24 for using Matrix_BI__c.Row_BI__c and Matrix_BI__c.Column_BI__c
+            var matrixRow = parseInt("{!matrix.Row_BI__c}");
+            var matrixColumn = parseInt("{!matrix.Column_BI__c}");
+            maCols = matrixColumn + 2, rowmax = maCols*(matrixRow + 1);
+            //console.log('maCols : ' + maCols + ', rowmax : ' + rowmax);
+            //End: added by Peng Zhu 2013-05-24
+            colmax = maCols-1;
+            if(hasData){
+                if($('#cktotal').hasClass('isTotalOn')){
+                    hasData = 1;
+                }else if($('#ckaverage').hasClass('isAverageOn')){
+                    hasData = 2;
+                }else{
+                    hasData = 3;        
+                }
+            }
+            if(hasData == 1){//total
+                $matrix.children('li').each(function(idx){
+                    if(idx > colmax){
+                        colidx = idx%maCols;                                    
+                        if(colidx > 0){
+                            $li = $(this),
+                            $sp = $li.children('span');                         
+                            $sp.eq(0).text($li.data('dta'));
+                            $sp.eq(1).text($li.data('dtb'));
+                            $sp.eq(2).text($li.data('dtc'));
+                            $sp.eq(3).text($li.data('dtd'));
+                        }
+                    }
+                });
+                $('#KPItbody').find('span').show();
+                $('#chart_div').show();
+            }else if(hasData == 2){//average
+                $matrix.children('li').each(function(idx){
+                    if(idx > colmax){
+                        colidx = idx%maCols;                                    
+                        if(colidx > 0){
+                            $li = $(this),
+                            $sp = $li.children('span');                         
+                            $sp.eq(0).text($li.data('dta'));
+                            $sp.eq(1).text($li.data('dab'));
+                            $sp.eq(2).text($li.data('dac'));
+                            $sp.eq(3).text($li.data('dtd'));
+                        }
+                    }
+                });
+                $('#KPItbody').find('span').show();
+                $('#chart_div').show();
+            }else if(hasData == 3){//deselect both checkbox,so set all cells empty
+                $matrix.children('li').each(function(idx){
+                    if(idx > colmax){
+                        colidx = idx%maCols;
+                        if(colidx > 0){
+                            $li = $(this),
+                            $sp = $li.children('span');                             
+                            $sp.eq(0).text('');
+                            $sp.eq(1).text('');
+                            $sp.eq(2).text('');
+                            $sp.eq(3).text('');
+                        }                       
+                    }
+                });
+                $('#KPItbody').find('span').hide();
+                $('#chart_div').hide();
+            }else{
+                var ths = getTreshold();
+                for(var i=0;i<maCols;i++){
+                    colTotal.push({'da':0,'db':0,'dc':0,'dd':0});
+                }
+                $matrix.children('li').each(function(idx){
+                    $li = $(this),
+                    colidx = idx%maCols;
+                    $li.children('.hf').attr('title',ths['t'+(colidx-1)]);
+                    if(idx > colmax){                       
+                        if(idx < rowmax){                                       
+                            if(colidx > 0){
+                                $sp = $li.children('span');
+                                if(colidx < colmax){//data li
+                                    tmp = parseFloat($sp.eq(0).text());
+                                    if(isNaN(tmp)) tmp = 0;                         
+                                    rowTotal.da += tmp;
+                                    colTotal[colidx].da += tmp;
+                                    $li.data('da',tmp);
+                                    $li.data('dta',roundNumToKM(tmp,thelocale,9999,0));
+                                    $sp.eq(0).text($li.data('dta'));
+                                    ca = tmp;
+                                    
+                                    tmp = parseFloat($sp.eq(1).text());
+                                    if(isNaN(tmp)) tmp = 0; 
+                                    rowTotal.db += tmp;
+                                    colTotal[colidx].db += tmp;
+                                    $li.data('db',tmp);
+                                    $li.data('dtb',roundNumToKM(tmp,thelocale,9999,0));
+                                    if(ca!=0)
+                                    $li.data('dab',roundNumToKM(tmp/ca,thelocale,9999,1));
+                                    else
+                                    $li.data('dab','0');
+                                    $sp.eq(1).text($li.data('dtb'));
+                                        
+                                    tmp = parseFloat($sp.eq(2).text());
+                                    if(isNaN(tmp)) tmp = 0; 
+                                    rowTotal.dc += tmp;
+                                    colTotal[colidx].dc += tmp;
+                                    $li.data('dc',tmp);
+                                    $li.data('dtc',roundNumToKM(tmp,thelocale,9999,0));
+                                    if(ca!=0)
+                                    $li.data('dac',roundNumToKM(tmp/ca,thelocale,9999,1));
+                                    else
+                                    $li.data('dac','0');
+                                    $sp.eq(2).text($li.data('dtc'));
+                                    
+                                    tmp = parseFloat($sp.eq(2).attr('id'));
+                                    $sp.eq(2).removeAttr('id');
+                                    if(isNaN(tmp)) tmp = 0; 
+                                    $li.data('dd',tmp);
+                                    
+                                    tmp = $sp.eq(3).text();
+                                    $li.data('dtd', tmp);
+
+                                }else{//row total li
+                                    
+                                    $li.data('dta',roundNumToKM(rowTotal.da,thelocale,9999,0));
+                                    $li.data('dtb',roundNumToKM(rowTotal.db,thelocale,9999,0));
+                                    $li.data('dtc',roundNumToKM(rowTotal.dc,thelocale,9999,0));
+                                    
+                                    if(rowTotal.da != 0){
+                                        $li.data('dab',roundNumToKM(rowTotal.db/rowTotal.da,thelocale,9999,1));
+                                        $li.data('dac',roundNumToKM(rowTotal.dc/rowTotal.da,thelocale,9999,1));
+                                    }else{
+                                        $li.data('dab','0');
+                                        $li.data('dac','0');
+                                    }
+                                    
+                                    //Calculate Market Share total rows
+                                    var prx = parseFloat(rowTotal.dc),mrx = parseFloat(rowTotal.db);
+                                    var ms = (mrx == null || mrx == 0 ) ? 0 : (100*prx/mrx);
+                                    $li.data('dtd',FormatNums(ms,thelocale,false,2) + ' %');
+                                    
+                                    
+                                    $sp.eq(0).text($li.data('dta'));
+                                    $sp.eq(1).text($li.data('dtb'));
+                                    $sp.eq(2).text($li.data('dtc'));
+                                    $sp.eq(3).text($li.data('dtd'));
+                                    
+                                    //Restart values
+                                    rowTotal.da = rowTotal.db = rowTotal.dc = rowTotal.dd = 0 ;
+                                }
+                            }
+                        }else{//grand total
+                            if(colidx > 0){
+                                $li = $(this),
+                                $sp = $li.children('span');
+                                if(colidx < colmax){
+                                    $li.data('dta',roundNumToKM(colTotal[colidx].da,thelocale,9999,0));
+                                    $li.data('dtb',roundNumToKM(colTotal[colidx].db,thelocale,9999,0));
+                                    $li.data('dtc',roundNumToKM(colTotal[colidx].dc,thelocale,9999,0));
+                                    
+                                    if(colTotal[colidx].da!=0){
+                                        $li.data('dab',roundNumToKM(colTotal[colidx].db/colTotal[colidx].da,thelocale,9999,1));
+                                        $li.data('dac',roundNumToKM(colTotal[colidx].dc/colTotal[colidx].da,thelocale,9999,1));
+                                    }else{
+                                        $li.data('dab','0');
+                                        $li.data('dac','0');
+                                    }
+                                    
+                                    //Calculate Market Share total columns
+                                    var prx = parseFloat(colTotal[colidx].dc),mrx = parseFloat(colTotal[colidx].db);
+                                    var ms = (mrx == null || mrx == 0 ) ? 0 : (100*prx/mrx);
+                                    $li.data('dtd',FormatNums(ms,thelocale,false,2) + ' %');
+                                        
+                                    $sp.eq(0).text($li.data('dta'));
+                                    $sp.eq(1).text($li.data('dtb'));
+                                    $sp.eq(2).text($li.data('dtc'));
+                                    $sp.eq(3).text($li.data('dtd'));
+                                        
+                                    rowTotal.da += colTotal[colidx].da;
+                                    rowTotal.db += colTotal[colidx].db;
+                                    rowTotal.dc += colTotal[colidx].dc;
+                                    rowTotal.dd += colTotal[colidx].dd;
+                                
+                                }else{
+                                    $li.data('dta',roundNumToKM(rowTotal.da,thelocale,9999,0));
+                                    $li.data('dtb',roundNumToKM(rowTotal.db,thelocale,9999,0));
+                                    $li.data('dtc',roundNumToKM(rowTotal.dc,thelocale,9999,0));
+                                    $li.data('dtd',FormatNums(rowTotal.dd,thelocale,false,2));
+                                    
+                                    if(rowTotal.da!=0){
+                                        $li.data('dab',roundNumToKM(rowTotal.db/rowTotal.da,thelocale,9999,1));
+                                        $li.data('dac',roundNumToKM(rowTotal.dc/rowTotal.da,thelocale,9999,1));
+                                    }else{
+                                        $li.data('dab','0');
+                                        $li.data('dac','0');
+                                    }
+                                    
+                                    //Calculate Market Share total matrix
+                                    var prx = parseFloat(rowTotal.dc),mrx = parseFloat(rowTotal.db);
+                                    var ms = (mrx == null || mrx == 0 ) ? 0 : (100*prx/mrx);
+                                    $li.data('dtd',FormatNums(ms,thelocale,false,2) + ' %');
+                                                                        
+                                    $sp.eq(0).text($li.data('dta'));
+                                    $sp.eq(1).text($li.data('dtb'));
+                                    $sp.eq(2).text($li.data('dtc'));
+                                    $sp.eq(3).text($li.data('dtd'));
+                                       
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function calKpi2(){
+            var segData =  {'Gain':{'da':0,'db':0,'dc':0},
+                            'Build':{'da':0,'db':0,'dc':0},
+                            'Defend':{'da':0,'db':0,'dc':0},
+                            'Observe':{'da':0,'db':0,'dc':0},
+                            'Maintain':{'da':0,'db':0,'dc':0}
+                            },
+                $li,
+                tmp,
+                cls,
+                $row,
+                $matrix = $('#matrixData');
+            $matrix.children('li').not('.tdhd').each(function(idx){
+                $li = $(this);
+                if($li.hasClass('Gain')){
+                    segData.Gain.da += $li.data('da');
+                    segData.Gain.db += $li.data('db');
+                    segData.Gain.dc += $li.data('dc');
+                }else if($li.hasClass('Build')){
+                    segData.Build.da += $li.data('da');
+                    segData.Build.db += $li.data('db');
+                    segData.Build.dc += $li.data('dc');
+                }else if($li.hasClass('Defend')){
+                    segData.Defend.da += $li.data('da');
+                    segData.Defend.db += $li.data('db');
+                    segData.Defend.dc += $li.data('dc');
+                }else if($li.hasClass('Observe')){
+                    segData.Observe.da += $li.data('da');
+                    segData.Observe.db += $li.data('db');
+                    segData.Observe.dc += $li.data('dc');
+                }else if($li.hasClass('Maintain')){
+                    segData.Maintain.da += $li.data('da');
+                    segData.Maintain.db += $li.data('db');
+                    segData.Maintain.dc += $li.data('dc');
+                }
+            });
+            var total = {'da':0,'db':0,'dc':0};
+            for(var k in segData){
+                if(segData[k] && segData[k].da){
+                    total.da += segData[k].da;
+                    total.db += segData[k].db;
+                    total.dc += segData[k].dc;
+                }
+            }
+            segData.gtotal = total;     
+            $('#KPItbody').children().each(function(){
+                $row = $(this);
+                cls = $row.attr('class');
+                if(cls != 'gtotal' && segData[cls]){
+                    $row = $row.children();
+                    $row.eq(1).children('span').text(roundNumToKM(segData[cls].da,thelocale,9999,0));
+                    
+                    if(segData.gtotal.da == 0)
+                    $row.eq(2).children('span').text(FormatNums(0,thelocale,false,2));
+                    else
+                    $row.eq(2).children('span').text(FormatNums((100*segData[cls].da/segData.gtotal.da),thelocale,false,2));
+                    $row.eq(3).children('span').text(roundNumToKM(segData[cls].db,thelocale,9999,0));
+                    if(segData.gtotal.db == 0)
+                        $row.eq(4).children('span').text(FormatNums(0,thelocale,false,2));
+                    else
+                       $row.eq(4).children('span').text(FormatNums((100*segData[cls].db/segData.gtotal.db),thelocale,false,2));
+                    $row.eq(5).children('span').text(roundNumToKM(segData[cls].dc,thelocale,9999,0));
+                    
+                    if(segData.gtotal.dc == 0)
+                    $row.eq(6).children('span').text(FormatNums(0,thelocale,false,2));
+                    else
+                    $row.eq(6).children('span').text(FormatNums((100*segData[cls].dc/segData.gtotal.dc),thelocale,false,2));
+                    
+                    //@jescobar 2014-01-29: Add market share value
+                    var marketRX = segData[cls].db;
+                    var productRX = segData[cls].dc; 
+                    var marketShare = 0;
+                    
+                    marketShare = (marketRX == 0 ) ? 0 : productRX/marketRX; 
+                    
+                    $row.eq(7).children('span').text(FormatNums((100*marketShare),thelocale,false,2));
+                    
+                    //Begin: commented out by Peng Zhu 2013-07-16
+                    //if(segData.gtotal.da == 0)
+                    //$row.eq(8).children('span').text(roundNumToKM(0,thelocale,9999,1));
+                    //else
+                    //$row.eq(8).children('span').text(roundNumToKM((segData[cls].dc/segData.gtotal.da),thelocale,9999,1));
+                    //End: comment out by Peng Zhu 2013-07-16
+                    //Begin: added by Peng Zhu 2013-07-16
+                    if(segData[cls].da == 0)
+                    $row.eq(8).children('span').text(roundNumToKM(0,thelocale,9999,1));
+                    else
+                    $row.eq(8).children('span').text(roundNumToKM((segData[cls].dc/segData[cls].da),thelocale,9999,1));
+                    //End: added by Peng Zhu 2013-07-16
+                }else if(cls == 'gtotal'){
+                    $row = $row.children();
+                    
+                    $row.eq(1).children('span').text(roundNumToKM(segData.gtotal.da,thelocale,9999,0));
+                    $row.eq(3).children('span').text(roundNumToKM(segData.gtotal.db,thelocale,9999,0));
+                    $row.eq(5).children('span').text(roundNumToKM(segData.gtotal.dc,thelocale,9999,0));
+                }
+            });
+            if(typeof canvas != 'undefined' && canvas.clearCanvas){
+                canvas.clearCanvas();               
+            }else{
+                canvas = $.createGooPieChart($("#chart_div"),Gprop);
+            }
+            var data = [
+                {id:"c1",num:segData.Gain.da},
+                {id:"c2",num:segData.Build.da},
+                {id:"c3",num:segData.Defend.da},
+                {id:"c4",num:segData.Observe.da},
+                {id:"c5",num:segData.Maintain.da}
+              ];  
+              
+            canvas.setDataKind(Glegd);
+            canvas.loadPieData(data,"percent",null);
+            
+            //Begin: added by Peng Zhu 2013-07-10 for pie-note legend overflow
+            $('div[class=pie_note] b:not(.icon)').each(function(){
+                var $this = $(this);
+                if(!$this.hasClass("note_legend")){
+                    $this.addClass("note_legend");
+                }
+                
+                $this.off('mouseenter').on('mouseenter', function(){
+                    if (this.offsetWidth < this.scrollWidth && !$(this).attr('title')){
+                        $(this).attr('title', $.trim($(this).text())); 
+                    }
+                });
+            });
+            //End: added by Peng Zhu 2013-07-10
+        }
+        
+    </script>
+        <div id="parseJson">
+        
+        </div>
+        <div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.45;position:absolute;z-index:9000;filter:alpha(opacity=45);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');"></div>
+        <div id="loading-curtain-div2" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.45;position:absolute;z-index:8000;filter:alpha(opacity=45);background-position:center center;"/>
+        <div id="updatingCD" style="top:50%;left:50%;text-align:center;display:none;position:absolute;z-index:9000;font-weight:bold;color:red;"><p>Updating Cycle Data ...</p></div>
+        <div id="loading-curtain-div3" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;position:absolute;z-index:7000;"/>
+        
+        <div class="ptBreadcrumb">&nbsp;&laquo;&nbsp;<a href="/{!matrix.Cycle_BI__c}">Back to Cycle: {!matrix.Cycle_BI__r.Name} </a></div>
+        <apex:sectionHeader title="{!sectionHeaderTitle}" subtitle="{!sectionHeaderSubTitle}"/>
+        <apex:pageMessages id="msg" escape="false"/>
+        <apex:pageBlock tabstyle="Matrix_BI__c" mode="maindetail" id="thepb" rendered="{!matrix.Account_Matrix_BI__c}">
+            <!-- commented by Peng Zhu 2013-05-16 for using sectionHeader replace the name -->
+            <!-- 
+            <apex:pageBlockSection showHeader="false" columns="2">
+                <apex:outputField value="{!matrix.Name__c}"/>
+            </apex:pageBlockSection>
+             -->
+            <apex:pageBlockSection title="Matrix Data Section" columns="2" collapsible="true" id="pbsect">
+                <apex:outputField value="{!matrix.Cycle_BI__r.Country_Lkp_BI__r.Name}"/>
+                <apex:outputField value="{!matrix.Cycle_BI__r.Start_Date_BI__c}"/>
+                <apex:outputField value="{!matrix.Product_Catalog_BI__r.Name}" label="Product"/>
+                <apex:outputField value="{!matrix.Cycle_BI__r.End_Date_BI__c}"/>          
+                <apex:outputField value="{!matrix.Specialization_BI__c}"/>
+                <!-- Begin: added by Peng Zhu 2013-05-17 -->
+                <!--    <apex:inputField value="{!matrix.Matrix_Description_BI__c}" /> -->
+                <apex:outputField id="theMatrixDescOf" value="{!matrix.Matrix_Description_BI__c}" />
+                <!-- End: added by Peng Zhu 2013-05-17 -->
+            </apex:pageBlockSection>
+            <apex:pageBlockSection title="Scenario Information" columns="2" collapsible="true" id="scensect">
+                <apex:outputField value="{!matrix.Current_BI__c}"/>
+                <apex:outputField value="{!matrix.Scenario_BI__c}"/>
+                <apex:outputField value="{!matrix.First_Scenario_BI__c}"/>
+                
+                
+            </apex:pageBlockSection>
+            <apex:pageBlockSection showHeader="false" collapsible="true" columns="1">   
+            <!-- commented by Peng Zhu 2013-05-17 for moving this tag up-->
+            <!-- <apex:form id="theform" styleClass="theform">  --> 
+            <apex:form id="theform" styleClass="theform">  
+                <apex:inputHidden id="cycleDataId" value="{!cycleDataId}"/>
+                <apex:inputHidden id="matrixCellIds" value="{!matrixCellIds}"/>
+                <apex:inputHidden id="matrixSelected" value="{!matrixSelected}"/>
+                <apex:inputHidden id="matrixId" value="{!matrix.Id}"/>
+                <apex:actionfunction name="updateMatrixCellSelected" action="{!updateMatrixCellSelected}" rerender="msg,cycleDataId,matrixCellIds,matrixSelected" onComplete="checkGoOn();">
+                </apex:actionfunction>
+                <apex:actionfunction name="updateCycleData" action="{!updateCycleData}" rerender="msg,cycleDataId,matrixCellIds,matrixSelected" onComplete="checkGoOn();">
+                </apex:actionfunction>
+                <apex:actionfunction name="saveCD" action="{!saveCD}" rerender="msg" onComplete="closeFilter();">
+                </apex:actionfunction>
+                <apex:actionfunction name="getFilterCDData" action="{!getFilterCDData}" rerender="msg,filterPanel" onComplete="showFilterTable();">
+                </apex:actionfunction>
+                <!-- Begin: added by Peng Zhu 2013-05-21 for updating Matrix.Matrix_Description_BI__c -->
+                <apex:inputField id="theMatrixDescIfHidden" value="{!matrix.Matrix_Description_BI__c}" style="display:none"/>
+                <!-- End: added by Peng Zhu 2013-05-21 -->
+            
+                <!-- commented by Peng Zhu 2013-05-15 for new size -->     
+                <!-- <div class="{!IF(matrix.Size_BI__c=='10x11','matriHeader',IF(matrix.Size_BI__c=='5x6','matri_Header','hideElem'))}"> -->
+                <div class="{!IF(isMatrixOlRendered,'matriHeaderName','hideElem')}">
+                    <!-- <span>Intimacy</span> -->
+                    <!-- <span>{!IF(matrix.Dimension_1_Name_BI__c != null && matrix.Dimension_1_Name_BI__c != '', matrix.Dimension_1_Name_BI__c, $Label.channel_budget_page_lab4)}</span> -->
+                    <span>{!IF(matrix.Dimension_2_Name_BI__c != null && matrix.Dimension_2_Name_BI__c != '', matrix.Dimension_2_Name_BI__c, $Label.channel_budget_page_lab4)}</span>
+                </div>
+                <div id="matrixBody">
+                    <div class="leftSection">
+                        <div class="hdlr">
+                            <div class="ck isTotalOn" onclick="setStatistic(1)" id="cktotal"></div>
+                            <div class="frdv">Total</div>
+                            <div class="clear"></div>
+                        </div>
+                        <div class="hdlr">
+                            <div class="ck" onclick="setStatistic(2)" id="ckaverage"></div>
+                            <div class="frdv">Average</div>
+                            <div class="clear"></div>
+                        </div>                      
+                        <div class="hdvh {!IF(isMatrixOlRendered,'leftDiv','hideElem')}">
+                            <!-- <img src="{!$Resource.PotentialLabel}"/>  -->
+                            <!-- <h1 class="hdvhc h">{!IF(matrix.Dimension_2_Name_BI__c != null && matrix.Dimension_2_Name_BI__c != '', matrix.Dimension_2_Name_BI__c, $Label.channel_budget_page_lab5)}</h1> -->
+                            <h1 class="hdvhc h">{!IF(matrix.Dimension_1_Name_BI__c != null && matrix.Dimension_1_Name_BI__c != '', matrix.Dimension_1_Name_BI__c, $Label.channel_budget_page_lab5)}</h1>
+                        </div>
+                        <div class="{!IF(isMatrixOlRendered,'my_legend','hideElem')}" style="top:{!realHeight-119}px !important">
+                            <div class="lgHd"><span>Legend:</span></div>
+                            <div class="lgBd">
+                                <span> <input type="checkbox" disabled="true" checked="checked"  id="chkCustomer" /> # {!$Label.IMP_BI_Matrix_Phys}</span><br/>
+                                <span><input type="checkbox" checked="checked" id="chkPotential" /> <apex:outputText value="{!LEFT(matrix.Potential_data_Label_BI__c,12)}..." title="{!matrix.Potential_data_Label_BI__c}" /></span><br/>
+                                <span><input type="checkbox" checked="checked"  id="chkAdoption" /> <apex:outputText value="{!LEFT(matrix.Adoption_Data_Label_BI__c,12)}..." title="{!matrix.Adoption_Data_Label_BI__c}" /></span><br/>
+                                <span><input type="checkbox"  id="cMShare" /> Market Share </span><br/>
+                                <span><input type="checkbox"  id="numOfDoc" /> # {!$Label.IMP_BI_Doctor} </span><br/>
+<!--                                <table id="lgTbl">-->
+<!--                                    <tbody>-->
+<!--                                        <tr><td><span># Phys</span></td></tr>-->
+<!--                                        <tr><td><span><apex:outputLabel value="Field 1"/></span></td></tr>-->
+<!--                                        <tr><td><span>Prod Rx</span></td></tr>-->
+<!--                                    </tbody>-->
+<!--                                </table>-->
+                            </div>
+                        </div>
+                    </div>
+                    <div id="rightSec" class="rightSec">
+                        <!-- commented by peng zhu 2013-05-10 -->
+                        <!-- <ol id="matrixData" class="{!IF(matrix.Size_BI__c=='10x11','tenEleven',IF(matrix.Size_BI__c=='5x6','fiveSix','hideElem'))}">  -->
+                        <ol id="matrixData" style="width:{!realWidth}px !important;" class="{!IF(isMatrixOlRendered,'MatrixOl','hideElem')}">
+                            <!--first row-->
+                            <li class="ui-state-default tdhd rwhd"></li>
+                            <apex:repeat value="{!columns}" var="colElem">
+                                <!-- <li class="ui-state-default tdhd rwhd"><span>{!colElem}</span><div class="hf"></div></li> -->
+                                <li class="ui-state-default tdhd rwhd adoptionHd"><span>{!IF(isLaunch, list_adptnSts[colElem], colElem)}</span><div class="hf"></div></li>
+                            </apex:repeat>  
+                            <li class="ui-state-default tdhd rwhd"><span>Total</span></li>
+                            
+                            <!-- data li -->                    
+                            <apex:repeat value="{!rows}" var="rowElem">
+                                <li class="ui-state-default tdhd">{!rowElem}</li>
+                                <apex:repeat value="{! map_matrixCell[rowElem]}" var="cell"> 
+                                    <li class="ui-state-default tdda {!cell.Segment_BI__c}" name="{!cell.Id}">
+                                        <span id="sp0" class="sp0" style="float:left;">
+                                            <img id="hook" src="{!$Resource.IMP_BI_Hook}" style="width:10px;display:{!IF(cell.Selected_BI__c,'','none')}"/>
+                                            <img id="fork" src="{!$Resource.IMP_BI_fork}" style="width:10px;display:{!IF(cell.Selected_BI__c, 'none','')}"/>
+                                        </span>
+                                        <span id="sp1" class="sp1">{!cell.Total_Customers_BI__c}</span><br/>
+                                        <span id="sp2" class="sp2">{!cell.Total_Potential_BI__c}</span><br/>
+                                        <span class="sp3" id="{!cell.Total_Market_Share_BI__c}">{!cell.Total_Intimacy_BI__c}</span><br/>
+                                        <span id="sp4" class="sp4" style="display:none;">{!cell.Total_Market_Share_BI__c} %</span>
+                                        <span id="sp5" class="sp5" style="display:none;">{!IF(cell.Number_of_Doctors_BI__c = null,0,cell.Number_of_Doctors_BI__c)} </span>
+                                        
+                                        <apex:inputHidden id="cellSegment" value="{!cell.Segment_BI__c}"/>
+                                        <apex:inputHidden id="cellSelected" value="{!cell.Selected_BI__c}"/>
+                                        <div class="hf"></div>
+                                    </li>
+                                </apex:repeat>  
+                                <li class="ui-state-default tdhd">
+                                    <span class="sp1"></span><br/>
+                                    <span class="sp2"></span><br/>
+                                    <span class="sp3"></span><br/>
+                                    <span class="sp4" style="display:none;"></span>
+                                    <span class="sp5" style="display:none;"></span>
+                                </li>
+                            </apex:repeat>
+                            
+                            <!--last row-->
+                            <li class="ui-state-default tdhd rwhd"><span>Total</span></li>
+                            <apex:repeat value="{!columns}" var="colElem">
+                                <li class="ui-state-default tdhd rwhd">
+                                    <span class="sp1"></span><br/>
+                                    <span class="sp2"></span><br/>
+                                    <span class="sp3"></span><br/>
+                                    <span class="sp4" style="display:none;"></span>
+                                    <span class="sp5" style="display:none;"></span>
+                                    <div class="hf"></div>
+                                </li>
+                            </apex:repeat>  
+                            <li class="ui-state-default tdhd rwhd">
+                                <span class="sp1"></span><br/>
+                                <span class="sp2"></span><br/>
+                                <span class="sp3"></span><br/>
+                                <span class="sp4" style="display:none;"></span>
+                                <span class="sp5" style="display:none;"></span>
+                            </li>
+                        </ol>
+                    </div>
+                    
+                    <div id="individualFilter" style="border: 2px solid #CAA;border-radius: 12px;background: #F8F8F8;">
+                        
+                        <apex:outputpanel id="filterPanel">
+                            <center style="vertical-align: middle;line-height: 40px;">
+                                <input type="button" value="Save" onclick="showLoading();saveCD();" style="min-width:80px;display:{!IF(list_CD.size > 0, '','none')}"/>
+                                <input type="button" value="Cancel" onclick="closeFilter();" style="min-width:80px;"/>
+                            </center>
+                            <div id="filterContent" style=" padding: 0px 40px; ">
+                                <table id="filterTable">
+                                    <thead>
+                                        <apex:repeat value="{!list_fsm}" var="ft">
+                                            <th data-placeholder="{!IF(ft.fieldPath='Selected_BI__c', '1 or 0', '')}">
+                                                <!--
+                                                <apex:image value="{!$Resource.IMP_BI_Hook}" style="width: 20px;margin-right: 2px;" onclick="showSelected(true);" rendered="{!IF(ft.fieldPath='Selected_BI__c', true, false)}"/>
+                                                <apex:image value="{!$Resource.IMP_BI_fork}" style="width: 19px;" onclick="showSelected(false);" rendered="{!IF(ft.fieldPath='Selected_BI__c', true, false)}"/>
+                                                rendered="{!IF(ft.fieldPath='Selected_BI__c', false, true)}"
+                                                -->
+                                                <apex:outputText value="{!ft.Label}" />
+                                            </th>
+                                        </apex:repeat>
+                                    </thead>
+                                    <tbody>
+                                        <apex:repeat value="{!list_CD}" var="cd">
+                                            <tr>
+                                                <apex:repeat value="{!list_fsm}" var="fs">
+                                                    <td>
+                                                        <apex:outputpanel style="display:none" rendered="{!IF(fs.fieldPath='Selected_BI__c', true, false)}">
+                                                            {!IF(cd.Selected_BI__c,1,0)}
+                                                        </apex:outputpanel>
+                                                        <apex:inputField value="{!cd.Selected_BI__c}" rendered="{!IF(fs.fieldPath='Selected_BI__c', true, false)}"/>
+                                                        <apex:outputField value="{!cd[fs.fieldPath]}" rendered="{!IF(fs.fieldPath='Selected_BI__c', false, true)}"/>
+                                                    </td>
+                                                </apex:repeat>
+                                            </tr>
+                                        </apex:repeat>
+                                    </tbody>
+                                </table>
+                                <div class="pager">
+                                    <img src="{!URLFOR($Resource.IMP_BI_TableSorter, '/addons/pager/icons/first.png')}" class="first" alt="First" />
+                                    <img src="{!URLFOR($Resource.IMP_BI_TableSorter, '/addons/pager/icons/prev.png')}" class="prev" alt="Prev" />
+                                    <span class="pagedisplay"></span> <!-- this can be any element, including an input -->
+                                    <img src="{!URLFOR($Resource.IMP_BI_TableSorter, '/addons/pager/icons/next.png')}" class="next" alt="Next" />
+                                    <img src="{!URLFOR($Resource.IMP_BI_TableSorter, '/addons/pager/icons/last.png')}" class="last" alt="Last" />
+                                    <select class="pagesize" title="Select page size">
+                                        <option value="10">10</option>
+                                        <option value="20">20</option>
+                                        <option value="30">30</option>
+                                        <option value="40">40</option>
+                                    </select>
+                                    <select class="gotoPage" title="Select page number"></select>
+                                </div>
+                            </div>
+                        </apex:outputpanel>
+                    </div>
+                    <!-- commented by Peng Zhu 2013-05-15 for common size -->
+                    <!-- <div class="colorpick {!IF(matrix.Size_BI__c=='10x11','cpsa','cpsb')}"> -->
+                    <div class="colorpick">
+                        <div id="colorbody" style="display:none;">
+                            <div id="colors">
+                                <table id="colorpickt1">
+                                    <tbody>
+                                        <tr>
+                                            <!-- <td class="Gain" onclick="setColor(this)">Gain</td> -->
+                                            <!-- <td class="Build" onclick="setColor(this)">Build</td> -->
+                                            <!-- <td class="Defend" onclick="setColor(this)">Defend</td> -->
+                                            <td class="Gain" onclick="setColor(this)">{!IF(matrix.Segment_1_Label_BI__c != null && matrix.Segment_1_Label_BI__c != '', matrix.Segment_1_Label_BI__c, $Label.channel_budget_page_lab11)}</td>
+                                            <td class="Build" onclick="setColor(this)">{!IF(matrix.Segment_2_Label_BI__c != null && matrix.Segment_2_Label_BI__c != '', matrix.Segment_2_Label_BI__c, $Label.channel_budget_page_lab12)}</td>
+                                            <td class="Defend" onclick="setColor(this)">{!IF(matrix.Segment_3_Label_BI__c != null && matrix.Segment_3_Label_BI__c != '', matrix.Segment_3_Label_BI__c, $Label.channel_budget_page_lab13)}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table id="colorpickt2">
+                                    <tbody>
+                                        <tr>
+                                            <!-- <td class="Observe" onclick="setColor(this)">Observe</td> -->
+                                            <!-- <td class="Maintain" onclick="setColor(this)">Maintain</td> -->
+                                            <td class="Observe" onclick="setColor(this)">{!IF(matrix.Segment_4_Label_BI__c != null && matrix.Segment_4_Label_BI__c != '', matrix.Segment_4_Label_BI__c, $Label.channel_budget_page_lab14)}</td>
+                                            <td class="Maintain" onclick="setColor(this)">{!IF(matrix.Segment_5_Label_BI__c != null && matrix.Segment_5_Label_BI__c != '', matrix.Segment_5_Label_BI__c, $Label.channel_budget_page_lab15)}</td>
+                                            <td class="Blank" onclick="setColor(this)">Blank</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table id="popdata">
+                                    <tbody>
+                                        <tr style="{!IF(cfrc.phys, '', 'display:none;')}">
+                                            <td class="pdlf"><a title="Report" href="#" name="drillDownReport" target="_blank"># {!$Label.IMP_BI_Matrix_Phys}:</a></td><td class="pdrt"><a title="Report" href="#" name="drillDownReport" target="_blank"><span id="pyd"></span><img src="/s.gif" alt="Report" title="Report" style="background-image:url(/img/sprites/master.png); background-position:0 -282px; width: 16px; height: 11px;margin-left: 5px;" /></a></td>
+                                        </tr>
+                                        <tr style="{!IF(cfrc.productRx, '', 'display:none;')}">
+                                            <td class="pdlf"><apex:outputLabel value="{!matrix.Potential_data_Label_BI__c}"/>:</td><td class="pdrt"><span id="mrx"></span></td>
+                                        </tr>
+                                        <tr style="{!IF(cfrc.marketRx, '', 'display:none;')}">
+                                            <td class="pdlf"><apex:outputLabel value="{!matrix.Adoption_Data_Label_BI__c}"/>:</td><td class="pdrt"><span id="pdr"></span></td>
+                                        </tr>
+                                        <tr style="{!IF(cfrc.marketShare, '', 'display:none;')}">
+                                            <td class="pdlf">Market Share:</td><td class="pdrt"><span id="tms"></span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div style="width:176px;border:1px solid;display:{!IF(isFinal, 'none','')}"/>
+                                <table style="display:{!IF(isFinal, 'none','')}">
+                                    <thead>
+                                        <th style="width:33%;"/>
+                                        <th style="width:33%;font-weight:bold;text-align:center;">Account Selection</th>
+                                        <th style="width:33%;"/>
+                                    </thead>
+                                    <tbody>
+                                        <tr >
+                                            <td style="width:33%"/>
+                                            <td style="width:33%">
+                                            <!--<div>-->
+                                                <div style="display: inline-block;width: 49%;">
+                                                    <img id="hookClick" src="{!$Resource.IMP_BI_Hook}" onclick="setSelected(true);" style="width:40%;"/>
+                                                </div>
+                                                <div style="display: inline-block;width: 49%;text-align:right;float:right;">
+                                                    <img id="forkClick" src="{!$Resource.IMP_BI_fork}"  onclick="setSelected(false);" style="width:40%;"/>
+                                                </div>
+                                            <!--<div style="clear:both;"/>
+                                            </div>-->
+                                            </td>
+                                            <td style="width:33%"/>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div style="width:176px;text-align: center;display:{!IF(isFinal, 'none','')}">
+                                    <input type="button" onclick="getFilterTableData();" value="Individual Filter" class="btn" style="width:90%;border-radius:10px !important"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="clearright"></div>
+                    
+                    <div class="kpiDiv">
+                        <div class="kpiHeader">
+                            <div id="kpiHeaderLeft" style="float:left;">
+                                <div style="float:left;font-weight:bold;font-size:14px;line-height:25px;vertical-align:middle;">KPIs by Segment</div>
+                                <div style="float:right;line-height:25px;vertical-align:middle;">
+                                    <input type="button" class="btn" value="Refresh" onclick="calculateKPI();" style="float:right;"/>
+                                </div>
+                                <div style="clear:both;"/>
+                            </div>
+                            <div style="width:250px;float:right"></div>
+                            <div style="clear:both;"/>
+                        </div>
+                        
+                        <div id="KPITableParentDiv">
+                            <div class="kpiTableDiv">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <td class="td1 tdSegments"></td>
+                                            <td class="td2"><span># of {!$Label.IMP_BI_Matrix_Phys}</span></td>
+                                            <td class="td3"><span>% of {!$Label.IMP_BI_Matrix_Phys}</span></td>
+                                            <td class="td4"><span><apex:outputLabel value="{!matrix.Potential_data_Label_BI__c}"/></span></td>
+                                            <td class="td5"><span>% of <apex:outputLabel value="{!matrix.Potential_data_Label_BI__c}"/></span></td><!-- Market Share -->
+                                            <td class="td6"><span><apex:outputLabel value="{!matrix.Adoption_Data_Label_BI__c}"/></span></td>
+                                            <td class="td7">% of <span><apex:outputLabel value="{!matrix.Adoption_Data_Label_BI__c}"/></span></td>
+                                            <td class="td8"><span>% {!$Label.IMP_BI_Market_Share}</span></td>
+                                            <td class="td9" style="text-align:center;"><span>Average Product Rx<br />/ Customer</span></td><!-- {!$Label.IMP_BI_Matrix_Phys} -->
+                                        </tr>
+                                    </thead>
+                                    <tbody id="KPItbody">
+                                        <tr class="Blank">
+                                            <td class="tdSegments"><span>Blank</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="BlankSel kpiSubtd">
+                                            <td class="BlankSel"><span>Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="BlankDesel kpiSubtd">
+                                            <td class="BlankDesel"><span>Not Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="Gain">
+                                            <td class="tdSegments"><span>{!IF(matrix.Segment_1_Label_BI__c != null && matrix.Segment_1_Label_BI__c != '', matrix.Segment_1_Label_BI__c, $Label.channel_budget_page_lab11)}</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="GainSel">
+                                            <td class="GainSel kpiSubtd"><span>Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="GainDesel">
+                                            <td class="GainDesel kpiSubtd"><span>Not Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="Build">
+                                            <td class="tdSegments"><span>{!IF(matrix.Segment_2_Label_BI__c != null && matrix.Segment_2_Label_BI__c != '', matrix.Segment_2_Label_BI__c, $Label.channel_budget_page_lab12)}</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="BuildSel">
+                                            <td class="BuildSel kpiSubtd"><span>Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="BuildDesel">
+                                            <td class="BuildDesel kpiSubtd"><span>Not Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="Defend">
+                                            <td class="tdSegments"><span>{!IF(matrix.Segment_3_Label_BI__c != null && matrix.Segment_3_Label_BI__c != '', matrix.Segment_3_Label_BI__c, $Label.channel_budget_page_lab13)}</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="DefendSel">
+                                            <td class="DefendSel kpiSubtd"><span>Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="DefendDesel">
+                                            <td class="DefendDesel kpiSubtd"><span>Not Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="Observe">
+                                            <td class="tdSegments"><span>{!IF(matrix.Segment_4_Label_BI__c != null && matrix.Segment_4_Label_BI__c != '', matrix.Segment_4_Label_BI__c, $Label.channel_budget_page_lab14)}</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="ObserveSel">
+                                            <td class="ObserveSel kpiSubtd"><span>Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="ObserveDesel">
+                                            <td class="ObserveDesel kpiSubtd"><span>Not Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="Maintain">
+                                            <td class="tdSegments"><span>{!IF(matrix.Segment_5_Label_BI__c != null && matrix.Segment_5_Label_BI__c != '', matrix.Segment_5_Label_BI__c, $Label.channel_budget_page_lab15)}</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="MaintainSel">
+                                            <td class="MaintainSel kpiSubtd"><span>Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="MaintainDesel">
+                                            <td class="MaintainDesel kpiSubtd"><span>Not Selected</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="gtotal">
+                                            <td class="tdSegments">Total</td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="chart_div">
+                            
+                            </div>
+                        </div>
+                        <div class="clear"></div>
+                        <div class="segBtnDiv">
+                            <apex:commandButton id="theSaveBtn" value="Save" action="{!saveMatrix}" styleClass="segSbtn" style="{!IF(isFinal, 'visibility:hidden;', '')}"/>
+                            <apex:commandButton value="Cancel" action="{!cancelMatrix}" styleClass="segCbtn"/>
+                        </div>
+                    </div>
+                    <div class="clear"></div>
+                </div>
+                
+                    
+                    
+            </apex:form>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        
+        <apex:pageBlock tabstyle="Matrix_BI__c" mode="maindetail" id="thepb2" rendered="{!!matrix.Account_Matrix_BI__c}">
+            <!-- commented by Peng Zhu 2013-05-16 for using sectionHeader replace the name -->
+            <!-- 
+            <apex:pageBlockSection showHeader="false" columns="2">
+                <apex:outputField value="{!matrix.Name__c}"/>
+            </apex:pageBlockSection>
+             -->
+            <apex:pageBlockSection title="Matrix Data Section" columns="2" collapsible="true" id="pbsect">
+                <apex:outputField value="{!matrix.Cycle_BI__r.Country_Lkp_BI__r.Name}"/>
+                <apex:outputField value="{!matrix.Cycle_BI__r.Start_Date_BI__c}"/>
+                <apex:outputField value="{!matrix.Product_Catalog_BI__r.Name}" label="Product"/>
+                <apex:outputField value="{!matrix.Cycle_BI__r.End_Date_BI__c}"/>          
+                <apex:outputField value="{!matrix.Specialization_BI__c}"/>
+                <!-- Begin: added by Peng Zhu 2013-05-17 -->
+                <!--    <apex:inputField value="{!matrix.Matrix_Description_BI__c}" /> -->
+                <apex:outputField id="theMatrixDescOf" value="{!matrix.Matrix_Description_BI__c}" />
+                <!-- End: added by Peng Zhu 2013-05-17 -->
+            </apex:pageBlockSection>
+            <apex:pageBlockSection showHeader="false" collapsible="true" columns="1">   
+            <!-- commented by Peng Zhu 2013-05-17 for moving this tag up-->
+            <!-- <apex:form id="theform" styleClass="theform">  --> 
+            <apex:form id="theform" styleClass="theform">  
+                <!-- Begin: added by Peng Zhu 2013-05-21 for updating Matrix.Matrix_Description_BI__c -->
+                <apex:inputField id="theMatrixDescIfHidden" value="{!matrix.Matrix_Description_BI__c}" style="display:none"/>
+                <!-- End: added by Peng Zhu 2013-05-21 -->
+            
+                <!-- commented by Peng Zhu 2013-05-15 for new size -->     
+                <!-- <div class="{!IF(matrix.Size_BI__c=='10x11','matriHeader',IF(matrix.Size_BI__c=='5x6','matri_Header','hideElem'))}"> -->
+                <div class="{!IF(isMatrixOlRendered,'matriHeaderName','hideElem')}">
+                    <!-- <span>Intimacy</span> -->
+                    <!-- <span>{!IF(matrix.Dimension_1_Name_BI__c != null && matrix.Dimension_1_Name_BI__c != '', matrix.Dimension_1_Name_BI__c, $Label.channel_budget_page_lab4)}</span> -->
+                    <span>{!IF(matrix.Dimension_2_Name_BI__c != null && matrix.Dimension_2_Name_BI__c != '', matrix.Dimension_2_Name_BI__c, $Label.channel_budget_page_lab4)}</span>
+                </div>
+                <div id="matrixBody">
+                    <div class="leftSection">
+                        <div class="hdlr">
+                            <div class="ck isTotalOn" onclick="setStatistic(1)" id="cktotal"></div>
+                            <div class="frdv">Total</div>
+                            <div class="clear"></div>
+                        </div>
+                        <div class="hdlr">
+                            <div class="ck" onclick="setStatistic(2)" id="ckaverage"></div>
+                            <div class="frdv">Average</div>
+                            <div class="clear"></div>
+                        </div>                      
+                        <div class="hdvh {!IF(isMatrixOlRendered,'leftDiv','hideElem')}">
+                            <!-- <img src="{!$Resource.PotentialLabel}"/>  -->
+                            <!-- <h1 class="hdvhc h">{!IF(matrix.Dimension_2_Name_BI__c != null && matrix.Dimension_2_Name_BI__c != '', matrix.Dimension_2_Name_BI__c, $Label.channel_budget_page_lab5)}</h1> -->
+                            <h1 class="hdvhc h">{!IF(matrix.Dimension_1_Name_BI__c != null && matrix.Dimension_1_Name_BI__c != '', matrix.Dimension_1_Name_BI__c, $Label.channel_budget_page_lab5)}</h1>
+                        </div>
+                        <div class="{!IF(isMatrixOlRendered,'my_legend','hideElem')}" style="top:{!realHeight-103}px !important">
+                            <div class="lgHd"><span>Legend:</span></div>
+                            <div class="lgBd">
+                                <span> <input type="checkbox" disabled="true" checked="checked"  id="chkCustomer" /> # {!$Label.IMP_BI_Matrix_Phys}</span><br/>
+                                <span><input type="checkbox" checked="checked" id="chkPotential" /> <apex:outputText value="{!LEFT(matrix.Potential_data_Label_BI__c,12)}..." title="{!matrix.Potential_data_Label_BI__c}" /></span><br/>
+                                <span><input type="checkbox" checked="checked"  id="chkAdoption" /> <apex:outputText value="{!LEFT(matrix.Adoption_Data_Label_BI__c,12)}..." title="{!matrix.Adoption_Data_Label_BI__c}" /></span><br/>
+                                <span><input type="checkbox"  id="cMShare" /> Market Share </span><br/>
+<!--                                <table id="lgTbl">-->
+<!--                                    <tbody>-->
+<!--                                        <tr><td><span># Phys</span></td></tr>-->
+<!--                                        <tr><td><span><apex:outputLabel value="Field 1"/></span></td></tr>-->
+<!--                                        <tr><td><span>Prod Rx</span></td></tr>-->
+<!--                                    </tbody>-->
+<!--                                </table>-->
+                            </div>
+                        </div>
+                    </div>
+                    <div id="rightSec" class="rightSec">
+                        <!-- commented by peng zhu 2013-05-10 -->
+                        <!-- <ol id="matrixData" class="{!IF(matrix.Size_BI__c=='10x11','tenEleven',IF(matrix.Size_BI__c=='5x6','fiveSix','hideElem'))}">  -->
+                        <ol id="matrixData" style="width:{!realWidth}px !important;" class="{!IF(isMatrixOlRendered,'MatrixOl','hideElem')}">
+                            <!--first row-->
+                            <li class="ui-state-default tdhd rwhd"></li>
+                            <apex:repeat value="{!columns}" var="colElem">
+                                <!-- <li class="ui-state-default tdhd rwhd"><span>{!colElem}</span><div class="hf"></div></li> -->
+                                <li class="ui-state-default tdhd rwhd adoptionHd"><span>{!IF(isLaunch, list_adptnSts[colElem], colElem)}</span><div class="hf"></div></li>
+                            </apex:repeat>  
+                            <li class="ui-state-default tdhd rwhd"><span>Total</span></li>
+                            
+                            <!-- data li -->                    
+                            <apex:repeat value="{!rows}" var="rowElem">
+                                <li class="ui-state-default tdhd">{!rowElem}</li>
+                                <apex:repeat value="{! map_matrixCell[rowElem]}" var="cell"> 
+                                    <li class="ui-state-default tdda {!cell.Segment_BI__c}" name="{!cell.Id}">
+                                        <span id="sp1" class="sp1">{!cell.Total_Customers_BI__c}</span><br/>
+                                        <span id="sp2" class="sp2">{!cell.Total_Potential_BI__c}</span><br/>
+                                        <span class="sp3" id="{!cell.Total_Market_Share_BI__c}">{!cell.Total_Intimacy_BI__c}</span><br/>
+                                        <span id="sp4" class="sp4" style="display:none;">{!cell.Total_Market_Share_BI__c} %</span>
+                                        <apex:inputHidden value="{!cell.Segment_BI__c}"/>
+                                        <div class="hf"></div>
+                                    </li>
+                                </apex:repeat>  
+                                <li class="ui-state-default tdhd">
+                                    <span class="sp1"></span><br/>
+                                    <span class="sp2"></span><br/>
+                                    <span class="sp3"></span><br/>
+                                    <span class="sp4" style="display:none;"></span>
+                                </li>
+                            </apex:repeat>
+                            
+                            <!--last row-->
+                            <li class="ui-state-default tdhd rwhd"></li>
+                            <apex:repeat value="{!columns}" var="colElem">
+                                <li class="ui-state-default tdhd rwhd">
+                                    <span class="sp1"></span><br/>
+                                    <span class="sp2"></span><br/>
+                                    <span class="sp3"></span><br/>
+                                    <span class="sp4" style="display:none;"></span>
+                                    <div class="hf"></div>
+                                </li>
+                            </apex:repeat>  
+                            <li class="ui-state-default tdhd rwhd">
+                                <span class="sp1"></span><br/>
+                                <span class="sp2"></span><br/>
+                                <span class="sp3"></span><br/>
+                                <span class="sp4" style="display:none;"></span>
+                            </li>
+                        </ol>
+                    </div>
+                    <!-- commented by Peng Zhu 2013-05-15 for common size -->
+                    <!-- <div class="colorpick {!IF(matrix.Size_BI__c=='10x11','cpsa','cpsb')}"> -->
+                    <div class="colorpick">
+                        <div id="colorbody" style="display:none;">
+                            <div id="colors">
+                                <table id="colorpickt1">
+                                    <tbody>
+                                        <tr>
+                                            <!-- <td class="Gain" onclick="setColor(this)">Gain</td> -->
+                                            <!-- <td class="Build" onclick="setColor(this)">Build</td> -->
+                                            <!-- <td class="Defend" onclick="setColor(this)">Defend</td> -->
+                                            <td class="Gain" onclick="setColor(this)">{!IF(matrix.Segment_1_Label_BI__c != null && matrix.Segment_1_Label_BI__c != '', matrix.Segment_1_Label_BI__c, $Label.channel_budget_page_lab11)}</td>
+                                            <td class="Build" onclick="setColor(this)">{!IF(matrix.Segment_2_Label_BI__c != null && matrix.Segment_2_Label_BI__c != '', matrix.Segment_2_Label_BI__c, $Label.channel_budget_page_lab12)}</td>
+                                            <td class="Defend" onclick="setColor(this)">{!IF(matrix.Segment_3_Label_BI__c != null && matrix.Segment_3_Label_BI__c != '', matrix.Segment_3_Label_BI__c, $Label.channel_budget_page_lab13)}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table id="colorpickt2">
+                                    <tbody>
+                                        <tr>
+                                            <!-- <td class="Observe" onclick="setColor(this)">Observe</td> -->
+                                            <!-- <td class="Maintain" onclick="setColor(this)">Maintain</td> -->
+                                            <td class="Observe" onclick="setColor(this)">{!IF(matrix.Segment_4_Label_BI__c != null && matrix.Segment_4_Label_BI__c != '', matrix.Segment_4_Label_BI__c, $Label.channel_budget_page_lab14)}</td>
+                                            <td class="Maintain" onclick="setColor(this)">{!IF(matrix.Segment_5_Label_BI__c != null && matrix.Segment_5_Label_BI__c != '', matrix.Segment_5_Label_BI__c, $Label.channel_budget_page_lab15)}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table id="popdata">
+                                    <tbody>
+                                        <tr style="{!IF(cfrc.phys, '', 'display:none;')}">
+                                            <td class="pdlf"><a title="Report" href="#" name="drillDownReport" target="_blank"># {!$Label.IMP_BI_Matrix_Phys}:</a></td><td class="pdrt"><a title="Report" href="#" name="drillDownReport" target="_blank"><span id="pyd"></span><img src="/s.gif" alt="Report" title="Report" style="background-image:url(/img/sprites/master.png); background-position:0 -282px; width: 16px; height: 11px;margin-left: 5px;" /></a></td>
+                                        </tr>
+                                        <tr style="{!IF(cfrc.productRx, '', 'display:none;')}">
+                                            <td class="pdlf"><apex:outputLabel value="{!matrix.Potential_data_Label_BI__c}"/>:</td><td class="pdrt"><span id="mrx"></span></td>
+                                        </tr>
+                                        <tr style="{!IF(cfrc.marketRx, '', 'display:none;')}">
+                                            <td class="pdlf"><apex:outputLabel value="{!matrix.Adoption_Data_Label_BI__c}"/>:</td><td class="pdrt"><span id="pdr"></span></td>
+                                        </tr>
+                                        <tr style="{!IF(cfrc.marketShare, '', 'display:none;')}">
+                                            <td class="pdlf">Market Share:</td><td class="pdrt"><span id="tms"></span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="clearright"></div>
+                    
+                    <div class="kpiDiv">
+                        <div class="kpiHeader"><span>KPIs by Segment</span></div>
+                        <div>
+                            <div class="kpiTableDiv">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <td class="td1 tdSegments"></td>
+                                            <td class="td2"><span># of {!$Label.IMP_BI_Matrix_Phys}</span></td>
+                                            <td class="td3"><span>% of {!$Label.IMP_BI_Matrix_Phys}</span></td>
+                                            <td class="td4"><span><apex:outputLabel value="{!matrix.Potential_data_Label_BI__c}"/></span></td>
+                                            <td class="td5"><span>% of <apex:outputLabel value="{!matrix.Potential_data_Label_BI__c}"/></span></td><!-- Market Share -->
+                                            <td class="td6"><span><apex:outputLabel value="{!matrix.Adoption_Data_Label_BI__c}"/></span></td>
+                                            <td class="td7">% of <span><apex:outputLabel value="{!matrix.Adoption_Data_Label_BI__c}"/></span></td>
+                                            <td class="td8"><span>% {!$Label.IMP_BI_Market_Share}</span></td>
+                                            <td class="td9" style="text-align:center;"><span>Average Product Rx<br />/ Customer</span></td><!-- {!$Label.IMP_BI_Matrix_Phys} -->
+                                        </tr>
+                                    </thead>
+                                    <tbody id="KPItbody">
+                                        <tr class="Gain">
+                                            <td class="tdSegments"><span>{!IF(matrix.Segment_1_Label_BI__c != null && matrix.Segment_1_Label_BI__c != '', matrix.Segment_1_Label_BI__c, $Label.channel_budget_page_lab11)}</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="Build">
+                                            <td class="tdSegments"><span>{!IF(matrix.Segment_2_Label_BI__c != null && matrix.Segment_2_Label_BI__c != '', matrix.Segment_2_Label_BI__c, $Label.channel_budget_page_lab12)}</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="Defend">
+                                            <td class="tdSegments"><span>{!IF(matrix.Segment_3_Label_BI__c != null && matrix.Segment_3_Label_BI__c != '', matrix.Segment_3_Label_BI__c, $Label.channel_budget_page_lab13)}</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="Observe">
+                                            <td class="tdSegments"><span>{!IF(matrix.Segment_4_Label_BI__c != null && matrix.Segment_4_Label_BI__c != '', matrix.Segment_4_Label_BI__c, $Label.channel_budget_page_lab14)}</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="Maintain">
+                                            <td class="tdSegments"><span>{!IF(matrix.Segment_5_Label_BI__c != null && matrix.Segment_5_Label_BI__c != '', matrix.Segment_5_Label_BI__c, $Label.channel_budget_page_lab15)}</span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                        <tr class="gtotal">
+                                            <td class="tdSegments">Total</td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                            <td class="tdnu"><span></span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="chart_div">
+                            
+                            </div>
+                        </div>
+                        <div class="clear"></div>
+                        <div class="segBtnDiv">
+                            <apex:commandButton id="theSaveBtn" value="Save" action="{!saveMatrix}" styleClass="segSbtn" style="{!IF(isFinal, 'visibility:hidden;', '')}"/>
+                            <apex:commandButton value="Cancel" action="{!cancelMatrix}" styleClass="segCbtn"/>
+                        </div>
+                    </div>
+                    <div class="clear"></div>
+                </div>     
+            </apex:form>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+        
+</apex:page>

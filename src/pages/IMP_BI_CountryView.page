@@ -1,0 +1,63 @@
+<apex:page id="countryView" standardController="Country_BI__c" extensions="IMP_BI_CountryView" tabStyle="Country_BI__c">
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    
+    <style type="text/css">
+    </style>
+    
+    <script type="text/javascript">
+        var j$ = jQuery.noConflict();
+        j$(document).ready(function () {
+            j$('#countryView_countryDetailRD').find('div.fewerMore').css('display','none');
+        });
+    </script>
+    
+    <apex:detail id="countryDetail" relatedList="true" inlineEdit="true" relatedListHover="true"/>
+    <apex:form id="countryForm" rendered="{!!hasError}">
+        <apex:pageBlock title="{!$ObjectType.Product_vod__c.label}" id="countryBlock">
+        	<apex:pageBlockTable id="products" value="{!products}" var="p" rendered="{!products.size > 0}" rows="{!rowsPage}">
+                <apex:column headerValue="{!$ObjectType.Product_vod__c.fields.Name.label}">
+                    <apex:outputLink value="/{!p.Id}">{!p.Name}</apex:outputLink>
+                </apex:column>
+                <apex:column value="{!p.Active_BI__c}"/>
+                <apex:column value="{!p.Product_Type_vod__c}"/>
+            </apex:pageBlockTable>
+            <apex:outputPanel id="productsNoRecords" rendered="{!products.size == 0}"> 
+                No records to display
+            </apex:outputPanel>
+            <div class="pShowMore" style="display:{!IF(ISNULL(showMore),'none','')};">
+               <apex:commandLink action="{!action_showMoreRecords}" value="Show {!showMore} more »" id="theCommandLink" rerender="countryBlock"
+                style="display:{!IF(rowsPage>99,'none','')};"/>
+               <!-- a href="">Show {!showMore} more »</a-->
+               <span style="display:{!IF(rowsPage>99,'none','')};">&nbsp;|&nbsp;</span>
+               <a href="/apex/IMP_BI_CountryViewAll?id={!country.Id}">Go to list {!showAll} &nbsp;»</a>
+           </div>
+        </apex:pageBlock>
+        <div class="fewerMore">
+            <div class="backToTop">
+                <a title="Back To Top" href="#">
+                <img width="8" height="8" title="Back to Top" alt="Back to Top" src="/img/upToTop_caret.gif" />Back To Top</a>
+            </div>
+        </div>
+    </apex:form>
+    
+    <apex:outputPanel rendered="{!hasError}">
+        <table cellspacing="10">
+      <tbody>
+            <tr>
+                <td><span style="font-weight: bold; font-size: 12pt;">Data Not Available</span></td>
+            </tr>
+            <tr>
+                <td>
+                    The data you were trying to access could not be found. It may be due to another user deleting the data or a system error. 
+                    If you know the data is not deleted but cannot access it, please look at our 
+                    <a title="support (New Window)" href="javascript:openPopupFocusEscapePounds('https://help.salesforce.com/apex/htdoor?body=%2Ftrain%2FonlineSupport.jsp&amp;loc=support&amp;language=en_US&amp;release=188.20.2&amp;instance=CS18', 'Help', 1024, 768, 'width=1024,height=768,resizable=yes,toolbar=yes,status=yes,scrollbars=yes,menubar=yes,directories=no,location=yes,dependant=no', false, false);">
+                        support
+                    </a> page.
+                    <br/><br/>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    </apex:outputPanel>
+</apex:page>

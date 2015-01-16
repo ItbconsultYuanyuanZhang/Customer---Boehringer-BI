@@ -1,0 +1,3333 @@
+<apex:page id="thePage" controller="DataLoadVizArt.CtrlDataLoader" docType="html-5.0" sidebar="false" tabStyle="DataLoadVizArt__Upload_Job__c" title="Data Import">
+<apex:sectionHeader title="Data Import"
+        subtitle="Data Import" />
+    <link href="{!URLFOR($Resource.DataLoader_All,'jQueryUI-1.9.2/jquery-ui-1.9.2.custom.min.css')}" rel="stylesheet" type="text/css" />
+    <style type="text/css">
+        #objStr{display:none;}
+        #retBtn{width:800px;margin-top:15px;margin-left:20px;}
+        #retBtn button{height:28px;}
+        #progressbar{margin:10px;}
+        #progressbar div{text-align:center;}
+        #upDiv{width:800px;height:300px;border:0px solid #FAFAFA;margin:20px 0px 10px 0px;background:#F8F8F8;-webkit-box-shadow:1px 4px 12px #CCC;-moz-box-shadow:1px 4px 12px #CCC;-o-box-shadow:1px 4px 12px #CCC;}
+        #upDiv:hover{border:0px solid #FCA;-webkit-box-shadow:1px 4px 12px #ACF;-moz-box-shadow:1px 4px 12px #ACF;-o-box-shadow:1px 4px 12px #ACF;cursor:pointer;}/*eba*/
+        .hint{color:#AAA;margin:5px;font-size:4em;height:150px;line-height:150px;}
+        .hint.onHover{color:#ABC;}
+        #inputFile{margin-top:50px;margin-bottom:25px;}
+        #fileDiv{width:800px;margin-top:0px;}
+        #fileDiv #file_Name{font-weight:bold;font-size:1.3em;margin:0 5px;}
+        #fileDiv #upstatus{font-weight:bold;font-size:1.2em;margin:0 5px;color:#08c;}
+        
+        .btnDiv{width:800px;text-align:center;margin-bottom:20px;}
+        .btnDiv button{height:28px;}
+        
+        #Loading{position:absolute;height:100%;width:100%;left:0;background-image: url('/changemgmt/img/spinner24.gif');background-color: #FFF; opacity: 0.85; filter: alpha(opacity = 85); 
+        background-repeat: no-repeat; background-position: center center; }
+        
+        #mappingDiv ul{width:200px;margin:10px;height:300px;float:left;list-style-type: none;padding:5px;overflow-y:auto;overflow-x:hidden;border:1px solid #CCC;}
+        #mappingDiv ul li{margin: 0 3px 3px 3px;padding: 0.4em;padding-left: 1.5em;font-size: 1.4em;height: 18px;}
+        .clear{clear:both;}
+        .hideElem{display:none;}
+        .selectArea{width:800px;font-weight:bold;color:#4545AA;}
+        #selectTable{margin:0 auto;}
+        #selectTable tr td.tda{width:250px;height:25px;}
+        #selectTable tr td.tda select{width:150px;}
+        #selectTable tr td.tdb{width:150px;height:25px;}
+        #selectTable tr td.tdc{width:90px;height:25px;}
+        #ValueMapping,#additionalInputs{display:none;}
+        .loadAreaDiv{margin:20px;width:800px;}
+        body #contentWrapper table tr td form .loadAreaDiv .bPageBlock{border-top:1px solid #EEE;}
+        #upresultSpan{width:800px;margin-left:20px;}
+        #upresultSpan p{font-weight:bold;font-size:1.2em;margin-left:12px;}
+        .upStatistics{background:#F8F8F8;border-collapse:collapse;}
+        .upStatistics td{border:1px solid #ccc;}
+        .ua{width:30%;}
+        .ub{width:70%;}
+        .ea{padding:3px;}
+        .staDiv{max-height:300px;overflow-y:auto;}
+        .jobMsg{color:red;position:absolute;}
+        #downloadify{margin-top:2px;}
+        #excptInfo{font-weight:bold;color:#f80;font-size:1.2em;}
+    </style>
+
+    <script src="{!URLFOR($Resource.DataLoader_All, '/jQuery-1.9.1/jquery-1.9.1.min.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.DataLoader_All, '/jQueryUI-1.9.2/jquery-ui-1.9.2.custom.min.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.DataLoader_All, '/js/swfobject.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.DataLoader_All, '/js/downloadify.min.js')}" type="text/javascript"></script>
+    
+    <!--<script src="{!URLFOR($Resource.CtrlDataLoaderJs)}" type="text/javascript"></script>-->
+    <script>
+        var j$ = jQuery.noConflict();
+        if(typeof Visualforce != 'undefined' && Visualforce.remoting ){
+             Visualforce.remoting.timeout = 110000;
+        }else if(typeof  _Visualforce != 'undefined' &&  _Visualforce.Ajax ){
+             _Visualforce.Ajax.timeout=110000;
+        }
+        //***lg is for test use***//
+        var lg;
+        if(window.console && console.log){ 
+            lg = function(txt){
+                console.log('-= custom logging =- ' + txt);
+            };
+        }else{
+            lg=function(){};
+        }
+        function refreshSen(){
+            if(typeof startSessionTimer != 'undefined'){
+                lastPageActivityTime=(new Date()).getTime();
+                startSessionTimer();
+            }
+        }
+        var fdate=function(d){
+            var hr = d.getHours(),
+                mi = d.getMinutes(),
+                se = d.getSeconds(),
+                ms = d.getMilliseconds();
+            if(hr<10) hr = '0'+hr;
+            if(mi<10) mi = '0'+mi;
+            if(se<10) se = '0'+se;
+            if(ms < 10) ms = '00'+ms;
+            else if(ms<100) ms = '0'+ms;
+            return hr+':'+mi+':'+se+'.'+ms;
+        };
+        //*** retUrlData is the return URL, postAction is the URL to invoke an apex page related to batch ***//
+        var retUrl,postAction,host_name;
+        //*** urlData is the data provided in URL ***//
+        var urlData = (function(){
+            var ud = location.href;
+            host_name = ''+ud;
+            host_name = /dataloadvizart\.(\w+)\./.exec(host_name);
+            if(host_name.length >1)
+            host_name = host_name[1];
+            else{
+                host_name = (''+ud).replace('https://dataloadvizart.','');
+                var firstPoint = host_name.indexOf('.');
+                host_name = host_name.substring(0,firstPoint);
+            }
+            ud = ud.substr(ud.lastIndexOf('?'));
+            ud = ud.replace(/^\?/,'');
+            ud = ud.split('&');
+            var md = {};
+            for(var i=0,j=ud.length;i<j;i++){
+                if(ud[i]){ 
+                    if(ud[i].indexOf('f_')>=0){
+                        ud[i] = ud[i].replace(/^f_/,'');
+                        ud[i] = ud[i].split('=');
+                        md[j$.trim(ud[i][0])] = j$.trim(ud[i][1]);
+                    }else if(ud[i].indexOf('retUrl') >= 0){
+                        retUrl = j$.trim(ud[i].replace('retUrl','').replace('=',''));
+                    }else if(ud[i].indexOf('postAction') >= 0){
+                        postAction = j$.trim(ud[i].replace('postAction','').replace('=',''));
+                    }
+                }
+            }
+            return md;
+            }());
+        
+        //*** some global variables ***//
+        var numModel;//a map of decimal/delimiter based on user locale
+        var global_s;//string date format of user locale
+        var obj_Name;//an object model about the upload obj, looks like {attributes:{name:xxx,url:xxx},...}
+        var toolTipMap = {};//a map of the locale picklist tooltip
+        var msg_onValidated = '{!$Label.Datatool_onValidated}',
+            msg_errFileType = '{!$Label.Datatool_errFileType}',
+            msg_requiredAddInput = '{!$Label.Datatool_rqAdditionalInput}',
+            msg_requiredVmInput = '{!$Label.Datatool_rqMappingInput}',
+            msg_errLimitMsg = '{!$Label.Datatool_errLimitMsg}',
+            msg_fieldNotExist = '{!$Label.Datatool_fieldNotExist}',
+            msg_notMapped = '{!$Label.Datatool_notMapped}',
+            msg_emptyHeader = '{!$Label.Datatool_emptyHeader}',
+            //msg_isEmpty = '{!$Label.Datatool_isEmpty}',
+            msg_fieldseparator = '{!$Label.Datatool_fieldseparator}',
+            msg_onSaved = '{!$Label.Datatool_onSaved}',
+            msg_onSaveErr = '{!$Label.Datatool_onSaveErr}',
+            msg_actXObjRequired = '{!$Label.Datatool_actXObjRequired}',
+            msg_exptNotify = '{!$Label.Datatool_excptNotification}',
+            msg_needGroupAndAggField = 'Please make sure the source file has at least one groupby field and one aggregation field.',
+            msg_invalidMenge = 'Please make sure numeric values in ', //check function getMengeMsg before change
+            msg_extIdMenge = 'Please make sure no external Id in ',//check function getMengeMsg before change
+            msg_MengeMethodNotSame = 'Please make sure only one aggregation method in ',//check function getMengeMsg before change
+            msg_InvalidExtId = 'Please make sure the defined External ID Field on Upload Job is an external field.',
+            msg_upsertExtNotFound = 'Please make sure External ID Field is defined when Upload Job type contains upsert.',
+            msg_NoUpsertExtId = 'Please make sure at least one Upsert External ID field when Upload Job type contains upsert.',
+            msg_uploadEnd = '{!$Label.Datatool_uploadEnd}';
+        
+        //*** function to get the alert message ***//checked
+        function getMengeMsg(columnName,msg_Menge){
+            return msg_Menge + columnName.join(',')+'.';
+        }
+        //*** function to get fields separator, if not find, default is comma ***//checked
+        function findFieldSeparator(){
+            var sptr = ',',
+                $localPicklist = j$('#localPicklist'),
+                localeVal;
+            if($localPicklist.length > 0){
+                localeVal = $localPicklist.val();
+            }else{
+                localeVal = j$('#userLocal').text();
+            }
+            j$('#localeInfo').children('div').each(function(){
+                var $el = j$(this);
+                if(localeVal == $el.attr('class')){
+                    sptr = $el.children().eq(4).text();
+                    return false;
+                }
+            });
+            return sptr;
+        }
+        
+        //*** function to parse csv ***//checked
+        function CSVToArray(strData,strDelimiter,rowstoread,isLastStr){
+            strDelimiter = (strDelimiter || ",");
+            var objPattern = new RegExp(
+               ("(\\" + strDelimiter + "|\\r?\\n|\\r|\\n|^)(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|([^\"\\" + strDelimiter + "\\r\\n]*))"),"gi");
+            var arrData = [[]];
+            var arrMatches = null;
+            var numread = 0;
+            var lidx = 0;//used to figure out the partial record
+            var strMatchedDelimiter;
+            var strMatchedValue;
+            var needPop = true;
+            var quoteReg = new RegExp( "\"\"", "g" );
+            arrMatches = objPattern.exec( strData );
+            
+            while (arrMatches){
+                    strMatchedDelimiter = arrMatches[ 1 ];
+                    if ( strMatchedDelimiter.length && (strMatchedDelimiter != strDelimiter)){
+                            numread++;
+                            lidx = arrMatches.index;
+                            if (rowstoread && rowstoread == numread ){
+                                needPop = false;
+                                break;
+                            }
+                            arrData.push( [] );
+                            
+                    }
+                    if (arrMatches[ 2 ]){
+                            // found a quoted value, unescape any double quotes.
+                            strMatchedValue = arrMatches[ 2 ].replace(quoteReg,"\"");
+                    } else {
+                            // found a non-quoted value.
+                            strMatchedValue = arrMatches[ 3 ];
+                    }
+                    arrData[ arrData.length - 1 ].push( strMatchedValue );
+                    
+                    arrMatches = null;
+                    arrMatches = objPattern.exec( strData );
+            }
+            
+            strMatchedDelimiter = strMatchedValue = arrMatches = null;
+            // tested about the que and pop
+            var strQue = strData.substr(lidx);
+            strData = null;
+            if(needPop && isLastStr){
+                needPop = false;
+                strQue = '';
+            }       
+            return {ary:arrData, qe:strQue,pop:needPop};
+        }
+        //*** function to get total line number for non-IE ***//checked
+        function getLineNum4NonIE(strData,strDelimiter){
+            strDelimiter = (strDelimiter || ",");
+            var objPattern = new RegExp(
+               ("(\\r?\\n|\\r|\\n)(?:\"([^\"]*(?:\"\"[^\"]*)*)\"|(?:[^\"\\" + strDelimiter + "\\r\\n]*))"),"gi");
+            var numread = 0,strMatchedDelimiter,arrMatches;
+            while (arrMatches = objPattern.exec( strData )){
+                    strMatchedDelimiter = arrMatches[ 1 ];
+                    if ( strMatchedDelimiter.length && (strMatchedDelimiter != strDelimiter)){
+                            numread++;
+                    }
+            }
+            strMatchedDelimiter = arrMatches = null;
+            return numread;
+        }
+        
+        //*** main loader object and its functions ***//
+        var loader = {
+            //%%%%% variables %%%%%//
+            isLoading : false,
+            lastPct : 0,
+            //if more than 900000, possibly get remote exception "Too long input"
+            maxLimit : 40000,//this limit bytes per batch read (for non-IE)
+            IELimit : 200,//this limit lines per batch read (for IE)
+            errLimit : 5000,            //this limit the failure records allowed, if procede, will stop the upload
+            maxLimitAgg:100000,
+            maxLimitAgg4IE:5000,
+            loaded : false,
+            que:'', // it holds partial line data on every batch, and added into next batch.
+            mthSum : 'Sum',
+            mthAvg : 'Average',
+            mthCount : 'Count',
+            head:0,
+            objModel:null,
+            map_field : false,
+            cancel:false,
+            readOver: false,
+            statistics:null,
+            useAcx : false,
+            path:false,
+            isEnd:false,
+            aggNonMapSkip:true,//if true, a field value not mapped, just skip.
+            parallelMax:1,
+            resendCount : [],
+            resendLimit : 1000,//if remote action give empty response repeatedly, 
+            //how many times this batch can be resend(with this limit to avoid possible endless retry)
+            fileLine : -1,
+            errRecords:[],
+            exceptRecords:[],
+            invalidRecords:[],
+            taskIndex:0,
+            teamIdx:0,
+            lastST : 0,
+            ReUid:1001,
+            doneLastQue:false,
+            taskIndexMap:{},
+            //%%%%% functions %%%%%//
+            resetTeamA:function(){
+                this.errlimitAlerted = false,
+                this.mapRsSend = {},
+                this.externalIdx = -1,//should also be make empty after a upload
+                this.externalOjb = {},
+                this.extMap = {},
+                this.externalOjbFd = {},
+                this.isAgg = false,
+                this.UpsertExtFields=[],
+                this.errRcdNum = 0,
+                this.resultCopyMap = {},
+                this.newExtIdMap = {},
+                this.toResendData = [false],
+                this.taskCount = this.parallelMax,
+                this.objAryStore = null,
+                this.Results = null,
+                this.isGetting = false,
+                this.isReading = false,
+                this.lockA = false,
+                this.ReUid = 1000,
+                this.teamIdx = 0,
+                this.lastST = 0,
+                this.doneLastQue = false,
+                this.statisitcTile = false;
+                //this.erred = 0;
+                //this.inVed = 0;
+                //this.badRec = 0;
+            },
+            roundNum:function(num,digit){
+                if(typeof digit == 'undefined') digit = 2;
+                var tmp = Math.pow(10,digit);
+                return Math.round(tmp*num)/tmp;
+            },
+            readBlobFile:function(start,end,onloadProcess,checkCancel){
+                var that = this;
+                var reader = new FileReader();
+                reader.onloadend = function(e){
+                    if(checkCancel && !checkCancel()) return;
+                    if(e.target.readyState == FileReader.DONE) { // DONE == 2
+                         if(typeof(e.target.result) == 'string'){
+                            var tmp = e.target.result;
+                            onloadProcess(tmp);
+                         }
+                    }
+                }
+                reader.onprogress = function(e){
+                    if(checkCancel){
+                        if(!checkCancel()) {
+                            reader.abort();
+                            that.handleError();
+                            return false;
+                        }
+                    }
+                };
+                reader.onerror = function(e){
+                    alert(e);
+                    reader.abort();
+                    that.handleError();
+                };
+                var blob;
+                if(that.file.slice){
+                    blob = that.file.slice(start, end);
+                }else if(that.file.webkitSlice) {
+                    blob = that.file.webkitSlice(start, end);
+                } else if(that.file.mozSlice) {
+                    blob = that.file.mozSlice(start, end);
+                }
+                reader.readAsBinaryString(blob);
+            },
+            //*** when file is droped on the area ***//
+            doDrop :function (e) { 
+               j$('#validateBtn').prev().focus();
+               e.stopPropagation();  
+               e.preventDefault(); 
+               var that = this;
+               that.loaded = 0;
+               that.cancel = false;
+               that.doFiles(e.dataTransfer.files);
+            },
+            decideFieldSeparator:function(tmp){
+                var that = this;
+                var tmpTrial = CSVToArray(tmp,',',2);
+                tmpTrial = tmpTrial.ary;
+                tmp = CSVToArray(tmp,that.fieldsSeptor,2);
+                tmp = tmp.ary;
+                var needChangeSpt = false;
+                if(tmpTrial[0].length > tmp[0].length){
+                    //maybe separator should be comma!
+                    needChangeSpt = confirm(msg_fieldseparator);
+                }
+                if(needChangeSpt){
+                    that.fieldsSeptor = ',';
+                    that.sourceMap = that.trimList(tmpTrial[0]);
+                    that.trialLine = tmpTrial[1];
+                }else{
+                    that.sourceMap = that.trimList(tmp[0]);
+                    that.trialLine = tmp[1];
+                }
+            },
+            showFileName:function(filename){
+                j$('#file_Name').text(filename);
+                j$('#progressbar').progressbar({ value: 0}).hide();
+                j$('#upstatus').text('');
+                j$('#excptInfo').text('');
+            },
+            onShowValidate:function(){
+                this.head = this.sourceMap;
+                this.showValidate();
+                this.lastPct = 0;
+            },
+            //*** prepare to upload file, so show file name, get file headers and so on ***//
+            doFiles:function (files){
+                var that = this;
+                var fileName;
+                for (var i = 0,f; f= files[i]; i++) {
+                     that.file = f;
+                    if(!/\.csv$/.test(f.name)){
+                        alert(msg_errFileType);
+                        return false;
+                    }
+                    fileName = f.name;
+                }
+                that.showFileName(fileName);
+                that.trialLine = false;
+                that.header2filter = false;
+                that.fieldsSeptor = findFieldSeparator();
+                that.readBlobFile(0,2000,function(tmp){
+                    that.decideFieldSeparator(tmp);
+                    that.header2filter = true;
+                    tmp = null;
+                    that.onShowValidate();
+                });
+            },
+            refreshLocale:function(){
+                var that = this;
+                if(!that.file && !that.path){
+                    return false;
+                }
+                if(!window.ActiveXObject){
+                    that.fieldsSeptor = findFieldSeparator();
+                    that.readBlobFile(0,2000,function(tmp){
+                        that.decideFieldSeparator(tmp);
+                        that.header2filter = true;
+                        tmp = null;
+                        that.onShowValidate();
+                    });
+                }else{
+                    var fso = new ActiveXObject("Scripting.FileSystemObject");
+                    var reader= fso.openTextFile(that.path,1);
+                    var count = 0;
+                    var head = '';
+                    that.fieldsSeptor = findFieldSeparator();
+                    while(!reader.AtEndofStream && count <3){
+                        head += reader.ReadLine()+'\n';//need not "count++" here
+                        count ++;
+                    }
+                    if(head){
+                        that.decideFieldSeparator(head);
+                    }
+                    head = null;
+                    that.onShowValidate();
+                    reader.Close();
+                    fso = reader = null;
+                }
+            },
+            //*** check file for IE ***//
+            checkFile:function (file){
+                var that = this;
+                that.cancel = false;
+                var path;
+                if (document.all) {//get file path
+                    file.select();
+                    document.getElementById('upDiv').focus();
+                    path = document.selection.createRange().text;
+                }
+                if(path)
+                that.path = path;
+                else
+                return false;//if can't get path, can only give up.
+                if(!/\.csv$/.test(path)){
+                    alert(msg_errFileType);
+                    return false;
+                }
+                var fileName = path;
+                //fileName = fileName.substr(fileName.lastIndexOf('\')+1);
+                that.showFileName(fileName);
+                var fso = new ActiveXObject("Scripting.FileSystemObject");
+                var reader= fso.openTextFile(that.path,1);
+                var count = 0;
+                var head = '';
+                that.trialLine = false;
+                that.fieldsSeptor = findFieldSeparator();
+                while(!reader.AtEndofStream){
+                    if(count <3){
+                        head += reader.ReadLine()+'\n';//need not "count++" here
+                    }else{
+                        reader.SkipLine();
+                    }
+                    count ++;
+                }
+                if(head){
+                    that.decideFieldSeparator(head);
+                }
+                head = null;
+                that.onShowValidate();
+                reader.Close();
+                fso = reader = null;
+                that.fileLine = count;
+            },
+            //*** show "Validate" button ***//
+            showValidate:function(){
+                j$('#validateBtn').show().focus();
+                this.closeStatistics();//clear up statistics data
+            },
+            //*** when "Validate" button clicked, clear something and prepare to upload ***//
+            startValidate:function(e){
+                if(e.preventDefault)
+                    e.preventDefault();
+                else 
+                    event.returnValue = false;
+                if(e.stopPropagation)
+                    e.stopPropagation(); 
+                else
+                    event.cancelBubble = true;
+                if(loader.isLoading){
+                    return false;
+                }else{
+                    this.isLoading = true;
+                } 
+                showLoading();
+                
+                this.map_field = false;
+                this.invalidRecords = [];
+                this.mapExtId = {};
+                
+                doFields();
+            },
+            //*** set up some maps, check fields names, and clear/init some variables, and alert if validate ok or not ***//
+            doValidate:function(){
+                lg('Check required inputs & headers, prepare needed maps begin : '+fdate(new Date()));
+                var that = this; 
+                that.resetTeamA();
+                
+                var map_Type_Format = {//only need those != 0 
+                        PERCENT:1,
+                        DOUBLE:1,
+                        CURRENCY:1,
+                        NUMBER:1,
+                        DATE:2,
+                        DATETIME:3,//it need to be treat differently with Date
+                        INTEGER:1
+                    };
+
+                hideLoading();
+                if(j$('#additionalInputs').prev().find('.errorMsg').length > 0){
+                    that.isLoading = false;
+                    alert(msg_requiredAddInput);
+                    return false;
+                }
+                if(j$('#ValueMapping').prev().find('.errorMsg').length > 0){
+                    that.isLoading = false;
+                    alert(msg_requiredVmInput);
+                    return false;
+                }
+                var targetMap={};
+                var trimMa,trimTar;
+                var extObjSource = {};
+                var url_data = urlData;
+                var groupByArray = [];
+                var aggFields = [];
+                var withAggregation = false;
+                
+                if(loader.isUpsert){
+                    if(loader.ExtIdFieldName && loader.ExtIdFieldName.indexOf('NOT_EXT_ID')>0){
+                        alert(msg_InvalidExtId);
+                        return false;
+                    }else if(!loader.ExtIdFieldName){
+                        alert(msg_upsertExtNotFound);
+                        return false;
+                    }
+                }
+                if(that.importType == 'Insert with aggregation'||that.importType == 'Upsert with aggregation'){
+                    that.isAgg = withAggregation = true;
+                }
+                //find target mapping
+               
+                var isInvalidMenge = false,isExtIdMenge = false,isMengeSameMethod = true;
+                var aggFieldCheckMap = {};
+                var mengeName1 = [],mengeName2 = [],mengeName3 = [];
+                var upsertExtIndex = [];
+                var dateAccmap = {};
+                
+                j$('#jobFieldMap').children().each(function(idx){
+                    var mapping = j$(this).text().split(':');
+                    
+                    trimMa = j$.trim(mapping[0]);
+                    trimTar = j$.trim(mapping[1]);
+                    var isArray = false;
+                    
+                    if(typeof targetMap[trimMa] == 'undefined')
+                        targetMap[trimMa] = trimTar;
+                    else{
+                        var tp = targetMap[trimMa];
+                        
+                        if(tp && tp.push){
+                            if(map_Type_Format[loader.objTypeMap[trimTar]] == 1){
+                                tp.push(trimTar);
+                                isArray = true;
+                            }else{
+                                mengeName1.push(trimMa);
+                                isInvalidMenge = true;
+                                return false;
+                            }
+                        }else{
+                            if(map_Type_Format[loader.objTypeMap[tp]] == 1 && map_Type_Format[loader.objTypeMap[trimTar]] == 1){
+                                tp = [tp,trimTar];
+                                isArray = true;
+                            }else{
+                                mengeName1.push(trimMa);
+                                isInvalidMenge = true;
+                                return false;
+                            }
+                        }
+                        targetMap[trimMa] = tp;
+                    }
+                    if(mapping[2]&&mapping[2].toUpperCase()=='TRUE'){
+                        if(isArray){
+                            mengeName2.push(trimMa);
+                            isExtIdMenge = true;
+                            return false;
+                        }else{
+                            extObjSource[idx]={
+                                sourceName:trimMa,
+                                objName:j$.trim(mapping[3]),
+                                extFd:j$.trim(mapping[4])
+                            };
+                        }
+                    }
+                    
+                    var obj;
+                    
+                    if(withAggregation){
+                        if(mapping[5]&&mapping[5].toUpperCase()=='TRUE'){
+                            if(loader.objTypeMap[trimTar] == 'DATE'||loader.objTypeMap[trimTar] == 'DATETIME'){
+                                if(mapping[9]){
+                                    obj = {name:trimMa,apiName:trimTar,order:parseInt(mapping[6],10),isDate:true,accuracy:mapping[9]};
+                                    dateAccmap[trimTar] = mapping[9];
+                                }else{
+                                    obj = {name:trimMa,apiName:trimTar,order:parseInt(mapping[6],10),isDate:true,accuracy:'Day'};//give it default as 'Day'
+                                    dateAccmap[trimTar] = 'Day';
+                                }
+                            }else{
+                                obj = {name:trimMa,apiName:trimTar,order:parseInt(mapping[6],10),isDate:false,accuracy:null};
+                            }
+                            groupByArray.push(obj);
+                        }else if(mapping[7]){
+                            if(!aggFieldCheckMap[trimMa]){
+                                obj = {name:trimMa,method:mapping[7]};
+                                aggFields.push(obj);
+                                aggFieldCheckMap[trimMa]=mapping[7];
+                            }else if(mapping[7] != aggFieldCheckMap[trimMa]){
+                                mengeName3.push(trimMa);
+                                isMengeSameMethod = false;
+                            }
+                        }
+                    }
+                    if(mapping[8]){
+                        upsertExtIndex.push({index:mapping[8],field:trimTar});
+                    }
+                });
+                
+                aggFieldCheckMap = null;
+                var msg_menge;
+                if(isInvalidMenge){
+                    msg_menge = getMengeMsg(mengeName1,msg_invalidMenge);
+                    alert(msg_menge);
+                    return false;
+                }
+                if(isExtIdMenge){
+                    msg_menge = getMengeMsg(mengeName2,msg_extIdMenge);
+                    alert(msg_menge);
+                    return false;
+                }
+                if(!isMengeSameMethod){
+                    msg_menge = getMengeMsg(mengeName3,msg_MengeMethodNotSame);
+                    alert(msg_menge);
+                    return false;
+                }
+                
+                if(loader.isUpsert){
+                    if(upsertExtIndex.length == 0){
+                        //another possibility is upsert with id !!!!!!!!!!!
+                        alert(msg_NoUpsertExtId);
+                        return false;
+                    }else{
+                        upsertExtIndex.sort(function(a,b){
+                            if(parseInt(a.index,10) > parseInt(b.index,10)) return 1;
+                            if(parseInt(a.index,10) < parseInt(b.index,10)) return -1;
+                            return 0;
+                        });
+                        for(var s=0,t=upsertExtIndex.length;s<t;s++){
+                            that.UpsertExtFields.push(upsertExtIndex[s]['field']);
+                        }
+                    }
+                }
+                
+                if(withAggregation){
+                    groupByArray.sort(function(a,b){
+                        if(a.order > b.order) return 1;
+                        else if(a.order < b.order) return -1;
+                        else return 0;
+                    });
+                    var jobvalmap=[];
+                    j$('#jobValueMap').children().each(function(idx){
+                        var mapping = j$(this).text().split(':');
+                        var tmpt = mapping[1];
+                        jobvalmap.push({name:mapping[0],sourceVal:tmpt,replaceVal:mapping[2]});
+                    });
+                    that.makeAggMaps([groupByArray,aggFields,jobvalmap]);
+                    that.makeRangeMap();
+                    that.aggSumMap = {};
+                }
+                trimMa = null;
+                that.targetMap = targetMap;
+                
+                /*
+                that.replaceMap -- about replace mapping, this map contains values from value mapping, URL provided data, and user input data.
+                their priority is value mapping > user input > URL > source file
+                and they will replace every line fields in that.lineR()
+                */
+                var addInputStr = j$('#additionalInputs').text();
+                var valMapStr = j$('#ValueMapping').text();
+                if(addInputStr){
+                    var inputJson = j$.parseJSON(addInputStr);
+                    var tmp;
+                    
+                    for(var ky in inputJson){//*****if need replacement of input date*****
+                        if(inputJson.hasOwnProperty(ky)){
+                            if(dateAccmap[ky] == 'Month'){
+                                inputJson[ky] = localDate(inputJson[ky]);
+                                tmp = inputJson[ky].split('-');
+                                inputJson[ky] = tmp[0]+'-'+tmp[1]+'-'+'01'; 
+                            }else if(dateAccmap[ky] == 'Year'){
+                                inputJson[ky] = localDate(inputJson[ky]);
+                                tmp = inputJson[ky].split('-');
+                                inputJson[ky] = tmp[0]+'-01-01';
+                            }
+                        }
+                    }
+                    url_data = j$.extend({},url_data,inputJson);
+                }
+                if(valMapStr){
+                    url_data = j$.extend({},url_data,j$.parseJSON(valMapStr));
+                    delete url_data["attributes"];
+                    delete url_data["type"];
+                }
+                that.replaceMap = url_data;
+                url_data = null;
+                //check locale
+                var localeElem = j$('#localPicklist'),
+                    localeVal = localeElem.val();
+                that.localeMapping = {};
+                if(numModel){
+                    that.localeMapping.seperator = numModel.dec,
+                    that.localeMapping.delimiter = numModel.dli;
+                }
+                if(localeElem.length > 0 && localeVal){
+                    j$('#localeInfo').children().each(function(){
+                        var $el = j$(this);
+                        if($el.hasClass(localeVal)){
+                            var $span = $el.children();
+                            that.localeMapping = {//with selected locale picklist, have the following mapping
+                                seperator:$span.eq(1).text(),
+                                delimiter:$span.eq(2).text(),
+                                dateformat:$span.eq(3).text()
+                            };
+                            return false;
+                        }
+                    });
+                }
+                var noFields = [],emptyFields = [];
+                                
+                var fieldApiName,fieldType,sourceVal,targetVal;
+                var hasGroupBy = false,hasAggField = false,r,s;
+                that.formatMap = {};
+                
+                for(var i=0,j=that.sourceMap.length;i<j;i++){
+                    sourceVal = j$.trim(that.sourceMap[i]),
+                    targetVal = targetMap[sourceVal];
+                    
+                    if(!sourceVal){//empty field header
+                        emptyFields.push(i);
+                    }else if(!targetVal){//can't find the target header or it is empty
+                        noFields.push(sourceVal);
+                    }else{
+                        if(targetVal.sort)
+                        fieldApiName = targetVal[0];
+                        else
+                        fieldApiName = targetVal;
+                        fieldType = loader.objTypeMap[fieldApiName];
+                        if(map_Type_Format[fieldType] == 1){ //this field is Number type(percent, decimal,...)
+                            that.formatMap[i] = 1;
+                        }else if(map_Type_Format[fieldType] == 2){//this field is Date type
+                            that.formatMap[i] = 2;
+                        }else if(map_Type_Format[fieldType] == 3){//this field is Datetime type
+                            that.formatMap[i] = 3;
+                        }
+                        
+                        for(var objPro in extObjSource){
+                            if(sourceVal == extObjSource[objPro]["sourceName"]){//since that.head = that.sourceMap(did so in doFile() for Chrome/FF or in checkFile() for IE)
+                                that.extMap[i]={//a map for external id use
+                                    sourceName:extObjSource[objPro]["sourceName"],
+                                    objName:extObjSource[objPro]["objName"],
+                                    extFd:extObjSource[objPro]["extFd"]
+                                };
+                            }
+                        }
+                        
+                        if(!hasGroupBy){
+                            for(r=0,s=groupByArray.length;r<s;r++){
+                                if(sourceVal == groupByArray[r]['name']){
+                                    hasGroupBy = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if(!hasAggField){
+                            for(r=0,s=aggFields.length;r<s;r++){
+                                if(sourceVal == aggFields[r]['name']){
+                                    hasAggField = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if(withAggregation && (!hasGroupBy||!hasAggField) || !withAggregation && (noFields.length > 0||emptyFields.length > 0)){
+                    var alertStr = '';
+                    if(withAggregation){
+                        if(!hasGroupBy||!hasAggField){
+                            alertStr += msg_needGroupAndAggField;
+                        }
+                    }else{
+                        if(noFields.length > 0){
+                            alertStr += msg_fieldNotExist + noFields.join(',') + (noFields.length > 1? ' are ': ' is ') + msg_notMapped;
+                        }
+                        if(emptyFields.length > 0){
+                            if(alertStr.length > 0)
+                            alertStr += ' and ';
+                            alertStr += msg_emptyHeader;
+                        }
+                    }
+                    that.clearFileName4IE();
+                    that.isLoading = false;
+                    that.fieldsSeptor = false;
+                    alert(alertStr);
+                }
+                else{
+                    lg('Check required inputs & headers, prepare needed maps end : '+fdate(new Date()));
+                    that.isLoading = false;//in case that user close the alert
+                    
+                    if(confirm(msg_onValidated)){
+                        that.isLoading = true;
+                        that.taskToken = 'newTask';
+                        dtm = dm = null;//global variables
+                        that.que = '';
+                        that.errRecords = [];
+                        that.exceptRecords = [];
+                        that.statistics = {records:0,size:0,start:new Date()};
+                        j$('#excptInfo').empty();
+                        if(withAggregation)
+                            j$('#upstatus').text('aggregating...');
+                        else
+                            j$('#upstatus').text('uploading...');
+                        that.lastPct = 0;
+                        j$("#progressbar").hide().progressbar({ value: 0 }).children().text('0%');
+                        j$('#progressbar').show();
+                        that.taskIndex=0;
+                        that.taskIndexMap={};
+                        that.uploadIntType = j$('#upload_int_Type').text();
+                        that.setMap4Wrap();
+                        
+                        if(window.ActiveXObject){
+                            that.isIE = true;
+                            that.start = 0;                            
+                            if(withAggregation){
+                                that.batch = that.maxLimitAgg4IE;
+                                that.readFile();                                
+                            }else{
+                                that.batch = that.IELimit*that.parallelMax;
+                                that.readFile();////param baseLength
+                            }
+                        }else{
+                            that.isIE = false;
+                            
+                            var tril = that.trialLine;
+                            if(tril){
+                                tril = tril.join(',');
+                                tril = tril.length;
+                                that.maxLimit = 200*tril;
+                                that.trialLine = tril;
+                            }
+                            
+                            that.maxLimitCp = that.maxLimit*that.parallelMax;
+                            that.fileLine = 0;
+                            that.getNonIELine(0,100000,that.file);
+                            
+                            lg('Validate end, import start: '+fdate(new Date()));
+                            if(withAggregation){
+                                that.start = 0;
+                                that.end = that.maxLimitAgg;
+                                that.readBlob();
+                            }else{
+                                that.start = 0;
+                                that.end = that.maxLimitCp;
+                                that.readBlob();
+                            }
+                        }
+                    }
+                }
+            },
+            aggregateRecords:function(tmp){
+                var that = this;
+                var aggKey,repVal,aggVal;
+                var keyMap = [];
+                var i,k,s,t,j=tmp.length;
+                var accMap={};
+                
+                for(i=0,k=that.aggKeyMap.length;i<k;i++){
+                    if(typeof that.aggKeyMap[i]['index'] != 'undefined'){
+                        keyMap.push(that.aggKeyMap[i]['index']);
+                        if(that.aggKeyMap[i]['isDate']){
+                            
+                            accMap[that.aggKeyMap[i]['index']] = that.aggKeyMap[i]['accuracy'];
+                        }
+                    }else{
+                        keyMap.push(that.aggKeyMap[i]['apiName']);
+                        if(that.aggKeyMap[i]['isDate']){
+                            accMap[that.aggKeyMap[i]['apiName']] = that.aggKeyMap[i]['accuracy'];
+                        }
+                    }
+                }
+                
+                var isSkip;
+                
+                for(i=0;i<j;i++){
+                    isSkip = true;
+                    if(tmp[i] && tmp[i][0]!= ''){
+                        for(s=0,t=that.aggRepMap.length;s<t;s++){//replace with uploadjob value mapping 
+                            var target = that.aggRepMap[s]['sourceVal'];
+                            target = j$.trim(target);
+                            var flag = 0;
+                            if(target.charAt(0) == '%'){
+                                flag += 1;
+                            }
+                            if(/%$/.test(target)){
+                                flag += 2;
+                            }
+                            target=target.replace(/^%/,'').replace(/%$/,'');
+                            var checkFd;
+                            if(flag == 0){
+                                checkFd = (target == j$.trim(tmp[i][that.aggRepMap[s]['index']]));
+                                
+                            }else if(flag == 1){//'%abc'
+                                checkFd = tmp[i][that.aggRepMap[s]['index']];
+                                var idx = checkFd.indexOf(target);
+                                if(idx >0){
+                                    
+                                    checkFd = checkFd.substr(idx);
+                                    checkFd = (checkFd == target);
+                                }else{
+                                   checkFd = false; 
+                                }
+                                
+                            }else if(flag == 2){//'abc%'
+                                checkFd = tmp[i][that.aggRepMap[s]['index']];
+                                if(checkFd && checkFd.indexOf(target)==0){
+                                    checkFd = true;
+                                }else{
+                                   checkFd = false; 
+                                }
+                                
+                            }else{//'%abc%'
+                                checkFd = tmp[i][that.aggRepMap[s]['index']];
+                                if(checkFd && checkFd.indexOf(target)>=0){
+                                    checkFd = true;
+                                }else{
+                                   checkFd = false; 
+                                }
+                                
+                            }
+                            if(checkFd){
+                                tmp[i][that.aggRepMap[s]['index']] = that.aggRepMap[s]['replaceVal'];
+                                isSkip = false;
+                                //since here is to replace the value to its record type id,
+                                //and each record must have a record id, so this "isSkip" filter here is no problem.
+                            }
+                        }
+                        if(that.aggNonMapSkip && isSkip){
+                            continue;
+                        }
+                        aggKey = '';
+                        var day;
+                        
+                        for(s=0,t=keyMap.length;s<t;s++){
+                            if(typeof keyMap[s] == 'string'){
+                                //use replacemap
+                                day = that.replaceMap[keyMap[s]];
+                                if(typeof day !='undefined'){
+                                    if(accMap[s]){
+                                        day = localDate(day);
+                                        if(day != -1){
+                                        switch(accMap[s]){
+                                            case 'Month':
+                                                day = day.split('-');
+                                                day = day[0]+'-'+day[1]+'-'+'01';
+                                                break;
+                                            case 'Year':
+                                                day = day.split('-');
+                                                day = day[0]+'-01-01';
+                                                break;
+                                        }
+                                        }else{
+                                            day = that.replaceMap[keyMap[s]];
+                                        }
+                                    }
+                                    aggKey += day;
+                                }
+                            }else{
+                                if(accMap[s]){
+                                    day = '';
+                                    tmp[i][keyMap[s]] = localDate(tmp[i][keyMap[s]]);
+                                    switch(accMap[s]){
+                                        case 'Day':
+                                            day = tmp[i][keyMap[s]];
+                                        break;
+                                        case 'Month':
+                                            if(day != -1){
+                                            day = tmp[i][keyMap[s]].split('-');
+                                            day = day[0]+'-'+day[1]+'-'+'01'; }
+                                            else
+                                            day = tmp[i][keyMap[s]];
+                                            break;
+                                        case 'Year':
+                                            if(day != -1){
+                                            day = tmp[i][keyMap[s]].split('-');
+                                            day = day[0]+'-01-01';
+                                            }else
+                                            day = tmp[i][keyMap[s]];
+                                            break;
+                                    }
+                                    if(day == '') day = tmp[i][keyMap[s]];
+                                }else{
+                                    day = tmp[i][keyMap[s]];
+                                }
+                                aggKey += day;
+                            }
+                        }
+                        
+                        if(!that.aggSumMap[aggKey])
+                            that.aggSumMap[aggKey] = {'record':tmp[i]};
+                        
+                        for(s=0,t=that.aggMthMap.length;s<t;s++){
+                            if(!that.aggSumMap[aggKey][that.aggMthMap[s]['index']]){
+                                that.aggSumMap[aggKey][that.aggMthMap[s]['index']] = {sum:0,count:0};
+                            }
+                            
+                            that.aggSumMap[aggKey][that.aggMthMap[s]['index']]['sum'] += localNum(tmp[i][that.aggMthMap[s]['index']]);
+                            that.aggSumMap[aggKey][that.aggMthMap[s]['index']]['count'] ++;
+                        }
+                    }
+                }
+                
+            },
+            wrapObjAgg:function(){
+                var that = this;
+                var result = [],record,SUM = that.mthSum,AVG=that.mthAvg,COUNT=that.mthCount;
+                var mthMap = {};
+                for(var i=0,j=that.aggMthMap.length;i<j;i++){
+                    if(!mthMap[that.aggMthMap[i]['index']]){
+                        mthMap[that.aggMthMap[i]['index']] = that.aggMthMap[i]['method'];
+                    }
+                }
+                var obj;
+                for(var key in that.aggSumMap){
+                    obj = that.aggSumMap[key];
+                    record = obj['record'];
+                    
+                    for(var c in obj){
+                        if(/^\d+$/.test(c)){
+                            if(mthMap[c] == SUM)
+                            record[c] = that.roundNum(obj[c]['sum']);
+                            else if(mthMap[c] == AVG){
+                                if(obj[c]['count'] == 0)
+                                record[c] = 0;
+                                else
+                                record[c] = that.roundNum(obj[c]['sum']/obj[c]['count']);
+                            }else if(mthMap[c] == COUNT){
+                                record[c] = obj[c]['count'];
+                            }
+                        }
+                    }
+                    
+                    result.push(record);
+                }
+                
+                var objAry = [];
+                
+                for(var i=0,j=result.length;i<j;i++){
+                    objAry.push(that.lineRAgg(that.head,result[i]));
+                    //result[i] = null;
+                }
+                
+                that.objAryStore = objAry;
+                that.fileLine = objAry.length;
+                
+                j$('#upstatus').text('uploading...');
+                that.taskCount = that.parallelMax;
+                that.getNextResults();
+            },
+            str2Result:function(str,opts,isLastQue){
+                var that = this;
+                
+                //why 4991? Because salesforce allow max 5000 records per request, and by test, under 4991 is safe.
+                var isLastStr = isLastQue;
+                var bsize = 200,mult = that.parallelMax;
+                if(that.isIE)
+                    bsize = false;
+                else if(isLastStr ==1){
+                    isLastQue = true;
+                    bsize = false;
+                }else{
+                    bsize *= mult;
+                }
+                
+                str = CSVToArray(str,that.fieldsSeptor,bsize,isLastQue);
+                that.que = str.qe;
+                
+                if(!that.isIE){
+                    var tril = that.trialLine;
+                    if(!isLastQue && that.que && that.que.length > 3*tril*mult){
+                        that.maxLimitCp -= that.que.length;
+                        if(that.maxLimitCp < 195 * tril * mult){
+                            that.maxLimitCp = 200 * tril * mult;
+                        }
+                    }
+                }
+                
+                var needPop = str.pop; // IE need test for this
+                if(isLastStr ==1 && !needPop){
+                    that.que = '';
+                }
+                str = str.ary;
+                if(opts.headFilter){
+                    str.shift();
+                    that.header2filter = false;
+                }
+                var column = that.head.length,
+                    result=[];
+                    
+                if(needPop){//need test for IE
+                    str.pop();
+                }
+                
+                var recordTmp,_record,fixRecord = false,cont;
+                var j = str.length;
+                
+                if(that.isAgg){//do aggregation
+                    that.aggregateRecords(str);
+                    opts.readNextAgg();
+                }else{
+                    if(j>0){
+                        lg('Wrap array data into objects start: '+fdate(new Date()));
+                        that.taskIndex ++;
+                        var tix = that.taskIndex;
+                        var header = that.head;
+                        var obj;
+                        var ctt = 0,cta=0;
+                        for(var i=0;i<j;i++){//
+                            if(str[i] && str[i].length >= column){ // need test
+                                obj = that.lineR(header,str[i],column,tix);
+                                if(!obj.invalid)
+                                result.push(obj);
+                                //else
+                                //that.inVed ++
+                            }
+                            /*
+                            else{
+                                that.badRec ++;
+                                console.log(str[i]);
+                            }  
+                            */             
+                        }
+                        //lg('inVed:'+that.inVed+'badRec:'+that.badRec);
+                        if(result.length > 0){
+                            lg('Read '+result.length+' records from file.'+fdate(new Date()));
+                            that.Results = result;
+                            that.doExtIds(tix);
+                        }else if(!that.isEnd){
+                            that.isReading = false;
+                            if(isIE)
+                            that.startNextRead4IE();
+                            else
+                            that.startNextRead();
+                        }else{
+                            that.checkAndEnd();
+                        }
+                    }else if(!that.isEnd){
+                        that.isReading = false;
+                        if(isIE)
+                        that.startNextRead4IE();
+                        else
+                        that.startNextRead();
+                    }else{
+                        //better check if all tasks finished
+                        that.checkAndEnd();
+                    }
+                }
+            },
+            checkAndEnd:function(){
+                var that = this;
+                if(that.isJobEnd()){
+                //if(that.checkEndJob()){
+                    that.invokeEnd();
+                }
+            },
+            invokeEnd:function(){
+                var that = this;
+                if(that.isIE)
+                    that.end4IE(that.head.length);
+                else
+                    that.end4NonIE(that.head.length);
+            },
+            //*** read file (a batch) for non-IE ***//
+            readBlob : function(){
+                var that = this;
+                var file = that.file;
+                if(!file) return;
+                var start = that.start;
+                var end = that.end;
+                //not file.size-1;
+                var fileSize = file.size;
+                
+                start = parseInt(start,10)||0,
+                end = Math.min(parseInt(end,10),fileSize);
+                that.end = end;
+                if(end < fileSize) that.isEnd = false;
+                else that.isEnd = true;
+                
+                lg('Read records from file begin : '+fdate(new Date()));//return;
+                that.readBlobFile(start,end,function(readResult){
+                    var tmp = that.que + readResult;
+                    var opts = {headFilter:that.header2filter,readNextAgg : that.startNextReadAgg};
+                    loader.str2Result(tmp,opts,that.isEnd);
+                },
+                function(){
+                    if(that.cancel){
+                        that.giveResult(that.head.length);
+                        hideLoading();
+                        that.handleError();
+                        that.isLoading = false;
+                        that.statistics = null;
+                        return false;
+                    }else
+                    return true;
+                });
+            },
+            //*** read file for IE ***// also see comments in readBlob()
+            readFile : function (){
+                var that = this,
+                    start = that.start,
+                    batch = that.batch,
+                    _batch = batch;
+                that.mapExtId = {};
+                
+                if(that.cancel){
+                    j$('#upstatus').text('');
+                    hideLoading();
+                    that.giveResult(that.head.length); 
+                    
+                    that.isLoading = false;
+                    return false;
+                }
+                //pay attention to "Start"
+                
+                var content="";
+                var fso = new ActiveXObject("Scripting.FileSystemObject");
+                var reader= fso.openTextFile(that.path,1);
+                var count = 0;
+                //if(hasHeader){
+                    reader.SkipLine(); //need not count++,it should not be included in doneline
+                //}
+                
+                while(!reader.AtEndofStream && count < start){
+                    reader.SkipLine();
+                    count ++;
+                }
+                count = 0;
+                
+                var column = that.head.length;
+                    
+                var tmp = that.que;//although IE read whole line,but in CSVToArray it might lead to that.que
+                that.que = '';
+                while(!reader.AtEndofStream && count < batch ){
+                    tmp += reader.ReadLine()+'\n';
+                    count++;
+                }
+                
+                if(reader.AtEndofStream) {that.isEnd = true;}else{that.isEnd = false;} 
+                reader.Close();
+                reader = fso = null;
+                var opts = {
+                            headFilter:that.header2filter,
+                            readNextAgg : function(){
+                                if(!that.isEnd){
+                                    that.start = that.start + that.batch;
+                                    that.readFile();
+                                }else{
+                                    //do upload
+                                    that.wrapObjAgg();
+                                }
+                            }
+                            };
+                loader.str2Result(tmp,opts,true);
+            },
+            startNextReadAgg:function(){
+                var that = this;
+                that.start = that.end;//not that.end+1 !!
+                that.end = that.start + that.maxLimitAgg;
+                if(that.que && that.que.length > 0)
+                that.end -= that.que.length;
+                if(that.end - that.start <5000) that.end = that.start+5000;
+                var file = that.file;
+                var fileSize = file.size;
+                
+                if(that.start <= fileSize){
+                    that.readBlob();
+                }else{
+                    //upload agg
+                    that.wrapObjAgg();
+                }
+            },
+            lineRWrap:function(header,record,y,i,tix){
+                var that = this;
+                var result = false;
+                
+                if( that.extMap[i] && y ){
+                    if(!that.mapExtId[i])
+                    that.mapExtId[i] = {};
+                    if(!that.mapExtId[i][y])
+                        that.mapExtId[i][y]={a:'M',b:tix};
+                    else{
+                        that.mapExtId[i][y].b = tix;
+                    }
+                }
+                if(that.formatMap[i]==1){
+                    y = localNum(y);
+                    if(y===false || (y!=0 && isNaN(y))) {
+                        result = header[i]+' parse number error:'+record[i];
+                    }
+                }else if(that.formatMap[i]==2){
+                    y = localDate(y);
+                    if(y==-1) {
+                        result = header[i]+' parse date error:'+record[i];
+                    }
+                }else if(that.formatMap[i]==3){
+                    y = localDateTime(y);
+                    if(y==-1) {
+                        result = header[i]+' parse datetime error:'+record[i];
+                    }
+                }
+                return result;
+            },
+            //*** wrap a line into an object,also gather ExternalId and check Number/Date format ***//
+            lineR:function(header,record,column,tix){
+                var that = this; 
+                var obj = j$.extend({},obj_Name);
+                
+                var y;
+                var parseErrMsg = [],objInValid;
+                for(var i=0;i<column;i++){
+                    y = record[i];
+                    
+                    //and externalId not in value Mapping ? This has been considered when replacing value with mapExtId -- see line 389 or so
+                    objInValid = that.lineRWrap(header,record,y,i,tix);
+                    if(!objInValid){
+                        if(/FALSE/.test(y)){
+                            obj[that.map_field[i]] = false;
+                        }else if(/TRUE/.test(y)){
+                            obj[that.map_field[i]] = true;
+                        }else{
+                            if(that.map_field[i] && typeof that.map_field[i] != 'undefined'){
+                                if(typeof that.map_field[i] == 'string')
+                                    obj[that.map_field[i]] = y; 
+                                else if(that.map_field[i].sort){
+                                    for(var s=0;s<that.map_field[i].length;s++){
+                                        if(Math.round(y) != y){
+                                            if('INTEGER' == that.objTypeMap[that.map_field[i][s]])
+                                                obj[that.map_field[i][s]] = Math.round(y); 
+                                            else
+                                                obj[that.map_field[i][s]] = y; 
+                                        }else
+                                        obj[that.map_field[i][s]] = y; 
+                                    }
+                                }
+                            }else{
+                                obj[that.map_field[i]] = null;
+                            }
+                        }
+                    }else{
+                        parseErrMsg.push(objInValid);
+                    }
+                }
+                //since non-IE and IE both will call this lineR(), so add the invalid records process logic here
+                if(objInValid){
+                    obj.invalid = true;
+                    that.invalidRecords.push({"erMsg":parseErrMsg.join(';'),"erRd":record});
+                    
+                }else{
+                    for(var k in that.replaceMap){
+                        obj[k] = that.replaceMap[k];
+                    }
+                    delete obj['undefined'];
+                    
+                }
+                
+                return obj;
+            },
+            lineRAgg:function(header,record){
+                var that = this; 
+                var obj = j$.extend({},obj_Name);
+                var y,parseErrMsg = [],objInValid,idx;
+                
+                for(var i=0,j=that.rangeMap.length;i<j;i++){
+                    idx = that.rangeMap[i];
+                    y = record[idx]; 
+                    //and externalId not in value Mapping ? This has been considered when replacing value with mapExtId -- see line 389 or so
+                    
+                    objInValid = that.lineRWrap(header,record,y,idx);                    
+                    if(!objInValid){
+                        if(/FALSE/.test(y)){
+                            obj[that.map_field[idx]] = false;
+                        }else if(/TRUE/.test(y)){
+                            obj[that.map_field[idx]] = true;
+                        }else{
+                            if(that.map_field[idx] && typeof that.map_field[idx] != 'undefined'){
+                                if(typeof that.map_field[idx] == 'string')
+                                    obj[that.map_field[idx]] = y; 
+                                else if(that.map_field[idx].sort){
+                                    for(var s=0;s<that.map_field[idx].length;s++){
+                                        if(Math.round(y) != y){
+                                            if('INTEGER' == that.objTypeMap[that.map_field[idx][s]])
+                                                obj[that.map_field[idx][s]] = Math.round(y); 
+                                            else
+                                                obj[that.map_field[idx][s]] = y; 
+                                        }else
+                                        obj[that.map_field[idx][s]] = y; 
+                                    }
+                                }
+                            }else{
+                                obj[that.map_field[idx]] = null;
+                            }
+                        }
+                    }else{
+                        parseErrMsg.push(objInValid);
+                    }
+                }
+                //since non-IE and IE both will call this lineR(), so add the invalid records process logic here
+                if(objInValid){
+                    obj.invalid = true;
+                    that.invalidRecords.push({"erMsg":parseErrMsg.join(';'),"erRd":record});
+                    
+                }else{
+                    for(var k in that.replaceMap){//should replace aggregation fields here
+                        obj[k] = that.replaceMap[k];
+                    }
+                    delete obj['undefined'];
+                }
+                
+                return obj;
+            },
+            getNextResults:function(){
+                var that = this;
+                that.isGetting = true;
+                var num = 1000 * that.parallelMax;
+                
+                if(that.objAryStore.length == 0){
+                    //end 
+                    that.hasResult = false;
+                    that.isGetting = false;
+                    if(that.taskCount == that.parallelMax){
+                        //end jobs
+                        that.invokeEnd();
+                    }
+                }else{
+                    that.hasResult = true;
+                    if(num > that.objAryStore.length){
+                        num = that.objAryStore.length;
+                    }
+                    that.taskIndex ++;
+                    that.Results = that.objAryStore;
+                    //doextId
+                    that.doExtIds(that.taskIndex);
+                    that.isGetting = false;
+                }
+                
+            },
+            groupResults:function(objAry,tix){
+                var that = this;
+                var i,j = objAry.length,groupNbr,thd,theResults;
+                var temp,tmpObj;
+                if(j<100){ // for test, it should be <100*******
+                    theResults=[];
+                    theResults.push(objAry);
+                }else{
+                    theResults = [],groupNbr = 0,thd = 0;
+                    for(i=0;i<j;i++){
+                        if(i == thd){
+                            theResults[groupNbr] = [];
+                            groupNbr ++;
+                            thd = 200*groupNbr;
+                        }
+                        tmpObj = objAry[i];
+                            
+                        if(!tmpObj || tmpObj.invalid){
+                            //parse number/date/datetime error, already processed in lineR(),so just skip here
+                        }else{
+                            theResults[theResults.length-1].push(tmpObj);
+                        }
+                        objAry[i]=null;            
+                    }
+                    objAry = null;
+                    
+                }
+                that.Results = theResults;
+                that.invokeRequest(tix);
+            },
+            asisExtId:function(tix){
+                var that = this;
+                var o, exId, exfieldVal;
+                var exIdFieldName;
+                var result;
+                var is_Upsert = that.isUpsert;
+                var upExtFields = that.UpsertExtFields;
+                var lth = upExtFields.length;
+                var extIdFdName = that.ExtIdFieldName;
+                var req_matchKey = [[]];
+                var count = 1,thd = 0;
+                var extSeptr = that.ExtIdFieldSpt;
+                var mapIdxFd = that.map_field;
+                var etIxI;
+                    var result = that.Results;
+                    if(result && result.length > 0){
+                        for(var x=0,y=result.length;x<y;x++){ // replace the object values
+                            o = result[x];
+                            
+                            for(var etIx in that.extMap){
+                                etIxI = parseInt(etIx,10);
+                                if( etIxI === 0||!isNaN(etIxI)){
+                                    exIdFieldName = mapIdxFd[etIx];
+                                    
+                                    exId = o[exIdFieldName];//here o might be an empty obj
+                                    
+                                    if(typeof exId != 'undefined'){
+                                        exfieldVal = that.mapExtId[etIx][exId]['a'];
+                                    }else{// o is empty
+                                        exfieldVal = false;
+                                    }
+                                    if(exfieldVal && exfieldVal !=='M'){
+                                        if(!that.replaceMap || !that.replaceMap[exIdFieldName])
+                                        o[exIdFieldName] = exfieldVal;
+                                        
+                                    }
+                                }
+                            }
+                            if(is_Upsert && lth > 0){
+                                var matchKey = [];
+                                for(var i=0;i<lth;i++){
+                                    matchKey.push(o[upExtFields[i]]);
+                                }
+                                matchKey = matchKey.join(extSeptr);
+                                o[extIdFdName] = matchKey;
+                                
+                                if(count%9900==0) {
+                                    thd++;
+                                    req_matchKey.push([]);
+                                }
+                                req_matchKey[thd].push('\''+matchKey+'\'');
+                                count ++;
+                            }
+                        }
+                    }
+                
+                that.isReading = false;
+                if(that.isUpsert && lth > 0){
+                    for(var s=0;s<req_matchKey.length;s++){
+                        req_matchKey[s] = req_matchKey[s].join(',');
+                    }
+                    req_matchKey = req_matchKey.join('@@');
+                    that.fdmpExtId(req_matchKey,extIdFdName,tix);
+                }else{
+                    that.groupResults(that.Results,tix);
+                }
+                
+            },
+            fdmpExtId:function(req_matchKey,extIdFdName,tix){
+                var that = this;
+                var nt = new Date().getTime(),
+                            lst = that.lastST;
+                if(nt - lst < 91){
+                    setTimeout(function(){
+                        that.fdmpExtId(req_matchKey,extIdFdName,tix);
+                    },91);
+                }else{
+                    
+                    that.lastST = new Date().getTime();
+                    var cdloader=that.getRemoteLoader();
+                    cdloader.findmapIdExtId(req_matchKey,extIdFdName,that.upsertObjName,function(rps){
+                        if(!rps){
+                            lg('request externalId but get no response from server');
+                            setTimeout(function(){
+                                that.fdmpExtId(req_matchKey,extIdFdName,tix);
+                            },500);
+                        }else
+                        that.addId4ExtId(rps,tix);
+                    });
+                }
+            },
+            rmExtMp:function(exterIds,tix){
+                var that = this;
+                var nt = new Date().getTime(),
+                            lst = that.lastST;
+                if(nt - lst < 91){
+                    setTimeout(function(){
+                        that.rmExtMp(exterIds,tix);
+                    },91);
+                }else{
+                    
+                    that.lastST = new Date().getTime();
+                    var cdloader=that.getRemoteLoader();
+                    cdloader.findExternalMap(exterIds,function(res){
+                        if(!res){
+                            lg('request externalMap but get no response from server');
+                            setTimeout(function(){
+                                that.rmExtMp(exterIds,tix);
+                            },500);
+                        }else{
+                            lg('Request external Ids get response from server: '+fdate(new Date()));
+                            lg('Add external Ids to objects start: '+fdate(new Date()));
+                            that.updateExtIdMap (res,tix);
+                            that.asisExtId(tix);
+                        }
+                    });
+                }
+            },
+            doExtIds:function(tix){
+                var that = this;
+                var isAgg = that.isAgg;
+                var exterIds = that.checkExId();
+                if(exterIds.length > 0){ // need call apex and get real external Id
+                    lg('Request external Ids start: '+fdate(new Date()));
+                    exterIds = exterIds.join('@@');
+                    that.rmExtMp(exterIds,tix);
+                }else{
+                    that.asisExtId(tix);
+                }                          
+            },
+            addId4ExtId:function(res,tix){
+                var that = this;
+                var isAgg = that.isAgg;
+                
+                var $span = j$('#extRes');
+                res = $span.html(res).text();
+                $span.text('');
+                $span = null;
+                
+                if(res != 'NOTFOUND'){
+                    res = res.split(';');
+                    var map = {};
+                    var item,extfdName = that.ExtIdFieldName,id;
+                    for(var i=0,j=res.length;i<j;i++){
+                        item = res[i].split(':');
+                        map[item[0]] = item[1];
+                    }
+                    
+                    var result = that.Results;
+                    for(var x=0,y=result.length;x<y;x++){ //replace object values
+                        o = result[x];
+                        if(id=map[o[extfdName]])
+                        o.id = id;
+                    }
+                }
+                that.groupResults(that.Results,tix);
+            },
+            isJobMapClear:function(){
+                var tmp,titm,isClear = true;
+                var that = this;
+                var mapTask = that.taskIndexMap;
+                var tiMax = that.taskIndex;
+                //if tiMax not in mapTask, it might be in process of add external Id, or so.
+                //but surely it will come to the process of sendRequest, and then it will be in this map.
+                if(tiMax in mapTask){
+                    for(var ti in mapTask){
+                        if(/^\d+$/.test(ti)){
+                            tmp = mapTask[ti];
+                            for(titm in tmp){
+                                if(tmp[titm]=='send'){
+                                    isClear = false;
+                                    break;
+                                }
+                            }
+                            if(!isClear){
+                                break;
+                            }
+                        }
+                    }
+                }else
+                isClear = false;
+                /*
+                if(window.console && console.log){
+                    console.log('isClear:'+isClear+'>>'+JSON.stringify(mapTask));
+                }
+                */
+                return isClear;
+            },
+            isJobEnd:function(){
+                var that = this;
+                if(!that.isEnd) return false;
+                if(j$.trim(that.que) != '') return false;
+                if(!that.isJobMapClear()) return false;
+                return true;
+            },
+            isRmFree:function(){
+                var that = this;
+                var nt = new Date().getTime(),
+                    lst = that.lastST;
+                return (nt-lst > 100);
+            },
+            invokeRequest: function(tix){
+                var that = this;
+                if(that.cancel){
+                    if(that.isJobMapClear()){
+                        //end jobs
+                        that.invokeEnd();
+                    }
+                    return;
+                }
+                var isAgg = that.isAgg;
+                var i,findResult = false,rsData,mapSend = that.mapRsSend;
+                
+                var isIE = that.isIE;
+                if(that.taskCount > 0 && !that.isReading){
+                
+                    if(!that.lockA){
+                        for(i=0;i<that.toResendData.length;i++){
+                            rsData = that.toResendData[i];
+                            if(rsData){
+                                if(!mapSend[rsData['id']]){
+                                    if(that.isRmFree()){
+                                        mapSend[rsData['id']] = 'sent';
+                                        
+                                        that.sendRequest(rsData['data'],i,tix,'b');
+                                        that.taskCount--;
+                                        rsData['data'] = null;
+                                        that.toResendData[i] = false;
+                                    }
+                                    findResult = true;
+                                    break;
+                                }
+                            }
+                         }
+                     }else{
+                         for(i=0;i<that.toResendData.length;i++){
+                            rsData = that.toResendData[i];
+                            if(rsData && !mapSend[rsData['id']]){
+                                findResult = true; // toResendData is locked,so just make it retry
+                                break;
+                            }
+                         }
+                     }
+                    
+                    if(!findResult){
+                        for(i=0;i<that.Results.length;i++){
+                            if(that.Results[i]){
+                                if(that.isRmFree()){
+                                    that.sendRequest(that.Results[i],i,tix,'A');
+                                    that.taskCount--;
+                                    that.Results[i] = false;
+                                }
+                                findResult = true;
+                                break;
+                            }
+                        }
+                    }
+                    if(findResult){
+                        setTimeout(function(){
+                            that.invokeRequest(that.taskIndex);
+                        },101);
+                    }else{
+                        refreshSen();
+                        if(isAgg){
+                            if(that.hasResult){//to avoid repeated getNext at end of load
+                                if(!that.isGetting)
+                                that.getNextResults();
+                            }else if(that.taskCount == that.parallelMax){//need consider if check by map?  - fuqi 1025
+                                //end jobs
+                                that.invokeEnd();
+                            }
+                        }else{ 
+                            if(!that.isEnd){//to avoid repeated getNext at end of load
+                                if(!that.isReading){
+                                    if(isIE)
+                                    that.startNextRead4IE();
+                                    else
+                                    that.startNextRead();
+                                }
+                            }else if(j$.trim(that.que) != '' && !that.doneLastQue){
+                                that.doneLastQue = true;
+                                var strQue = ''+that.que;
+                                that.que = '';
+                                /*
+                                if(window.console && console.log){
+                                    console.log('que is not empty >>'+that.que);
+                                }
+                                */
+                                var opts = {headFilter:that.header2filter,readNextAgg : function(){}};
+                                that.str2Result(strQue,opts,1);
+                            }else if(that.isJobEnd()){
+                                /*
+                                if(window.console && console.log){
+                                    console.log('tix'+tix+' taskcount'+that.taskCount+' '+fdate(new Date()));
+                                    console.log('isJobEnd true, will end...');
+                                }
+                                */
+                                //end jobs
+                                that.invokeEnd();
+                            }
+                        }
+                    }
+                }
+                
+            },
+            importWork:function(result,upload_int_Type,import_num,i,tix,copyId,callback){
+                var that = this;
+                var nt = new Date().getTime(),
+                            lst = that.lastST;
+                if(nt - lst < 81){
+                    setTimeout(function(){
+                        that.importWork(result,upload_int_Type,import_num,i,tix,copyId,callback);
+                    },81);
+                }else{
+                    that.lastST = new Date().getTime();
+                    var cdloader=that.getRemoteLoader();
+                    lg('Start sending records with task '+tix+'-'+copyId+':'+import_num+' records');
+                    cdloader.import_Data(result,upload_int_Type,function(response){// upload data
+                        lg('Upload get response from server: '+fdate(new Date()));
+                        var res;
+                        var $span = j$('#htmlResposne');
+                        if($span.text() != ''){
+                            var sid = 'S'+(new Date()).getTime();
+                            j$('<span id="'+sid+'" class="hideElem"></span>').appendTo('body');
+                            $span = j$('#'+sid);
+                            res = $span.html(response).text();
+                            $span.remove();
+                        }else{
+                            res = $span.html(response).text();
+                            $span.text('');
+                        }
+                        if(res){
+                            var numDiff = that.updateErrRd(res,import_num,i,copyId);
+                            
+                            //check and clear the extId map - begin
+                            that.resultCopyMap[copyId] = null;
+                            var tixmap = that.taskIndexMap;
+                            
+                            tixmap[tix][copyId] = 'clear';
+                            
+                            that.clearExtMap(tix);
+                            //check and clear the extId map - end
+                            if(numDiff ===0){
+                                var ret = that.udpProgress();
+                                that.taskCount ++;
+                                that.invokeRequest(that.taskIndex);
+                            }else{
+                                //missing data!! // or has exception
+                                var ret = that.udpProgress(isNaN(numDiff));
+                                that.taskCount ++;
+                                that.invokeRequest(that.taskIndex);
+                            }
+                            
+                        }else{
+                          lg('Upload get no response from server: '+fdate(new Date()));
+                            callback(result,import_num,i,copyId);
+                        }
+                    });
+                }
+                
+            },
+            sendRequest:function(result,i,tix,team){ 
+                var that = this;
+                var copyId = team+tix+'c'+ (++that.teamIdx);
+                var tixmap = that.taskIndexMap;
+                if(typeof tixmap[tix] == 'undefined')
+                tixmap[tix] = {};
+                tixmap[tix][copyId] = 'send';
+                that.resultCopyMap[copyId]=result;
+                var import_num = result.length;
+                result = JSON.stringify(result);
+                result = result.replace(/\\r/g,'');
+                var reLength = result.length;
+                
+                var upload_int_Type = that.uploadIntType; 
+                
+                that.importWork(result,upload_int_Type,import_num,i,tix,copyId,function(result,import_num,i,cid){
+                    var self = loader;
+                    self.resendCount[i] = 0;
+                    self.resendData(result,import_num,i,tix,cid);
+                });
+            },
+            resendData:function(result,import_num,i,tix,cid){
+                lg('Resend data '+import_num+' records : '+fdate(new Date()));
+                var that = this;
+                if(that.isRmFree()){
+                    var upload_int_Type = that.uploadIntType;
+                    that.importWork(result,upload_int_Type,import_num,i,tix,cid,function(result,import_num,i,cpid){
+                        setTimeout(function(){
+                            loader.resendData(result,import_num,i,tix,cpid);//need always resend, until success
+                        },1000);
+                    });
+                }else{
+                    setTimeout(function(){
+                        that.resendData(result,import_num,i,tix,cid);
+                    },101);
+                }
+            },
+            clearExtMap:function(tix){
+                var that = this;
+                var tc = 0 + that.taskIndex,ki;
+                var mapTask = that.taskIndexMap;
+                var tmp,titm,isClear,clearAry=[],remainAry=[];
+                var dreg = /^\d+$/;
+                for(var ti in mapTask){
+                    if(dreg.test(ti)){
+                        isClear = true;
+                        tmp = mapTask[ti];
+                        for(titm in tmp){
+                            if(tmp[titm]=='send')
+                            isClear = false;
+                        }
+                        if(isClear){
+                            clearAry.push(ti);
+                            //delete mapTask[ti];
+                        }else{
+                            remainAry.push(ti);
+                        }
+                    }
+                }
+                var i,j,k,g,isMin,clearMax = -1;
+                for(i=0,j=clearAry.length;i<j;i++){
+                    isMin = true;
+                    for(k=0,g=remainAry.length;k<g;k++){
+                        if(clearAry[i] > remainAry[k]) isMin = false;
+                    }
+                    if(isMin){
+                        if(clearMax < clearAry[i]) clearMax = clearAry[i];
+                    }
+                }
+                
+                for(i=0,j=clearAry.length;i<j;i++){
+                    ki = clearAry[i];
+                    if(ki < clearMax && ki < tc){
+                        delete mapTask[ki];
+                    }
+                }
+                clearAry=remainAry=null;
+                if(clearMax >= 0){//tix external Id map can be cleared
+                    var pro,mapExts = that.mapExtId,extIdi;
+                    for(var extIdx in mapExts){
+                        extIdi = parseInt(extIdx,10);
+                        if( extIdi === 0 || !isNaN(extIdi) ){
+                            tmp = mapExts[extIdx];
+                            for(pro in tmp){
+                                if(tmp[pro].b < clearMax){
+                                    delete tmp[pro];
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            //*** after a batch upload, start next read (for non-IE) ***//
+            startNextRead:function(){
+                lg('Prepare next read : '+fdate(new Date()));
+                var that = this;
+                if(!that.isReading){
+                    that.isReading = true;
+                    
+                    that.start = that.end;//not that.end + 1 !!
+                    that.end = that.start + that.maxLimitCp;
+                    if(that.que && that.que.length > 0)
+                    that.end -= that.que.length;
+                    if(that.end - that.start <5000) that.end = that.start+5000;
+                    var fileSize = that.file.size;
+                    if(that.start <= fileSize){
+                        that.readBlob();
+                    }else{
+                        that.hasResult = false;
+                    }
+                }
+            },
+            startNextRead4IE:function(){
+                var that = this;
+                if(!that.isReading){
+                    that.isReading = true;
+                    that.mapExtId = null;
+                    that.mapExtId = {};
+                    that.start = that.start + that.batch;
+                    if(!that.isEnd){
+                        that.readFile();
+                    }else{
+                        //wait to end
+                        that.hasResult = false;
+                    }
+                }
+
+            },
+            endJob:function(){
+                var that = this;
+                that.giveResult(that.head.length);
+                that.Results = null,
+                that.toResendData = null,
+                that.fileLine = -1,
+                that.loaded = 0,
+                that.isEnd = false,
+                that.lastPct = 0,
+                that.cancel = false,
+                that.fieldsSeptor = false,
+                that.resultCopyMap = {},
+                that.taskIndexMap = {},
+                that.replaceMap = {};
+                j$('#progressbar').hide();
+                that.hideValidate();
+                that.head = 0,
+                that.mapExtId = null;
+                j$('#upstatus').text(msg_uploadEnd);
+                if(j$('#upExceptions').children().length > 0){
+                    j$('#excptInfo').text(msg_exptNotify).show();
+                }
+                that.isLoading = false;
+                hideLoading();
+                that.invokeBatch();
+            },
+            //*** when upload end, do some thing clear up (for non-IE) ***//
+            end4NonIE:function(column){
+                lg('Reset jobs at end of upload: '+fdate(new Date()));
+                var that = this;
+                that.que = '';
+                that.endJob();
+            },
+            //*** when upload end, do some thing clear up (for IE) ***//
+            end4IE:function(column){
+                var that = this;
+                that.path = false;
+                that.clearFileName4IE();
+                that.endJob();
+            },
+            //*** clear the input file name ***//
+            clearFileName4IE:function(){
+                var $el = j$('#inputFile');
+                if($el.length > 0){
+                    $el = $el.get(0);
+                    $el.outerHTML=$el.outerHTML.replace(/(value=\").+\"/i,"$1\""); 
+                }
+            },
+            //*** call batch ***//checked
+            invokeBatch:function(){
+                if(postAction){lg('Invoke the batch on end of every upload: '+fdate(new Date()));
+                    if(this.taskToken){
+                        this.taskToken = false;
+                        var str_src = 'https://' + host_name + '.salesforce.com/apex/'+postAction+'?cycid='+retUrl;
+                        var striframe = '<iframe id="theFrame" src="'+str_src+'"/>';
+                        j$('#frame4invokeBatch').empty().append(striframe);
+                    }
+                }
+            },
+            //*** check and collect which external id need call apex(marked with "M") to update the external Id map ***//
+            checkExId:function(){
+                var that = this;
+                var exterIds = [],idAry,aryLth,grpNbr,grpAmt,i,tmp,extIda;
+                for(var extIdx in that.mapExtId){
+                    extIda = parseInt(extIdx,10);
+                    if(extIda === 0|| !isNaN(extIda) ){
+                        idAry = [];
+                        tmp = that.mapExtId[extIdx];
+                        for(var pro in tmp){
+                            if(tmp[pro].a==='M'){//tmp[pro] can't be undefined
+                                idAry.push('\''+pro+'\'');
+                            }
+                        }
+                        aryLth = idAry.length;
+                        if(aryLth > 0){
+                            if(aryLth < 10000){
+                                exterIds.push(extIdx+';'+that.extMap[extIdx].objName+';'+that.extMap[extIdx].extFd+';'+idAry.join(','));
+                            }else{
+                                grpNbr = Math.ceil(aryLth/9999);
+                                grpAmt = Math.ceil(aryLth/grpNbr);
+                                for(i=0;i<grpNbr;i++){
+                                    if(i<grpNbr-1)
+                                    exterIds.push(extIdx+';'+that.extMap[extIdx].objName+';'+that.extMap[extIdx].extFd+';'+idAry.splice(i*grpAmt,grpAmt).join(','));
+                                    else
+                                    exterIds.push(extIdx+';'+that.extMap[extIdx].objName+';'+that.extMap[extIdx].extFd+';'+idAry.join(','));
+                                }
+                            }
+                        }
+                    }
+                }
+                return exterIds;
+            },
+            //*** get the correct CtrlDataLoader for remote action use ***//
+            getRemoteLoader : function(){
+                if(typeof CtrlDataLoader !='undefined' && CtrlDataLoader && CtrlDataLoader.findExternalMap){
+                    return CtrlDataLoader;
+                }else{
+                    return DataLoadVizArt.CtrlDataLoader;
+                }
+            },
+            //*** update External Id map with apex response ***//
+            updateExtIdMap : function(res,tix){
+                var that = this;
+                var $span = j$('#extRes');
+                res = $span.html(res).text();
+                $span.text('');
+                $span = null;
+                res = res.split('@@');
+                var x,y,z,u,v,w,r;
+                for(x = 0,y = res.length; x<y; x++){
+                    if(res[x] &&res[x].indexOf('$')>=0){
+                        z = res[x].split('$');
+                        u = z[1],
+                        z = parseInt(z[0],10);
+                        u = u.split(';');
+                        for(v=0,w=u.length;v<w;v++){
+                            r = u[v].split(':');
+                            that.mapExtId[z][r[0]] = {a:r[1],b:tix};
+                        }
+                    }
+                }
+                x = y = z = null; 
+            },
+            //*** update error records and exception records, for giveResult() use ***//
+            updateErrRd:function(res,importedNum,idx,cpId){
+                if(!res) return -1;
+                lg('Update statistics data with response : '+fdate(new Date()));
+                
+                var that = this;
+                try{
+                    res = j$.parseJSON(res);
+                }catch(e){
+                    res = {isSucc:false,responseMsg:'Exception - can not parse response from server.'};
+                    
+                }
+                var numDiff = importedNum;
+                var errItem,reSendDataLth;
+                if(res.isSucc){
+                    that.loaded += importedNum;
+                    var records = parseInt(res.succNum,10);
+                    lg('Task '+cpId+' sent:'+importedNum+',success num:'+records);
+                    if(!isNaN(records)){//if records==0,ok 
+                        that.statistics.records += records;
+                        numDiff -= records;
+                    }
+                    
+                    var aa=0,ab = 0,eMsg,reUid = that.ReUid;
+                    if(res.list_errs && res.list_errs.length > 0){
+                        that.lockA = true;
+                        for(var x=0,y=res.list_errs.length; x<y; x++){
+                            errItem = res.list_errs[x];
+                            eMsg = errItem['errMsg'];
+                            if(!errItem['errMsg']){
+                                that.errRecords.push(errItem);
+                            }else{
+                                eMsg = eMsg.toLowerCase();
+                                if(eMsg.indexOf('unable to obtain exclusive access')>=0){
+                                    aa ++;
+                                    reSendDataLth = that.toResendData.length;
+                                    for(var m=0;m <reSendDataLth;m++){
+                                        if(!that.toResendData[m]){
+                                            that.toResendData[m] = {'id':++reUid,'data':[errItem['errObj']]};
+                                            break;
+                                        }else if(that.toResendData[m]['data'].length < 200){
+                                            that.toResendData[m]['data'].push(errItem['errObj']);
+                                            break;
+                                        }else if(m == reSendDataLth-1){
+                                            that.toResendData.push({'id':++reUid,'data':[errItem['errObj']]});
+                                            break;
+                                        }
+                                    }
+                                }
+                                //else if(eMsg.indexOf('duplicate')>=0){
+                                    //nothing
+                                    //ab++;
+                                //}
+                                else{
+                                    that.errRecords.push(errItem);
+                                }
+                            }
+                        }
+                        //that.erred += that.errRecords.length;
+                        that.lockA = false;
+                        that.ReUid = reUid;
+                        numDiff -= y;
+                    }
+                    that.loaded -= (aa+ab);
+                    //lg('uploaded:'+that.loaded+' success:'+that.statistics.records+' err:'+that.erred);
+                    //lg('inVed:'+that.inVed+'badRec:'+that.badRec);
+                }else{
+                    var column = that.head.length;
+                    
+                    that.addresultAsErr(column,importedNum,true,idx,res.responseMsg,cpId);
+                    var d = new Date();
+                    d = fdate(d);
+                    that.exceptRecords.push({time: d,exMsg:res.responseMsg});
+                    numDiff = 'hasException';
+                }
+                lg('Update statistics data with response end : '+fdate(new Date()));
+                return numDiff;
+            },
+            //define that.map_field
+            setMap4Wrap:function(){
+                var that = this;
+                var column = that.head.length;
+                var hasPrefix = false;
+                that.map_field = {};
+                var flag;
+                for(var i=0;i<column;i++){
+                    flag = true;
+                    if(typeof that.map_field[i] == 'undefined'){
+                        for(var k in that.targetMap){
+                            if(k && j$.trim(k.toUpperCase()) != 'ID'){
+                                if(j$.trim(k) == j$.trim(that.head[i])){
+                                    that.map_field[i] = that.targetMap[k];
+                                    flag = false;
+                                    if(!hasPrefix && that.targetMap[k]){ 
+                                        if(typeof that.targetMap[k] == 'string'){ 
+                                            if(that.targetMap[k].indexOf('DataLoadVizArt__')>=0)
+                                            hasPrefix = true;
+                                        }else if(that.targetMap[k].sort && that.targetMap[k][0]){
+                                            if(that.targetMap[k][0].indexOf('DataLoadVizArt__')>=0)
+                                            hasPrefix = true;
+                                        }
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if(flag){
+                        for(var k in that.objModel){
+                            if(k && j$.trim(k.toUpperCase()) != 'ID'){
+                                if(j$.trim(k.toUpperCase()) == j$.trim(that.head[i].toUpperCase())){
+                                    if(hasPrefix && k && k.indexOf('DataLoadVizArt__') < 0 && k.indexOf('__c') >0)
+                                        that.map_field[i] = 'DataLoadVizArt__' + k;
+                                    else
+                                        that.map_field[i] = k;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            //*** if remote action give empty response repeatedly, add the data as error records so that user can check ***//
+            addresultAsErr:function(column,import_num,isException,idx,reasonMsg,copyId){
+                //if(window.console && console.log)console.log('reasonMsg:>>'+reasonMsg+'<<');
+                var that = this;
+                if(isNaN(that.errRcdNum)) that.errRcdNum = 0;
+                that.errRcdNum += import_num;
+                that.loaded += import_num;
+                //that.erred += import_num;
+                //lg('loaded:'+that.loaded+' erred:'+that.erred+' errRcdNum:'+that.errRcdNum);
+                //lg('inVed:'+that.inVed+'badRec:'+that.badRec);
+                if(!that.resultCopyMap[copyId]){
+                    return;
+                }
+                if(!that.statisitcTile){//create header
+                    that.addErrRecordTitle(column);
+                }
+                var ret = that.resultCopyMap[copyId];
+                var i,j,k,q,c,tmp,upresult = [],isSet;
+                var foundExid;
+                
+                for(i=0,j=ret.length;i<j;i++){
+                    q = ret[i];
+                    upresult.push('<tr>');
+                    for(k=0;k<column;k++){
+                        if(c = that.map_field[k]){
+                            if(c.sort){
+                                isSet = false;
+                                for(s=0;s<c.length;s++){
+                                    if('INTEGER'!=that.objTypeMap[c[s]]){
+                                        tmp = q[c[s]];
+                                        isSet = true;
+                                        break;
+                                    }
+                                }
+                                if(!isSet) tmp = q[c[0]];
+                            }else
+                                tmp = q[c];
+                            if(that.extMap[k]){
+                                foundExid = false;
+                                for(var exid in that.mapExtId[k]){
+                                    if(tmp == that.mapExtId[k][exid]){
+                                        upresult.push('<td class="ea">',exid,'</td><td class="ea">',tmp,'</td>');
+                                        foundExid = true;
+                                        break;
+                                    }
+                                }
+                                if(!foundExid)
+                                upresult.push('<td class="ea">',tmp,'</td><td class="ea"></td>');
+                            }
+                            else
+                            upresult.push('<td class="ea">',tmp,'</td>');
+                        }
+                    }
+                    q = null;
+                    
+                    if(isException){
+                        upresult.push('<td class="ea">Error:',reasonMsg,'</td></tr>');
+                    }else{
+                        upresult.push('<td class="ea">Timeout:',reasonMsg,'</td></tr>');
+                    }
+                    
+                }
+                that.resultCopyMap[copyId] = ret = null;
+                var $tbody = j$('#upStatistics');
+                
+                lg('add result as error,'+j+' records,so error now is '+that.errRcdNum);
+                j$('#failNum').text(that.errRcdNum);
+                if($tbody.children().length < that.errLimit)
+                    $tbody.append(upresult.join('')).parent().parent().show().prev().show();
+                else{
+                    if(!that.errlimitAlerted){
+                        that.errlimitAlerted = true;
+                        if(confirm(msg_errLimitMsg)){
+                            that.isLoading = false;
+                            that.cancel = true;
+                        }
+                    }
+                    
+                }
+            },
+            //*** if missing data,check and show them as error records ***//
+            addMissedRecordAsErr:function(column){
+                var that = this;
+                if(!that.statisitcTile){//create header
+                    that.addErrRecordTitle(column);
+                }
+            },
+            //*** update progress bar and return percent loaded ***//
+            udpProgress:function(isException){
+                var that = this;
+                var ret;
+                if(that.fileLine != 0){
+                    that.giveResult(that.head.length);
+                    ret = that.showPro(that.loaded,that.fileLine);
+                }
+                return ret;
+            },
+            
+            makeAggMaps:function(maps){
+                var that = this;
+                var tmpMap = {};
+                var i,j,k,t,x,y;
+                for(i=0,j=that.sourceMap.length;i<j;i++){
+                    tmpMap[that.sourceMap[i]] = i;
+                }
+                
+                for(i=0,j=maps.length;i<j;i++){
+                    for(k=0,t=maps[i].length;k<t;k++){
+                        maps[i][k]['index'] = tmpMap[maps[i][k]['name']];
+                    }
+                }
+                that.aggKeyMap = maps[0];
+                that.aggMthMap = maps[1];
+                that.aggRepMap = maps[2];
+            },
+            makeRangeMap:function(){
+                var that = this;
+                var i,j,result = [];
+                for(i=0,j=that.aggKeyMap.length;i<j;i++){
+                    result.push(that.aggKeyMap[i]['index']);
+                }
+                for(i=0,j=that.aggMthMap.length;i<j;i++){
+                    result.push(that.aggMthMap[i]['index']);
+                }
+                result.sort();
+                that.rangeMap = result;
+            },
+            
+            getNonIELine:function(start,end,file){
+                var that = this;
+                var fileSize = file.size;
+                start = parseInt(start,10)||0,
+                end = Math.min(parseInt(end,10),fileSize);
+                var reader = new FileReader();
+                reader.onloadend = function(e){
+                    if(e.target.readyState == FileReader.DONE) { // DONE == 2
+                         if(typeof(e.target.result) == 'string'){
+                            var tmp = e.target.result;
+                            that.fileLine += getLineNum4NonIE(tmp,that.fieldsSeptor);
+                            if(end < fileSize){
+                                start = end;
+                                end = start + 100000;
+                                that.getNonIELine(start,end,file);
+                            }else{
+                            }
+                         }
+                    }
+                }
+                var blob;
+                if(file.slice){
+                    blob = file.slice(start, end);
+                }else if(file.webkitSlice) {
+                    blob = file.webkitSlice(start, end);
+                } else if(file.mozSlice) {
+                    blob = file.mozSlice(start, end);
+                }
+                reader.readAsBinaryString(blob);
+            },
+           
+            //*** hide progress bar and init area ***//
+            handleError:function (){
+                j$("#progressbar").hide().progressbar({ value: 0 }).children().text('0%');                
+                j$('#upstatus').text('');
+                initLoaderArea();
+                this.invokeBatch();
+            },
+            //*** return to page with retUrl ***//
+            returnPage:function(e){
+                if(e.preventDefault)
+                    e.preventDefault();
+                else 
+                    event.returnValue = false;
+                if(e.stopPropagation)
+                    e.stopPropagation(); 
+                else
+                event.cancelBubble = true;
+                location.href = '/' + retUrl;
+            },
+            //*** to stop upload ***//
+            cancelUpload:function(e){
+                if(e.preventDefault)
+                    e.preventDefault();
+                else 
+                    event.returnValue = false;
+                if(e.stopPropagation)
+                    e.stopPropagation(); 
+                else
+                event.cancelBubble = true;
+                if(j$('#fileDiv').length == 0){
+                    return false;
+                }
+                if(this.isLoading){
+                    showLoading();
+                    loader.cancel = true;
+                }else
+                    hideLoading();
+                this.isLoading = false;
+            },
+            addErrRecordTitle:function(column){
+                var that = this;
+                var upresult = [];
+                upresult.push('<tr>');
+                var i,j,k;
+                for(i=0;i<column;i++){
+                    if(that.map_field[i]){
+                        if(that.extMap[i]){//for external Id, give two columns
+                            upresult.push('<td>',that.sourceMap[i],'</td><td>',that.map_field[i],'</td>');
+                        }else
+                        upresult.push('<td>',that.sourceMap[i],'</td>');
+                    }
+                }
+                upresult.push('<td>Error Message</td></tr>');
+                j$('#upStatisticsHead').append(upresult.join(''))
+                that.statisitcTile = true;
+            },
+            //*** show upload statistics ***//
+            giveResult:function(column){
+                if(!column) return;
+                var that = this;
+                if(this.lockA){
+                    setTimeout(function(){that.giveResult(column);},5);
+                }else{
+                    var timeSpent,i,j,k,s,isSet;
+                    if(that.statistics && that.statistics.start)
+                    timeSpent = new Date() - that.statistics.start;
+                    else 
+                    timeSpent = -1;
+                    timeSpent = Math.round(timeSpent/1000);
+                    if(timeSpent > 3600){
+                        var hrs,mins,sec;
+                        sec = timeSpent%3600,
+                        hrs = (timeSpent-sec)/3600,
+                        mins = (sec - sec%60)/60,
+                        sec = sec%60;
+                        timeSpent = hrs + 'h ' + mins + 'm ' + sec + 's';
+                    }
+                    else if(timeSpent > 60){
+                        var mins,sec;
+                        sec = timeSpent%60;
+                        mins = (timeSpent-sec)/60;
+                        timeSpent = mins +'m ' + sec + 's';
+                    }else{
+                        if(timeSpent >= 0)
+                        timeSpent = timeSpent + 's';
+                    }
+                    if(that.errRecords.length > 0)            
+                    that.errRcdNum +=  that.errRecords.length;
+                    if(that.invalidRecords.length > 0)            
+                    that.errRcdNum +=  that.invalidRecords.length;
+                    
+                    //lg('loaded:'+that.loaded+' succ:'+that.statistics.records+' err:'+that.errRcdNum+' pureErr:'+that.erred + 
+                    //' inVed:'+that.inVed+' badRec:'+that.badRec);
+                    
+                    if(that.statistics){
+                        if(that.statistics.records === 0 || !isNaN(that.statistics.records))
+                        j$('#uploadedNum').text(that.statistics.records);
+                    }
+                    j$('#failNum').text(that.errRcdNum);
+                    if(typeof timeSpent == 'string')
+                    j$('#timeSpent').text(timeSpent);
+                                          
+                    var $tbody = j$('#upStatistics');
+                    var upresult=[];
+                    if(that.errRecords.length > 0 || that.invalidRecords.length > 0){
+                        if(!that.statisitcTile){//create header
+                            that.addErrRecordTitle(column);
+                        }
+                        upresult = [];
+                        var tmp,ck,foundExid;
+                        for(i=0,j=that.errRecords.length; i<j; i++){
+                            upresult.push('<tr>');
+                            for(k=0;k<column;k++){
+                                if(ck = that.map_field[k]){
+                                    if(ck.sort){
+                                        isSet = false;
+                                        for(s=0;s<ck.length;s++){
+                                            if('INTEGER'!=that.objTypeMap[ck[s]]){
+                                                tmp = that.errRecords[i]['errObj'][ck[s]];
+                                                isSet = true;
+                                                break;
+                                            }
+                                        }
+                                        if(!isSet) tmp = that.errRecords[i]['errObj'][ck[0]];
+                                    }else
+                                        tmp = that.errRecords[i]['errObj'][ck];
+                                    if(that.extMap[k]){
+                                        foundExid = false;
+                                        for(var exid in that.mapExtId[k]){
+                                            if(tmp == that.mapExtId[k][exid]){
+                                                upresult.push('<td class="ea">',exid,'</td><td class="ea">',tmp,'</td>');
+                                                foundExid = true;
+                                                break;
+                                            }
+                                        }
+                                        if(!foundExid)
+                                        upresult.push('<td class="ea">',tmp,'</td><td class="ea"></td>');
+                                    }else{
+                                        upresult.push('<td class="ea">',tmp,'</td>');
+                                    }
+                                }
+                            }
+                            upresult.push('<td class="ea">',that.errRecords[i]['errMsg'],'</td></tr>');
+                        }
+                        
+                        that.errRecords = [];
+                        ////
+                        for(i=0,j=that.invalidRecords.length; i<j; i++){
+                            upresult.push('<tr>');
+                            for(k=0;k<column;k++){
+                                if(ck = that.map_field[k]){
+                                    if(ck.sort){
+                                        isSet = false;
+                                        for(s=0;s<ck.length;s++){
+                                            if('INTEGER'!=that.objTypeMap[ck[s]]){
+                                                tmp = that.errRecords[i]['errObj'][ck[s]];
+                                                isSet = true;
+                                                break;
+                                            }
+                                        }
+                                        if(!isSet) tmp = that.errRecords[i]['errObj'][ck[0]];
+                                    }else
+                                        tmp = that.errRecords[i]['errObj'][ck];
+                                    tmp = that.invalidRecords[i]['erRd'][ck];
+                                    if(that.extMap[k]){
+                                        foundExid = false;
+                                        for(var exid in that.mapExtId[k]){
+                                            if(tmp == that.mapExtId[k][exid]){
+                                                upresult.push('<td class="ea">',exid,'</td><td class="ea">',tmp,'</td>');
+                                                foundExid = true;
+                                                break;
+                                            }
+                                        }
+                                        if(!foundExid)
+                                        upresult.push('<td class="ea">',tmp,'</td><td class="ea"></td>');
+                                    }else
+                                        upresult.push('<td class="ea">',tmp,'</td>');
+                                }
+                            }
+                            upresult.push('<td class="ea">',that.invalidRecords[i]['erMsg'],'</td></tr>');
+                        }
+                        
+                        that.invalidRecords = [];
+                        if($tbody.children().length < that.errLimit)
+                            $tbody.append(upresult.join('')).parent().parent().show().prev().show();
+                        else{
+                            if(!that.errlimitAlerted){
+                                that.errlimitAlerted = true;
+                                if(confirm(msg_errLimitMsg)){
+                                    that.isLoading = false;
+                                    that.cancel = true;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if($tbody.children().length > 0){
+                        j$('#downloadify').show();
+                    }else{
+                        j$('#downloadify').hide();
+                    }
+                    
+                    upresult = [];
+                    if(that.exceptRecords.length > 0){
+                        //upresult.push('<p class="reM">Exceptions</p><div class="staDiv reM"><table class="upExceptions"><tbody><tr><td>Time</td><td>Exception Information</td></tr>');
+                        var i,j;
+                        for(i=0,j=that.exceptRecords.length; i<j; i++){
+                            upresult.push('<tr><td>',that.exceptRecords[i].time,'</td><td>',that.exceptRecords[i].exMsg,'</td></tr>');
+                        }
+                        that.exceptRecords = [];
+                        upresult = upresult.join('');
+                        j$('#upExceptions').append(upresult).parent().parent().show().prev().show();
+                    }
+                   
+                    upresult = null;
+                    j$('#upresultSpan').show();
+                }
+            },
+            
+            //*** clear quotes from the records ***//
+            trimList:function (ary){
+                for(var i=0,j=ary.length;i<j;i++){
+                    ary[i] = j$.trim(ary[i]);
+                    if(ary[i]){ 
+                        ary[i] = ary[i].replace(/^"/,'').replace(/"$/,'');
+                    }
+                }
+                return ary;
+            },
+            //*** hide validate button ***//
+            hideValidate:function(){
+                j$('#validateBtn').hide();
+            },
+            assistPro:function(diff,pct){
+                var that = this;
+                that.lastPct = Math.round(that.lastPct+diff);
+                if(that.lastPct > pct) {
+                    that.lastPct = pct;
+                    var shownPct = j$("#progressbar").progressbar("value");
+                    shownPct = parseInt(shownPct,10);
+                    if(isNaN(shownPct)) shownPct = 0;
+                    
+                    if(shownPct < pct)
+                    j$("#progressbar").progressbar({ value: that.lastPct}).children().text(that.lastPct+'%');
+                }else{
+                    j$("#progressbar").progressbar({ value: that.lastPct}).children().text(that.lastPct+'%');
+                    setTimeout(function(){
+                        that.assistPro(diff,pct);
+                    },25);
+                }
+            },
+            //*** display the progress bar ***//
+            //in this function, to make it look smooth, the progress bar updates in several times with below "setTimeout()"
+            showPro:function(loaded,total){
+                var that = this;
+                var pct = loaded/total *100;
+                pct = Math.round(pct);
+                if(pct >= 100){
+                    if(that.isJobEnd())
+                    pct = 100;
+                    else
+                    pct = 99.9;//if display 100 but not end,might confuse the user
+                }
+                lg('show Prog:'+pct);
+                var diff = (pct - that.lastPct)/5;
+                that.assistPro(diff,pct);
+                
+                return pct;           
+            },
+            //*** clear statistics data ***//
+            closeStatistics:function(){
+                j$('#upresultSpan').hide().children().filter('.reM').hide();
+                j$('#upStatistics').empty();
+                j$('#upStatisticsHead').empty();
+                loader.statisitcTile = false;
+                loader.errRcdNum = 0;
+                j$('#upExceptions').empty();
+            }
+        };
+        
+        //*** check browser and init LoadArea based on browser infomation ***//
+        function initLoaderArea(){
+            if(typeof FileReader == 'undefined'){
+                var udiv = document.getElementById('upDiv');
+                if(udiv){
+                    udiv.ondrop = function(){return false;};
+                }
+                var str,isIE = false;
+                if(window.ActiveXObject){
+                    str = '';
+                    try{
+                    var fso = new ActiveXObject("Scripting.FileSystemObject");
+                        if(!fso){
+                            str = 'You are using Internet Explorer, please change its security settings to continue.';
+                        }
+                    }catch(e){
+                        str = 'You are using Internet Explorer, it does not support the needed ActiveXObject now, please change its security settings to continue.';
+                    }
+                }else if(window.openDatabase){
+                    j$('#inputFile').remove();
+                    str = '<p>Sorry, your browser Safari does not support this function.</p>';
+                }else{
+                    j$('#inputFile').remove();
+                    str = '<p>Sorry, your browser does not support this function.</p>';
+                }
+                j$('#hint').removeClass('hint').html(str);
+            }else{
+                j$('#inputFile').remove();
+            }
+            j$('#upDiv').hover(
+                function(){
+                    j$('#hint').addClass('onHover');
+                },function(){
+                    j$('#hint').removeClass('onHover');
+                }
+            );
+        }
+        //*** init obj model information, which is about the obj to upload. With the model we can set up records and then apex can recognize ***//
+        function initObjModel(){
+            loader.objModel = j$.extend({},obj_Name);
+            loader.head = 0;
+            loader.map_field = false;
+            loader.objTypeMap = {};
+            j$('#objStr').children().each(function(){
+                var tmp = j$(this).text();
+                if(tmp.indexOf('obj_Name') < 0){
+                    tmp = tmp.split(':');
+                    loader.objModel[tmp[0]] = null;
+                    loader.objTypeMap[tmp[0]] = tmp[1];
+                }
+            });
+        }
+        //** display the loading **//
+        function showLoading(){
+            j$('#Loading').show();
+        }
+        //** hide the loading **//
+        function hideLoading(){
+            j$('#Loading').hide();
+        }
+        //*** set up maps ***//
+        function setupMapping(){
+            var ld = loader;
+            ld.parallelMax = parseInt(j$('#upload_parallel').text(),10)||1;
+            var impType;
+            ld.importType = impType = j$('#upload_type').text()||'insert';
+            impType = impType.toLowerCase();
+            if(impType.indexOf('upsert') >= 0){
+                ld.isUpsert = true;
+                ld.ExtIdFieldName = j$('#upload_ExtIdFieldName').text();
+                ld.ExtIdFieldSpt = j$('#upload_ExtIdFieldSpt').text();
+                ld.upsertObjName = j$('#upload_objName').text();
+                
+            }else{
+                ld.isUpsert = false;
+            }
+            
+            getObj_Name();
+            initLoaderArea();
+            initObjModel();
+            var overrideLocale = j$('#upload_overrideLocale').text();
+            if(overrideLocale && !ld.localePicklist){
+                ld.localePicklist = overrideLocale;
+            }
+            if(ld.localePicklist){
+                var $box = j$('#overwriteBox');
+                $box.attr('checked',true);
+                var $el = j$('#localPicklist');
+                if($el.length > 0)
+                    $el.val(ld.localePicklist);
+                else{
+                    checkOverwrite($box.get(0));
+                    j$('#localPicklist').val(ld.localePicklist);
+                }
+                ld.localePicklist = false;
+            }
+            hideLoading();
+        }
+        //var g_localDate,g_localNum = {};
+        //*** check whether override picklist is selected by user, and get override information ***//
+        function checkOverwrite(elem){
+            j$('#localPicklist').remove();
+            if(elem.checked == true){
+                var overLocale = j$('#upload_overrideLocale').text();
+                var result=['<select id="localPicklist" onchange="loader.refreshLocale();">'];
+                var options = [];
+                var cls,clsCopy;
+                refreshToolTipContent();
+                j$('#localeInfo').children().each(function(){
+                    clsCopy = j$(this).attr('class');
+                    var tip = toolTipMap[clsCopy];
+                    options.push({order:clsCopy,str:'<option value="'+clsCopy+'" title="'+tip+'">'+clsCopy+'</option>'});
+                });
+                options.sort(function(a,b){
+                    if(a.order > b.order) return 1;
+                    if(a.order < b.order) return -1;
+                    return 0;
+                });
+                for(var i=0,j=options.length;i<j;i++){
+                    result.push(options[i].str);
+                }
+                options = null;
+                result.push('</select>');
+                result = result.join('');
+                j$('#localeTd').html(result);
+                if(overLocale){
+                    j$('#localPicklist').val(overLocale);
+                }
+            }
+            return false;
+        }
+        function omi(evt,txt){
+            var posX = 15+evt.clientX;
+            var posY = evt.clientY;
+            j$('#mytoolTip').text(txt).css({left:posX,top:posY}).show();
+        }
+        function omo(txt){
+            j$('#mytoolTip').text('').hide();
+        }
+        function refreshToolTipContent(){
+            toolTipMap = {};
+            j$('#localeInfo').children().each(function(){
+                var $this = j$(this);
+                var $spans = $this.children();
+                var result = 'Decimal separator is '+$spans.eq(1).text() + '\n' + 
+                             'Delimiter is '+$spans.eq(2).text() +  '\n' + 
+                             'Date format is '+$spans.eq(3).text() +  '\n' + 
+                             'Fields separator is '+$spans.eq(4).text();
+                toolTipMap[$this.attr('class')] = result;            
+            });
+        }
+        //*** when user select a sobject to upload ***//
+        function doSelect(elem){
+            if('none' != j$(elem).val()){
+                var $el = j$('#localPicklist');
+                if($el.length > 0 && $el.val()){
+                    loader.localePicklist = $el.val();
+                }else{
+                    loader.localePicklist = false;
+                }
+                showLoading();
+                changeJob();
+            }
+            return false;
+        }
+        //*** parse number with locale ***//
+        function localNum(num){
+            if(num !==0 && !num) return null;
+            if(typeof num == 'number'){
+                return num;
+            } 
+            if(/^\d+(\.\d+)?$/.test(num)){
+                num = parseFloat(num);
+                return num;
+            }
+            var _num = num;
+            num = ''+num;
+            var reg1 = new RegExp('\\'+loader.localeMapping.delimiter, 'g');
+            num = num.replace(reg1,'').replace(loader.localeMapping.seperator,'.');
+            if(!/\.\d*\./.test(num))
+            num = parseFloat(num);
+            if(num !==0 && isNaN(num)) num = false;
+            return num;
+        }
+        //*** find dateformat ***//
+        function findDformat(){
+            var s;
+            if(!loader.localeMapping||!loader.localeMapping.dateformat){
+                if(global_s)
+                s = global_s;
+                else{
+                    var cls = j$('#userLocal').text();
+                    var findCls = false;
+                    j$('#localeInfo').children('div').each(function(){
+                        if( cls.indexOf(j$(this).attr('class'))>=0){
+                             global_s = s = j$(this).children().eq(3).text();
+                             findCls = true;
+                            return false;
+                        }
+                    });
+                    if(!findCls) {
+                        global_s = s = UserContext.dateFormat;
+                    }
+                }
+            }else{
+                s = loader.localeMapping.dateformat;
+            }
+            s = s.toUpperCase();
+            return s;
+        }
+        var rl,dm,rtl,dtm;
+        function getDmap(f,tpe){
+            var reg;
+            if(tpe === 1)
+                reg = /[yYmMdD]+/g;//only for date
+            else
+                reg = /[yYmMdDhH]+/g;//for dateTime
+            
+            var fs = f.match(reg);
+            var sa = ['Y','M','D','H','m','S','I'];
+            if(tpe ==2){
+                for(var i=4;i<=7;i++){
+                    if(fs.length < i){
+                        fs[i-1] = sa[i-1];
+                    }
+                }
+            }
+            
+            var mapd = {};
+            var mk;
+            for (var i=0,j=fs.length;i<j;i++){
+                mk = fs[i].charAt(0);
+                mk = mk.toUpperCase();
+                if(mk =='M' && typeof mapd[mk] != 'undefined'){
+                    mk = 'm';
+                }
+                mapd[mk] = i;//the 'm' for second(not Month), e.g HH:mm
+            }
+            
+            if(tpe === 1){
+                rl = j;
+                dm = mapd;
+            }else{
+                rtl = j;
+                dtm = mapd;
+            }
+        }
+        
+        //*** parse datetime with locale ***//
+        function localDateTime(d){
+            if(!d) return null;
+            if(/^\d{4}-\d{2}-\d{2}[T\s]\d{2}:\d{2}(?::\d{2}(?:\.\d{3})?)?$/.test(d)){
+                var list_d = d.match(/\d+/g);
+                if(parseInt(list_d[1],10) <12 && parseInt(list_d[2],10) <32 && parseInt(list_d[3],10) <24
+                    && parseInt(list_d[4],10) <60 && (typeof list_d[5] == 'undefined' || parseInt(list_d[5],10) < 60))
+                return d;
+                else return -1;
+            }
+            var s = findDformat();
+            
+            if(!dtm){
+                getDmap(s,2);
+            }
+            var ldm = dtm;
+            
+            var re = /\d+/g;
+            var ds = d.match(re);
+            if(ds.length <= rtl){
+                var result;
+                var y = ds[ldm['Y']],
+                    M = ds[ldm['M']],
+                    D = ds[ldm['D']];
+                    y = parseInt(y,10),
+                    M = parseInt(M,10),
+                    D = parseInt(D,10);
+                if(isNaN(y)||isNaN(M)||isNaN(D)||y<0||M<0||D<0||M>12||D>31||(''+y).length != 4){
+                    result = -1;
+                }else{
+                    result = ds[ldm['Y']]+'-'+ds[ldm['M']]+'-'+ds[ldm['D']];
+                    var h = ds[ldm['H']];
+                    if(typeof h == 'undefined')
+                    h = 0;
+                    else
+                    h = parseInt(h,10);
+                    
+                    if(h<0||h>24) result = -1;
+                    d = d.toUpperCase();
+                    if(d.indexOf('PM') >= 0 && h <12){
+                        h += 12;
+                    }else if(h < 10){
+                        h = '0'+h;
+                    }
+                    var m = ds[ldm['m']];
+                    if(typeof m == 'undefined')
+                    m = 0;
+                    else
+                    m = parseInt(m,10);
+                    if(m<0||m>60) result = -1;
+                    if(m < 10){
+                        m = '0'+m;
+                    }
+                    var s = ds[ldm['S']];
+                    if(typeof s == 'undefined')
+                    s = 0;
+                    else
+                    s = parseInt(s,10);
+                    if(s<0||s>60) result = -1;
+                    if(s < 10){
+                        s = '0'+s;
+                    }
+                    if(result != -1)
+                    result += 'T' + h + ':' + m + ':' + s + '.000Z';
+                }
+                return result;
+            }
+            return -1;
+        }
+        //*** parse date with locale ***//
+        function localDate(d){
+            if(!d) return null;
+            if(/^\d{4}-\d{2}-\d{2}$/.test(d)){
+                var list_d = d.match(/\d+/g);
+                if(parseInt(list_d[1],10) <12 && parseInt(list_d[2],10) <32)
+                return d;
+                else return -1;
+            }
+            if(!dm){
+                getDmap(findDformat(),1);
+            }
+            var ldm = dm;
+            var re = /\d+/g;
+            var ds = d.match(re);
+            var ret = -1;
+            if(ds.length <= rl){
+                var y = ds[ldm['Y']],
+                    M = ds[ldm['M']],
+                    D = ds[ldm['D']];
+                y = parseInt(y,10),
+                M = parseInt(M,10),
+                D = parseInt(D,10);
+                if(isNaN(y)||isNaN(M)||isNaN(D)||y < 0||M < 0||D < 0||M > 12 ||D > 31 ||(''+y).length !=4){
+                    ret = -1;
+                }else{
+                    ret = ds[ldm['Y']]+'-'+ds[ldm['M']]+'-'+ds[ldm['D']];
+                }
+            }
+            return ret;
+        };
+        //*** IE need security settings, if user not set, give user message ***//
+        function msgForIE(){
+            if(window.ActiveXObject && typeof FileReader == 'undefined'){
+                str = '';
+                try{
+                var fso = new ActiveXObject("Scripting.FileSystemObject");
+                if(!fso){
+                    str = msg_actXObjRequired;
+                }
+                }catch(e){
+                    str = msg_actXObjRequired;
+                }
+                if(str){
+                    alert(str);
+                    j$('#selectTable').find('select').each(function(){
+                        j$(this).attr('disabled','disabled');
+                    });
+                    j$('#selectTable').find('input').each(function(){
+                        j$(this).attr('disabled','disabled');
+                    });
+                    return false;
+                }
+            }
+            return true;
+        }
+        //*** function on page ready to find the upload object model, including its name and attributes ***//checked
+        function getObj_Name(){
+            j$('#objStr').children().each(function(){
+                var txt = j$(this).text();
+                if(txt.indexOf('obj_Name') >= 0 && txt.indexOf(':') > 0){
+                    txt = txt.replace('obj_Name:','');
+                        obj_Name =  txt;
+                        obj_Name = j$.parseJSON(obj_Name);
+                    return false;
+                }
+            });
+        }
+        //*** when parse html data to csv, used to format the data ***//
+        function formatData(input) {
+            // replace " with “
+            var regexp = new RegExp(/["]/g);
+            var output = input.replace(regexp, "“");
+            //HTML
+            var regexp = new RegExp(/\<[^\<]+\>/g);
+            var output = output.replace(regexp, "");
+            if (output == "") return '';
+            return '"' + output + '"';
+        }
+        //***find the number decimal and delimiter based on number model***// checked
+        function initNumModel(num_model){
+            if(num_model == ''||num_model.indexOf('234') < 0) return false;
+            var dli = /1(\D*)2/;
+            var dec = /4(\D)5/;
+            var dlit = dli.exec(num_model);
+            var decm = dec.exec(num_model);
+            return {dli:dlit[1],dec:decm[1]};
+        }
+        //*** function on page ready ***//
+        j$(document).ready(function(){
+            if(retUrl){
+                j$('#retBtn').removeClass('hideElem');
+            }else{
+                j$('#retBtn').addClass('hideElem');
+            }
+            msgForIE();
+            setupMapping();
+            numModel = j$('#num_Model').text();
+            numModel = initNumModel(numModel);
+            getObj_Name();
+        });
+        
+    </script>
+    <apex:pageMessages />
+     <div id="Loading" class="mask" style="display:none;"/><span id="userLocal" class="hideElem">{!userLocale}</span>
+     <span class="hideElem" id="num_Model">{!format_number}</span>
+     <center id="retBtn" class="hideElem"><button onclick="loader.returnPage(event);">{!$Label.Datatool_btnReturn}</button> </center>
+    <apex:form id="thform">
+        <!--
+        <span id="resInfo">
+            {!flagStr}
+        </span>
+        -->
+        <apex:actionFunction name="changeJob" action="{!findMapping}" rerender="thform" oncomplete="setupMapping();"></apex:actionFunction>
+        <apex:actionFunction name="doFields" action="{!doFields}" rerender="vm_pb,vm_inputs" oncomplete="loader.doValidate();"></apex:actionFunction>
+        <div class="selectArea">
+            <table id="selectTable">
+                <tr>
+                <td class="tda">
+                    <span style="margin-right:10px;">{!$Objecttype.DataLoadVizArt__Upload_Job__c.label}</span>
+                    <apex:outputPanel layout="inline" rendered="{!showLoadArea}">{!uploadJob.Name}</apex:outputPanel>
+                    <apex:selectList value="{!uploadJob.id}" onchange="doSelect(this);" multiselect="false" size="1" rendered="{!!showLoadArea}">
+                        <apex:selectOptions value="{!jobOptions}"/>
+                    </apex:selectList>
+                    <span class="hideElem" id="upload_parallel">{!uploadJob.DataLoadVizArt__Parallel_Import__c}</span>
+                    <span class="hideElem" id="upload_type">{!uploadJob.DataLoadVizArt__Type__c}</span>
+                    <span class="hideElem" id="upload_ExtIdFieldName">{!uploadJob.DataLoadVizArt__External_ID_Field__c}</span>
+                    <span class="hideElem" id="upload_ExtIdFieldSpt">{!uploadJob.DataLoadVizArt__External_ID_Separator__c}</span>
+                    <span class="hideElem" id="upload_overrideLocale">{!uploadJob.DataLoadVizArt__Override_Locale__c}</span>
+                    <span class="hideElem" id="upload_objName">{!uploadJob.DataLoadVizArt__Object_Api_Name__c}</span>
+                    <span class="hideElem" id="upload_int_Type">{!uploadType}</span>
+                    <apex:outputPanel styleClass="jobMsg" layout="block" rendered="{!AND(jobOptions.size==1,uploadResultFlag=='ByIdFailed')}">{!$Label.dataloadvizart__JobNotFoundById}</apex:outputPanel>
+                    <apex:outputPanel styleClass="jobMsg" layout="block" rendered="{!AND(jobOptions.size==1,uploadResultFlag=='ByIdNameFailed')}">{!$Label.dataloadvizart__JobNotFoundByIdName}</apex:outputPanel>
+                    <apex:outputPanel styleClass="jobMsg" layout="block" rendered="{!AND(jobOptions.size==1,uploadResultFlag=='ByNameFailed')}">{!$Label.dataloadvizart__JobNotFoundByName}</apex:outputPanel>
+                </td>
+                <td class="tdb">
+                    Override User Locale <input type="checkbox" onclick="checkOverwrite(this)" id="overwriteBox" title="override"/>
+                </td>
+                <td id="localeTd" class="tdc">
+                </td>
+                </tr>
+            </table>
+        </div>
+        <apex:outputPanel styleClass="hideElem">
+            <div id="mappingDiv">
+                <span id="jobFieldMap">
+                    <apex:repeat value="{!list_fieldMapping}" var="field">
+                       
+                        <span>{!field.DataLoadVizArt__Source__c}:{!field.DataLoadVizArt__Target__c}:{!field.DataLoadVizArt__External_Id__c}:{!field.DataLoadVizArt__Master_Object__c}:{!field.DataLoadVizArt__Master_External_Id_Field__c}:{!field.DataLoadVizArt__Group_By__c}:{!field.DataLoadVizArt__Group_By_Order__c}:{!field.DataLoadVizArt__Aggregation_Method__c}:{!field.DataLoadVizArt__Upsert_External_ID__c}:{!field.DataLoadVizArt__DateAccuracy__c}</span>
+                    </apex:repeat>
+                </span>
+                <span id="jobValueMap">
+                    <apex:repeat value="{!list_valueMapping}" var="field">
+                        <span>{!field.Upload_Job_Fields_Mapping__r.DataLoadVizArt__Source__c }:{!field.Name}:{!field.DataLoadVizArt__Value__c}</span>
+                    </apex:repeat>
+                </span>
+            </div>
+            <div id="localeInfo">   
+                    <apex:repeat value="{!settings}" var="setting">
+                        <div class="{!setting.Name}">
+                        <span>{!setting.DataLoadVizArt__Local__c}</span>
+                        <span>{!setting.DataLoadVizArt__Decimal_Separator__c}</span>
+                        <span>{!setting.DataLoadVizArt__Delimiter__c}</span>
+                        <span>{!setting.DataLoadVizArt__Date_Format__c}</span>
+                        <span>{!setting.DataLoadVizArt__Fields_Separator__c}</span>
+                        </div>
+                    </apex:repeat>
+                    
+            </div>
+        </apex:outputPanel>
+        
+        <apex:outputPanel id="loadArea" rendered="{!showLoadArea}" layout="block" styleClass="loadAreaDiv">
+            <span id="objStr">
+                <apex:repeat value="{!list_objModel}" var="objField">
+                    <span>{!objField}</span>
+                </apex:repeat>
+            </span>
+            <!-- ****** Addtional Fields ******-->
+            
+            <apex:pageBlock title="Additional Fields" id="vm_inputs" rendered="{!list_additionalFields.size > 0}">
+                <apex:pageBlockSection >
+                    <apex:repeat value="{!list_additionalFields}" var="f">
+                                <apex:inputField value="{!addtion_so[f]}"/>
+                    </apex:repeat>
+                </apex:pageBlockSection>
+                <div id="additionalInputs">{!additionalInputs}</div>
+            </apex:pageBlock>
+            
+            <!-- ****** Value Mapping ******-->
+            <apex:pageBlock title="Value Mapping" id="vm_pb" rendered="{!showValueMapping}">
+                <apex:pageBlockButtons rendered="{!list_fields.size > 0}" location="top">
+                    <apex:selectList value="{!selectedField}" size="1">
+                        <apex:selectOptions value="{!list_fields}"/>
+                    </apex:selectList>
+                    <apex:commandButton action="{!addFields}" value="Add" rerender="vm_pb" status="theStatus"/>
+                    <apex:actionStatus startText="" stopText="" id="theStatus">
+                        <apex:facet name="start"><img src="/img/loading.gif" /></apex:facet>
+                    </apex:actionStatus>
+                </apex:pageBlockButtons>
+                <apex:pageBlockSection >
+                    <apex:repeat value="{!list_fields2Map}" var="i">
+                        <apex:inputField value="{!so[i]}"/>
+                    </apex:repeat>
+                </apex:pageBlockSection>
+                <div id="ValueMapping">{!ValueMapping}</div>
+            </apex:pageBlock>
+            
+            <div id="upDiv" align="left" ondragenter="return false" ondragover="return false" ondrop="loader.doDrop(event)">
+                <center><input type="file" id="inputFile" onchange="loader.checkFile(this)"/></center>
+                <center id="hint" class="hint">Drag your file</center>
+                <center id="fileDiv">
+                <span id="file_Name"></span><span id="upstatus"></span>
+                <div id="progressbar"></div>
+                </center> 
+                <center id="excptInfo" style="display:none;"></center>
+            </div>
+            <div class="btnDiv">
+                <button onclick="loader.cancelUpload(event);">Stop Upload</button>
+                <button onclick="loader.startValidate(event);" id="validateBtn" style="display:none;">Validate</button>
+            </div>
+             
+        </apex:outputPanel>
+    </apex:form>
+    
+    <!-- ****** Results and Tables******-->
+    <span id="extRes" class="hideElem"></span>
+    <span id="htmlResposne" class="hideElem"></span>
+    <div id="upresultSpan" style="display:none;width:800px;">
+        <p>Statistics </p>
+        <table class="upStatistics" id="statisticTable">
+            <tbody>
+                <tr><td class="ua">Uploaded records:</td><td id="uploadedNum" class="ub"></td></tr>
+                <tr><td class="ua">Failure records:</td><td id="failNum" class="ua"></td></tr>
+                <tr><td class="ua">Time spent:</td><td id="timeSpent" class="ua"></td></tr>
+            </tbody>
+        </table>
+        <p class="reM">Failure records</p>
+        <div class="staDiv reM">
+            <table class="upStatistics">
+                <thead id="upStatisticsHead">
+                </thead>
+                <tbody id="upStatistics">
+                </tbody>
+            </table>
+        </div>
+        <p class="reM">Exceptions</p>
+        <div class="staDiv reM">
+            <table class="upExceptions">
+                <thead id="upExceptionsHead">
+                    <tr><td>Time</td><td>Exception Information</td></tr>
+                </thead>
+                <tbody id="upExceptions">
+                </tbody>
+            </table>
+        </div>
+        <div style="width:90px;margin:10px auto;">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>
+                            <button onclick="loader.closeStatistics();">Clear</button>
+                        </td>
+                        <td>
+                            <div id="downloadify">You must have Flash 10 installed to download this file.</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+         </div>
+    </div>
+    
+    <!-- download csv begin -->
+    <script type="text/javascript">
+            (function (){
+                Downloadify.create('downloadify',{
+                    filename: function(){
+                        return "Error records.csv";
+                    },
+                    data: function(){ 
+                        var row =[],txt = [],tmp;
+                        j$('#upStatisticsHead').children().children().each(function(){
+                            row.push(formatData(j$(this).html()));
+                        });
+                        tmp = row.join('');
+                        if(row.length > 0 && tmp != ''){
+                            row = row.join(',');
+                            txt.push(row);
+                        }
+                        j$('#upStatistics').children().each(function(){
+                            row = [];
+                            j$(this).children().each(function(){
+                                row.push(formatData(j$(this).html()));
+                            });
+                            tmp = row.join('');
+                            if(row.length > 0 && tmp != ''){
+                                row = row.join(',');
+                                txt.push(row);
+                            }
+                        });
+                        txt = txt.join('\n');
+                        return txt;
+                    },
+                    onComplete: function(){ alert(msg_onSaved); },
+                    onCancel: function(){},
+                    onError: function(){ alert(msg_onSaveErr); },
+                    swf: '{!URLFOR($Resource.DataLoader_All, '/other/downloadify.swf')}',
+                    downloadImage: '{!URLFOR($Resource.DataLoader_All, '/img/myBtn.jpg')}',
+                    width: 38,
+                    height: 21,
+                    transparent: true,
+                    append: false
+                });
+            }());
+       </script>
+     <!-- download csv end -->
+     <span class="hideElem">
+         <span id="frame4invokeBatch"></span>
+     </span>  
+     <div id="mytoolTip" role="tooltip" class="ui-tooltip ui-widget ui-corner-all ui-widget-content" style="display:none;">
+         
+     </div>    
+</apex:page>

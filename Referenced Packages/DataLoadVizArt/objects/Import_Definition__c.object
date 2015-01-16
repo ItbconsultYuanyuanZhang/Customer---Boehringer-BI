@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <customSettingsType>List</customSettingsType>
+    <customSettingsVisibility>Public</customSettingsVisibility>
+    <description>definition of import data format</description>
+    <enableEnhancedLookup>false</enableEnhancedLookup>
+    <enableFeeds>false</enableFeeds>
+    <fields>
+        <fullName>Category__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Category</label>
+        <length>255</length>
+        <required>true</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Date_Format__c</fullName>
+        <deprecated>false</deprecated>
+        <description>format of date</description>
+        <externalId>false</externalId>
+        <inlineHelpText>format of date</inlineHelpText>
+        <label>Date Format</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Decimal_Separator__c</fullName>
+        <deprecated>false</deprecated>
+        <description>format of number</description>
+        <externalId>false</externalId>
+        <inlineHelpText>format of number</inlineHelpText>
+        <label>Decimal Separator</label>
+        <length>1</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Delimiter__c</fullName>
+        <deprecated>false</deprecated>
+        <description>delimiter of number</description>
+        <externalId>false</externalId>
+        <inlineHelpText>delimiter of number</inlineHelpText>
+        <label>Delimiter</label>
+        <length>1</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Fields_Separator__c</fullName>
+        <deprecated>false</deprecated>
+        <description>The character that adjacent fields must be separated by.</description>
+        <externalId>false</externalId>
+        <inlineHelpText>The character that adjacent fields must be separated by.</inlineHelpText>
+        <label>Fields Separator</label>
+        <length>2</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Local__c</fullName>
+        <deprecated>false</deprecated>
+        <description>short name of locale</description>
+        <externalId>false</externalId>
+        <inlineHelpText>short name of locale</inlineHelpText>
+        <label>Local</label>
+        <length>8</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>ProfileIds__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>ProfileIds</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <label>Import Definition</label>
+</CustomObject>

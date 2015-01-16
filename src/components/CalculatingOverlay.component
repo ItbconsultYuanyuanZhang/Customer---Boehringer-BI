@@ -1,0 +1,38 @@
+<apex:component >
+    <script>
+        function show_loading_overlay() {
+            $("#loading_overlay").show()
+            $("#loading_modal").show()
+        }
+
+        function hide_loading_overlay() {
+            $("#loading_overlay").hide()
+            $("#loading_modal").hide()
+        }
+    </script>
+    <style>
+        #loading_overlay {
+            display:none;
+            opacity:0.7;
+        }
+
+        #loading_modal {
+            display:none;
+        }
+
+        #loading_modal img {
+            width:80px;
+            height:80px;
+        }
+    </style>
+    <div id="loading_overlay" class="modal-backdrop"></div>
+    <div id="loading_modal" class="modal">
+        <div class="modal-header"><h1>{!$Label.BI_BUSY_MESSAGE}</h1></div>
+        <div class="modal-body">
+            <div style="text-align:center">
+                <apex:image value="{!urlfor($Resource.loading_gif)}"/>
+            </div>
+        </div>
+        <div class="modal-footer"></div>
+    </div>
+</apex:component>

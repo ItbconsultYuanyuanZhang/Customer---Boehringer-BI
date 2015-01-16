@@ -1,0 +1,480 @@
+<apex:page id="mainPage" controller="IMP_BI_CtrlApplyFilter" title="Apply Filter" tabStyle="Cycle_BI__c" sideBar="false">
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css" />
+	<style type="text/css">
+		.ui-progressbar {
+	    	position: relative;
+	  	}
+	  	
+	  	.progress-label {
+	    	position: absolute;
+	    	left: 50%;
+	    	top: 4px;
+	    	font-weight: bold;
+	    	text-shadow: 1px 1px 0 #fff;
+	  	}
+	  	
+	  	.progressbar-wrapper {
+	  		padding: 5px 0;	
+	  	}
+	  	
+	  	.progressbar-wrapper th {
+	  		text-align: center;
+	  	}
+	  	
+	  	.div-button-area {
+	  		text-align: center;
+	  		padding: 5px 0;
+	  	}
+	  	
+	  	.btn-apply-filter, .btn-back {
+	  		margin-left: 5px;
+	  		margin-right: 5px;
+	  	}
+	  	
+	  	.pg-inner-tb {
+	  		width: 98%;
+	  		margin-left: auto;
+	  		margin-right: auto;
+	  	}
+	  	
+	  	.pg-inner-tb tr {
+	  		height: 25px;
+	  	}
+	  	
+	  	.pg-inner-tb th, .pg-inner-tb td {
+	  		height: 25px;
+	  		padding: 2px;
+	  		text-align: center;
+	  		border-right: 1px solid #1797C0;
+	  		border-bottom: 1px solid #1797C0;	  		
+	  	}
+	  	
+	  	.pg-inner-tb tr th:first-child, .pg-inner-tb tr td:first-child {
+	  		border-left: 1px solid #1797C0;
+	  	}
+	  	
+	  	.pg-inner-tb .pg-tr-pdn {
+	  		background-color: #1797C0;
+	  	}
+	  	.pg-inner-tb .pg-tr-mhd {
+	  		background-color: #D2EAF1;
+	  	}
+	  	
+	  	.pg-inner-tb th.pg-tb-col-mn, .pg-inner-tb td.pg-tb-col-mn {
+	  		width: 35%;
+	  	}
+	  	.pg-inner-tb th.pg-tb-col-st, .pg-inner-tb td.pg-tb-col-st {
+	  		width: 7%;
+	  	}
+	  	.pg-inner-tb th.pg-tb-col-nst, .pg-inner-tb td.pg-tb-col-nst {
+	  		width: 8%;
+	  	}
+	  	.pg-inner-tb th.pg-tb-col-pgb, .pg-inner-tb td.pg-tb-col-pgb {
+	  		width: 50%;
+	  	}
+	  	
+	  	.loding-curtain-div {
+	  		top: 0px;
+	  		left: 0px;
+	  		text-align: center;
+	  		width: 100%;
+	  		height: 100%;
+	  		background-color: #FFF;
+	  		opacity: 0.85;
+	  		position: absolute;
+	  		z-index: 49;
+	  		filter: alpha(opacity=85);
+	  		background-repeat: no-repeat;
+	  		background-position: center center;
+	  		background-image: url('/img/loading.gif');
+	  	}
+	  	.loding-curtain-div .loading-curtain-msg {
+			position: relative;
+		    top: 60%;
+		    font-size: 18px;
+		    font-weight: bold;
+		    z-index: 48;
+		    display: block;
+		    color: #817F7F;
+	  	}
+	  	
+	  	.product-name {
+	  		color: white;
+	  	}
+	</style>
+
+	<div id="loading-curtain-div" class="loding-curtain-div"><div class="loading-curtain-msg">Loading...</div></div>
+	
+	<apex:form id="theMessageForm">
+		<apex:outputPanel id="errMsg">
+			<apex:pageMessages id="msg" escape="false"/>
+		</apex:outputPanel>
+	
+		<apex:actionFunction name="showMessage" action="{!showMessage}" rerender="errMsg">
+			<apex:param name="message" value="" assignTo="{!message}" />
+			<apex:param name="msgType" value="" assignTo="{!msgType}" />
+		</apex:actionFunction>
+	</apex:form>
+
+	<div id="button-area-top" class="div-button-area">
+		<input type="button" id="btn-apply-filter-top" class="btn btn-apply-filter" value="Confirm to Apply Filter"/>
+		<input type="button" id="btn-back-top" class="btn btn-back" value="Back" />
+	</div>
+	
+	<div id="progress-outer"></div>
+	
+	<div id="button-area-bottom" class="div-button-area">
+		<input type="button" id="btn-apply-filter-bottom" class="btn btn-apply-filter" value="Confirm to Apply Filter"/>
+		<input type="button" id="btn-back-bottom" class="btn btn-back" value="Back" />
+	</div>
+
+	<span id="htmlEntity" style="display:none">&nbsp;</span>
+	
+	<div id="progressbar-template" class="progressbar-wrapper" style="display:none;">
+		<table class="pg-inner-tb" cellpadding="0" cellspacing="0">
+			<thead>
+				<tr class="pg-tr-pdn">
+					<th colspan="4"><span class="product-name"></span></th>
+				</tr>
+				<tr class="pg-tr-mhd">
+					<th class="pg-tb-col-mn">Matrix Name</th>
+					<th class="pg-tb-col-st">Selected</th>
+					<th class="pg-tb-col-nst">Not Selected</th>
+					<th class="pg-tb-col-pgb">Progress Bar</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</div>
+	
+	<script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+	<script src="//code.jquery.com/ui/1.11.2/jquery-ui.js"></script>
+	<script type="text/javascript">
+		if(typeof window.console != 'object') {
+		    window.console = {log:function(){}};
+		}
+	
+		Visualforce.remoting.timeout = 120000;
+		
+		var j$ = jQuery.noConflict();
+		
+		var sourceId = "{!$CurrentPage.parameters.Id}";
+		
+		j$(function() {
+			showLoading('Fetching accont matrix...');
+			IMP_BI_CtrlApplyFilter.fetchMapOfAccountMatrix(sourceId, function(result, event) {
+				j$('#htmlEntity').html(result);
+				var data = j$('#htmlEntity').text();
+				data = j$.parseJSON( data );
+				
+				if(data.status == 'SUCCESS') {
+					j$('#htmlEntity').html(data.result);
+					data = j$('#htmlEntity').text();
+					data = j$.parseJSON( data );	
+					
+					prepareApplyFilter(data);			
+				}
+				else {
+					showMessage(data.result, 'ERROR');
+				}
+				
+			});
+			
+			j$("input.btn-apply-filter").click(function() {
+				if(confirm('Are you sure to apply fiter?')) {
+					j$("input.btn-apply-filter").attr('disabled', 'disabled').addClass('btnDisabled');
+					applyFilterBegin();
+				}
+			});
+			
+			j$("input.btn-back").click(function() {
+				if(isApplyFilterStoped() || confirm('Are you sure to leave this page? The process will be stop and the updated Cylce Data will not be rollback!')) {
+					backToPreviousPage();
+				}
+			});
+		});
+		
+		function prepareApplyFilter(map_productId_listAccountMatrix) {
+			if(typeof map_productId_listAccountMatrix == 'object') {
+				for(var productId in map_productId_listAccountMatrix) {
+					if(typeof productId == 'string') {
+						var list_accountMatrix = map_productId_listAccountMatrix[productId];
+						
+						if(list_accountMatrix && list_accountMatrix.length) {
+							createProgressBarForEachMatrixPerProduct(list_accountMatrix);
+						}
+					}
+				}
+			}
+			
+			hasAccountMatrix();
+			
+			// count the selected and not selected doctors
+			countAmountOfPersonAccountForEachMatrix();
+		}
+		
+		function countAmountOfPersonAccountForEachMatrix() {
+			showLoading('Calculating selected and not selected doctors for each accont matrix...');
+			var list_matrixTr = j$("tr[id^='matrix-tr-']").filter(function() {
+				return j$(this).attr('bi-preprocess') == 'no';
+			});
+			
+			if(list_matrixTr && list_matrixTr.length) {
+				var $matrixProgressTr = j$(list_matrixTr[0]);
+				
+				var matrixId = $matrixProgressTr.attr('id').split('-')[2];
+				
+				IMP_BI_CtrlApplyFilter.calculateForCycleDataByMatrixId(matrixId, 'counter', function(result, event) {
+					j$('#htmlEntity').html(result);
+					var data = j$('#htmlEntity').text();
+					data = j$.parseJSON( data );
+
+					if(data.status == 'SUCCESS') {			
+						j$('#htmlEntity').html(data.result);
+						data = j$('#htmlEntity').text();
+						data = j$.parseJSON( data );
+						
+						if(data.Counter) {
+							$matrixProgressTr.find('td:eq(1)').text(data.Selected);				
+							$matrixProgressTr.find('td:eq(2)').text(data.NotSelected);
+							$matrixProgressTr.attr('bi-preprocess', 'yes');	
+						}
+						else{
+							$matrixProgressTr.remove();
+						}
+						
+						countAmountOfPersonAccountForEachMatrix();			
+					}
+					else {
+						showMessage(data.result, 'ERROR');
+					}
+					
+				});
+			}
+			else {
+				//finish the calculation for amount of Person Account
+				showAllProgressWrapper();
+				hideLoading();
+			}
+		}
+		
+		function createProgressBarForEachMatrixPerProduct(list_accountMatrix) {
+			if(list_accountMatrix && list_accountMatrix.length) {
+				var $progressOuter = j$("#progress-outer");
+			
+				var productId = list_accountMatrix[0].Product_Catalog_BI__c;
+				var productName = list_accountMatrix[0].Product_Catalog_BI__r.Name;
+			
+				var $progressWrapper = j$("#progressbar-template").clone();
+				
+				$progressWrapper.attr('id', ('progressbar-' + productId));
+				
+				//set product name
+				var $productNameSpan = $progressWrapper.find("span.product-name");
+				if($productNameSpan) $productNameSpan.text(productName);
+				
+				for(var i=0; i<list_accountMatrix.length; i++) {
+					var matrix = list_accountMatrix[i];
+					
+					//set progress bar for matrix
+					var $progressbarTr = j$('<tr id="matrix-tr-' + matrix.Id + '" bi-preprocess="no" bi-cd-total="0" bi-cd-counter="0"><td class="pg-tb-col-mn"><span class="matrix-name">' + matrix.Name + '</span></td><td class="pg-tb-col-st"></td><td class="pg-tb-col-nst"></td><td class="pg-tb-col-pgb"><div id="progressbar-matrix-' + matrix.Id + '" bi-apply-filter-finished="no"><div class="progress-label">Waiting...</div></div></td></tr>');
+					var $progressbarMatrix = $progressbarTr.find(("#progressbar-matrix-" + matrix.Id));
+					
+					if($progressbarMatrix) {
+						var $progressbarLabel = $progressbarMatrix.find("div.progress-label");
+						
+						$progressbarMatrix.progressbar({
+							value: false,
+							change: function(event, ui) {
+								console.log(event.target);
+								
+								var $target = j$(event.target);
+								var $targetLabel = $target.find("div.progress-label");
+								//$progressbarLabel.text($progressbarMatrix.progressbar( "value" ) + "%");
+								$targetLabel.text($target.progressbar( "value" ) + "%");
+						    },
+						    complete: function(event, ui) {
+								console.log(event.target);
+								
+								var $target = j$(event.target);
+								var $targetLabel = $target.find("div.progress-label");								
+								
+						       // $progressbarLabel.text( "Completed!" );
+						        //$progressbarMatrix.attr('bi-apply-filter-finished', 'yes');
+						        $targetLabel.text( "Completed!" );
+						        $target.attr('bi-apply-filter-finished', 'yes');
+						    }
+					    });
+					}
+					
+					//append tr to tbody
+					var $progressbarTbody = $progressWrapper.find("tbody");
+					if($progressbarTbody) {
+						$progressbarTbody.append($progressbarTr);
+					}
+					
+				}
+				$progressOuter.append($progressWrapper);
+				//$progressWrapper.show();
+			}
+		}
+
+		function applyFilterBegin() {
+			// get all not finished matrix job, calculate the list[0]
+			var list_matrixProgressDiv = j$("div[id^='progressbar-matrix-']").filter(function() {
+				return j$(this).attr('bi-apply-filter-finished') == 'no';
+			});
+			
+			if(list_matrixProgressDiv && list_matrixProgressDiv.length) {
+				var $matrixProgressDiv = j$(list_matrixProgressDiv[0]);
+				
+				var matrixId = $matrixProgressDiv.attr('id').split('-')[2];
+				//set progress bar to 1
+				updateProgressBarForPerMatrix({'matrixId': matrixId, 'value': 1});
+				
+				// begin to apply filter
+				applyFilterForPerMatrix({'matrixId': matrixId});
+			}
+			else {
+				//all finished
+			}
+		}
+		
+		function updateProgressBarForPerMatrix(obj) {
+			if(obj && (typeof obj.matrixId == 'string') && (typeof obj.value == 'number')) {
+				var $matrixProgressDiv = j$(("#progressbar-matrix-" + obj.matrixId));
+				
+				if($matrixProgressDiv) {
+					$matrixProgressDiv.progressbar("value", obj.value);
+				}
+			}
+		}
+		
+		function applyFilterForPerMatrix(obj) {
+			// 递归处理每个 Matrix 的Cycle Data
+			
+			console.log('In applyFilterForPerMatrix ');
+			console.log(obj);
+			
+			if(obj && ((typeof obj.matrixId) == 'string')) {
+				console.log('After applyFilterForPerMatrix if...');
+				IMP_BI_CtrlApplyFilter.calculateForCycleDataByMatrixId(obj.matrixId, 'updated', function(result, event) {
+					// get the response obj data
+					j$('#htmlEntity').html(result);
+					var data = j$('#htmlEntity').text();
+					data = j$.parseJSON( data );
+
+			        if(data.status == 'SUCCESS') {      
+			            j$('#htmlEntity').html(data.result);
+			            data = j$('#htmlEntity').text();
+			            data = j$.parseJSON( data );
+			                
+						if(data.length) {
+							var totalAmount = data.length;
+							
+							// update the amount to matrix tr
+							var $matrixTr = j$(("#matrix-tr-" + obj.matrixId));
+							var matrixTrTotal = parseInt($matrixTr.attr("bi-cd-total"));
+							
+							matrixTrTotal = parseInt(totalAmount / 2000) + 1;
+							
+							$matrixTr.attr("bi-cd-total", matrixTrTotal);
+							
+							updateProgressBarForPerMatrix({'matrixId': obj.matrixId, 'value': 3});	
+							
+							//call remote action
+							updateCycleData({'matrixId': obj.matrixId, 'set_cycleDataId': data});	
+						}
+						else {
+							updateProgressBarForPerMatrix({'matrixId': obj.matrixId, 'value': 100});
+							applyFilterBegin();		
+						}
+			        }
+			        else {
+			            showMessage(data.result, 'ERROR');
+			        }					
+				});
+			}
+		}
+
+		
+		function updateCycleData(obj) {
+			IMP_BI_CtrlApplyFilter.updateCycleData(JSON.stringify(obj.set_cycleDataId), function(result, event){
+				// get the response obj data
+				j$('#htmlEntity').html(result);
+				var data = j$('#htmlEntity').text();
+				data = j$.parseJSON( data );
+				
+				if(data.status == "SUCCESS") {
+					if(data.result == "Not Finished") {
+						var $matrixTr = j$(("#matrix-tr-" + obj.matrixId));
+						var matrixTrTotal = parseInt($matrixTr.attr("bi-cd-total"));
+						var matrixTrCounter = parseInt($matrixTr.attr("bi-cd-counter"));
+						matrixTrCounter = matrixTrCounter + 1;
+						
+						$matrixTr.attr("bi-cd-counter", parseInt(matrixTrCounter));
+						
+						var percent = parseInt((matrixTrCounter / matrixTrTotal) * 100);
+						var progress = 3 + percent;
+						
+						updateProgressBarForPerMatrix({'matrixId': obj.matrixId, 'value': progress});
+						
+						updateCycleData(obj);
+					}
+					else {
+						updateProgressBarForPerMatrix({'matrixId': obj.matrixId, 'value': 100});
+						applyFilterBegin();					
+					}
+				}		
+				else {
+            		showMessage(data.result, 'ERROR');
+				}
+			});
+		}
+		
+		function isApplyFilterStoped() {
+			if(!j$("#btn-apply-filter-top").is(':disabled')) return true;
+		
+			var list_openTask = j$("div[id^='progressbar-matrix-']").filter(function() {
+				return j$(this).attr('bi-apply-filter-finished') == 'no';
+			});
+			
+			if(list_openTask && list_openTask.length) return false;
+			else return true; 
+		}
+		
+		function backToPreviousPage() {
+			window.location = '/' + sourceId;
+		}
+		
+		function showLoading(msg) {
+			var message = '';
+			if((typeof msg) == 'string') message = msg;
+			
+			j$("#loading-curtain-div").find('div.loading-curtain-msg').html(message);
+			
+			j$("#loading-curtain-div").show();
+		}
+		
+		function hideLoading() {
+			j$("#loading-curtain-div").hide();
+			j$("#loading-curtain-div").find('div.loading-curtain-msg').html('');
+		}
+		
+		function hasAccountMatrix() {
+			var list_matrixTr = j$("tr[id^='matrix-tr-']");
+			
+			if(!list_matrixTr || !list_matrixTr.length) {
+				showMessage('Has no Account Matrix need to be apply filter!', 'INFO');
+			}
+		}
+		
+		function showAllProgressWrapper() {
+			j$("div[id^='progressbar-']").filter(function(){
+			    var list_tr = j$(this).find("tr[id^='matrix-tr-']");
+			    return (list_tr && list_tr.length);
+			}).show();
+		}
+	</script>
+</apex:page>

@@ -1,0 +1,649 @@
+<apex:page standardcontroller="Cycle_BI__c" showheader="true" sidebar="true" tabstyle="Cycle_BI__c" extensions="IMP_BI_ExtDataReload">
+    <apex:sectionHeader title="{!Cycle_BI__c.Name}" subtitle="Data Deletion"/>
+    
+    <apex:stylesheet value="{!URLFOR($Resource.ITbTabStyle)}" /> 
+    <script src="{!URLFOR($Resource.jQueryUI_1_10_2, 'jquery-ui-1.10.2.custom/js/jquery-1.9.1.min.js')}" type="text/javascript"></script>
+    <style>
+    span.title{font:italic bold 12px/20px arial,sans-serif;}
+    </style>
+    <script  src="/soap/ajax/27.0/connection.js" type="text/javascript"></script>
+    <script  src="/soap/ajax/27.0/apex.js" type="text/javascript"></script>
+    <script>
+        var __sfdcSessionId = '{!GETSESSIONID()}';
+        var totalDelSize = 0;
+        var totalMatrixDelSize = 0;
+        var cycprod={};
+        if(typeof Visualforce != 'undefined' && Visualforce.remoting){
+             Visualforce.remoting.timeout = 120000;
+        }else if(typeof  _Visualforce != 'undefined' &&  _Visualforce.Ajax){
+             _Visualforce.Ajax.timeout=120000;
+        }
+        j$ = jQuery.noConflict();
+        function checkAll(isChecked){
+            var checklist = document.getElementsByTagName('input');
+            for(var i = 0; i < checklist.length; i++){
+                if(checklist[i].id != 'allCheck' && checklist[i].type == "checkbox"){
+                    checklist[i].checked = isChecked;
+                }
+            }
+            
+        }
+        
+        function checkIsAll(isChecked){
+            /*var checklist = document.getElementsByTagName('input');
+            var allcheck = true;
+            for(var i = 0; i < checklist.length; i++){
+                if(checklist[i].id != 'allCheck' && checklist[i].type == "checkbox" && !checklist[i].checked){
+                    allcheck = false;
+                    break;
+                }
+            }
+            document.getElementById("allCheck").checked = allcheck;*/
+            
+            var allcheck = true;
+            j$("#itbtable").find(":checkbox").each(function(){
+                if(this.id != 'allCheck' && !this.checked){
+                    allcheck = false;
+                }
+                
+            });
+            document.getElementById("allCheck").checked = allcheck;
+        }
+        
+        function dataclear(){
+            j$( '#endMessage' ).hide();
+            showLoading();
+            showProcessing();
+            var list_prodId = [];
+            j$('#itbtable').find( ":checked" ).not("#allCheck").each(function(){
+                var $ck = j$(this);
+                var proId = $ck.parent('td').find('[type=hidden]').attr('value');
+                if(proId){
+                    list_prodId.push(proId);
+                }
+                
+            });
+            cycId = j$('#cycId').attr('value');
+            
+            cycprod["list_prodId"] = list_prodId;
+
+            cycprod["cycId"] = cycId;
+            
+            cycprod = JSON.stringify(cycprod);
+            
+            
+            
+            IMP_BI_ExtDataReload.clearMatrixDetail(
+                cycprod, 
+                function(result, event){
+                    if (event.status) {
+                        //console.log(result.success);
+                        //console.log(result);
+                        if(!result.success){
+                            if(result.message != 'deldetail'){
+                                //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                //j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                clearcycdata(cycprod);
+                            }
+                            else{
+                                clearMatrixDetail(cycprod);
+                            }
+                            
+                        }
+                        else{
+                            //totalMatrixDelSize = result.delSize;
+                            //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            //j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            //j$( '#endMessage' ).show();
+                            clearMatrixCell(cycprod);
+                        }
+                        
+                    } else if (event.type === 'exception') {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        if(event.message.indexOf('Unable to connect to the server') > -1){
+                            clearMatrixDetail(cycprod);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                        
+                    } else {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        clearMatrixDetail(cycprod);
+                    }
+                }, 
+                {escape: true}
+            );
+            
+            /*
+            IMP_BI_ExtDataReload.clearMatrixData(
+                cycprod, 
+                function(result, event){
+                    if (event.status) {
+                        //console.log(result.success);
+                        //console.log(result);
+                        if(!result.success){
+                            if(result.message != 'deldetail' && result.message != 'delcell' && result.message != 'delmatrix'){
+                                j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                            }
+                            else{
+                                deleteMatrix(cycprod);
+                            }
+                            
+                        }
+                        else{
+                            totalMatrixDelSize = result.delSize;
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            clearcycdata(cycprod);
+                        }
+                        
+                    } else if (event.type === 'exception') {
+                        j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$('#loading-showing-div').html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        j$( '#endMessage' ).show();
+                        j$('#loading-curtain-div').hide();
+                        j$('#loading-showing-div').hide();
+                    } else {
+                        j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$('#loading-showing-div').html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        j$( '#endMessage' ).show();
+                        j$('#loading-curtain-div').hide();
+                        j$('#loading-showing-div').hide();
+                    }
+                }, 
+                {escape: true}
+            );
+            */
+        }
+        
+        function clearMatrixDetail(item){
+            IMP_BI_ExtDataReload.clearMatrixDetail(
+                item, 
+                function(result, event){
+                    if (event.status) {
+                        //console.log(result.success);
+                        //console.log(result);
+                        if(!result.success){
+                            if(result.message != 'deldetail'){
+                                //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                //j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                clearcycdata(cycprod);
+                            }
+                            else{
+                                clearMatrixDetail(item);
+                            }
+                            
+                        }
+                        else{
+                            //totalMatrixDelSize = result.delSize;
+                            //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            //j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            //j$( '#endMessage' ).show();
+                            clearMatrixCell(item);
+                        }
+                        
+                    } else if (event.type === 'exception') {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        if(event.message.indexOf('Unable to connect to the server') > -1){
+                            clearMatrixDetail(item);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                        
+                    } else {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        clearMatrixDetail(item);
+                    }
+                }, 
+                {escape: true}
+            );
+        }
+        
+        function clearMatrixCell(sache){
+            IMP_BI_ExtDataReload.clearMatrixCell(
+                sache, 
+                function(result, event){
+                    if (event.status) {
+                        //console.log(result.success);
+                        //console.log(result);
+                        if(!result.success){
+                            if(result.message != 'delcell'){
+                                //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                //j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                clearcycdata(cycprod);
+                            }
+                            else{
+                                clearMatrixCell(sache);
+                            }
+                            
+                        }
+                        else{
+                            //totalMatrixDelSize = result.delSize;
+                            //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            //j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            //j$( '#endMessage' ).show();
+                            deleteMatrix(sache);
+                        }
+                        
+                    } else if (event.type === 'exception') {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        if(event.message.indexOf('Unable to connect to the server') > -1){
+                            clearMatrixCell(sache);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                    } else {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        clearMatrixCell(sache);
+                    }
+                }, 
+                {escape: true}
+            );
+        }
+        
+        function deleteMatrix(content){
+            IMP_BI_ExtDataReload.clearMatrixData(
+                content, 
+                function(result, event){
+                    if (event.status) {
+                        //console.log(result);
+                        if(!result.success){
+                            if(result.message.indexOf('DELETE_OPERATION_TOO_LARGE') > -1){
+                                var firstsplit = result.message.split('id');
+                                var secondsplit = firstsplit[1].split(';');
+                                var mid = secondsplit[0].trim();
+                                //console.log('mid: ' + mid);
+                                setCycleDataNull(mid);
+                            }
+                            else{
+                                //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                //j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                clearcycdata(cycprod);
+                            }
+                            
+                        }
+                        else{
+                            totalMatrixDelSize = result.delSize;
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            clearcycdata(content);
+                        }
+                        
+                    } else if (event.type === 'exception') {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        
+                        if(event.message.indexOf('Unable to connect to the server') > -1){
+                            deleteMatrix(content);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                    } else {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        deleteMatrix(content);
+                    }
+                }, 
+                {escape: true}
+            );
+        }
+        
+        function setCycleDataNull(wel){
+            IMP_BI_ExtDataReload.setCycleDataNull(
+                wel, 
+                function(result, event){
+                    if (event.status) {
+                        //console.log(result);
+                        if(!result.success){
+                            if(result.message == 'setnull'){
+                                setCycleDataNull(wel);
+                            }
+                            else{
+                                //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                //j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                clearcycdata(cycprod);
+                            }
+                            
+                        }
+                        else{
+                            //totalMatrixDelSize = result.delSize;
+                            //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            //j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            //j$( '#endMessage' ).show();
+                            deleteMatrix(cycprod);
+                        }
+                        
+                    } else if (event.type === 'exception') {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        
+                        if(event.message.indexOf('Unable to connect to the server') > -1){
+                            deleteMatrix(cycprod);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                    } else {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        deleteMatrix(cycprod);
+                    }
+                }, 
+                {escape: true}
+            );
+            
+        }
+        
+        //2013-07-04 added by Yuanyuan Zhang recursive deletion of matrix detail record BEGIN
+        /*function deleteMatrix(content){
+            IMP_BI_ExtDataReload.clearMatrixData(
+                content, 
+                function(result, event){
+                    if (event.status) {
+                        //console.log(result);
+                        if(!result.success){
+                            if(result.message != 'deldetail' && result.message != 'delcell' && result.message != 'delmatrix'){
+                                j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                            }
+                            else{
+                                deleteMatrix(content);
+                            }
+                            
+                        }
+                        else{
+                            totalMatrixDelSize = result.delSize;
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.delSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            clearcycdata(content);
+                        }
+                        
+                    } else if (event.type === 'exception') {
+                        j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$('#loading-showing-div').html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        j$( '#endMessage' ).show();
+                        j$('#loading-curtain-div').hide();
+                        j$('#loading-showing-div').hide();
+                    } else {
+                        j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$('#loading-showing-div').html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        j$( '#endMessage' ).show();
+                        j$('#loading-curtain-div').hide();
+                        j$('#loading-showing-div').hide();
+                    }
+                }, 
+                {escape: true}
+            );
+        }*/
+        
+        //2013-07-04 added by Yuanyuan Zhang recursive deletion of matrix detail record END
+        
+        
+        function clearcycdata(idstring){
+            //console.log('Start');
+            IMP_BI_ExtDataReload.clearCycData(
+                idstring, 
+                function(result, event){
+                    if (event.status) {
+                        //alert(result);
+                        //console.log('Start recusive clear cycledata');
+                        //j$("#htmlEntity").html(result); 
+                        if(result && result.gotonext=='gonext'){
+                            if(result.success == 'false'){
+                                //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                //j$('#loading-showing-div').html('<p style="color:red"><b>'+ result.message+'<b/><p/>');
+                                clearcycdata(idstring);
+                            }
+                            else{
+                                //console.log(result);
+                                totalDelSize += parseInt(result.delSize,10);
+                                j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ totalDelSize + ' {!$Label.Cycle_data_records_has_been_deleted}'+'<b/><p/>');
+                                j$('#loading-showing-div').html('<p style="color:red"><b>'+ totalDelSize + ' {!$Label.Cycle_data_records_has_been_deleted}'+'<b/><p/>');
+                            }
+                            j$( '#endMessage' ).show();
+                             //setTimeout(clearcycdata(idstring),5000);
+                             clearcycdata(idstring);
+                        }
+                        else{
+                            totalDelSize += parseInt(result.delSize,10);
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ totalMatrixDelSize + ' {!$Label.Matrix_Data_records_have_been_deleted}'+' <br/>' + totalDelSize + ' {!$Label.Cycle_data_records_has_been_deleted}'+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            
+                            j$('#itbtable').find( ":checked" ).not("#allCheck").each(function(){
+                                j$(this).parent('td').parent().remove();
+                            });
+                            if(j$('#itbtable').find( "input[type='checkbox']" ).not("#allCheck").length == 0){
+                                //hideTableContent();
+                                //cycDataMessage
+                                j$('#itbtable').hide();
+                                j$('#clearButton').hide();
+                                j$('[id$=titlePanel]').hide();
+                                j$( '[id$=summarymessage]' ).append('<p style="color:red"><b>'+ '{!$Label.No_Product}' +'<b/><p/>');
+                                j$( '#endMessage' ).show();
+                            }
+                            
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                            
+                            //2013-06-18 added for automatically call batch to recalculate cycle data
+                            var cyid = j$('#cycId').attr('value');
+                            window.location.href = "/apex/IMP_BI_CtrlCalculateCycleDataOverview?cycid=" + cyid + "&retUrl=/"+cyid;
+                        }       
+                    } else if (event.type === 'exception') {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        if(event.message.indexOf('Unable to connect to the server') > -1){
+                            clearcycdata(idstring);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                        
+                    } else {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        clearcycdata(idstring);
+                    }
+                }, 
+                {escape: true}
+            );
+        }
+        
+        
+        function logToPage(text) {
+            j$("#statusDiv").html( text + "<br />");
+        }
+        function showLoading(){
+            j$('#loading-curtain-div').show();
+        }
+        function showProcessing(){
+            j$('#loading-showing-div').show();  
+        }
+        
+        function checkSelection(){
+            var checkboxLength = j$('#tablebody').find( ":checked" ).length;
+            if(checkboxLength == 0){
+                alert('{!$Label.Select_Product}');
+                
+                return false;
+            }
+            else{
+                if(confirm('{!$Label.Are_you_sure}')){dataclear();}
+            }
+        }
+        
+        j$(function(){
+            
+            var prodId = '{!productIdString}';
+            var cid = "{!cycId}";
+            //console.log(prodId);
+            if(prodId == ''){
+                hideTableContent();
+            }
+            else{
+            
+                showLoading();
+                var hasCycdata = false;
+                //console.log(prodId);
+                prodId = prodId.split(',');
+                //var listtr = [];
+                //console.log(listtr.push);
+                for(var i = 0;i < prodId.length; i++){
+                    var idString = prodId[i] + ',' + cid;
+                    //console.log(i);
+                    //console.log(idString);
+                    //console.log(idString);
+                    IMP_BI_ExtDataReload.checkProductHasCd(
+                        idString,
+                        function(result, event){
+                            if(event.status){
+                            //console.log(i);
+                                //console.log(result);
+                                if(result.hasCycData == true){//onmouseOver="this.style.backgroundColor = '#E3F3FF'"; onmouseOut="this.style.backgroundColor = '#FFF'";
+                                    hasCycdata = true;
+                                    if(hasCycdata){
+                                        j$('#itbtable').show();
+                                        j$('#clearButton').show();
+                                        j$('#titlePanel').show();
+                                        j$( '#endMessage' ).hide();
+                                    }
+                                    /*console.log(hasCycdata);
+                                    var tabletr= '<tr class="dataRow" >'+
+                                                    '<td><input type="checkbox" onclick="checkIsAll()"></input>'+
+                                                        '<input type="hidden" value="'+result.cd.Product__r.Id+'"></input>                          </td>'+
+                                                    '<td><input type="text" readonly="readonly" value="'+result.cd.Product__r.Name+'"></input></td>'+
+                                                    '<td><input type="text" readonly="readonly" value="'+result.cd.Product__r.Id+'"></input></td></tr>';*/
+                                    //console.log(result.cd);                
+                                    var tabletr= '<tr class="dataRow" >'+
+                                                    '<td><input type="checkbox" onclick="checkIsAll()"></input>'+
+                                                        '<input type="hidden" value="'+result.cd.Product_Catalog_BI__c+'"></input>                          </td>'+
+                                                    '<td><span>'+result.cd.Product_Catalog_BI__r.Name+'</span></td>'+
+                                                    '<td><span>'+result.cd.Product_Catalog_BI__c+'</span></td></tr>';
+                                    
+                                    j$('#tablebody').append(tabletr); 
+                                    //console.log(listtr.push);
+                                    //listtr.push(tabletr);
+                                    //j$('#tablebody').append(listtr);
+                                    
+                                }
+                                //console.log(i);
+                                //console.log(prodId.length);
+                                if(i == prodId.length-1 || i == prodId.length){
+                                    j$('#loading-curtain-div').hide();
+                                    if(hasCycdata == false){
+                                        hideTableContent();
+                                    }  
+                                }
+                            }
+                            else if (event.type === 'exception') { 
+                                alert(event.message);
+                            }else {
+                                alert(event.message);
+                            }
+                        }, 
+                        {escape: true}
+                    );
+                }
+                //console.log(hasCycdata);
+                
+            }
+        });
+        
+        function hideTableContent(){
+            j$('#itbtable').hide();
+            j$('#clearButton').hide();
+            j$('[id$=titlePanel]').hide();
+            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+ '{!$Label.No_Product}' +'<b/><p/>');
+            j$( '#endMessage' ).show();
+        }//background-image:url('/img/loading.gif');
+    </script>
+    
+    <apex:form >
+        <div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');"></div>
+        <div id="loading-showing-div" style="top:42%;left:45%;text-align:center;width:300px;height:100px;display:none;position:absolute;z-index:8001"></div>
+        <apex:pageBlock id="thePb" mode="maindetail">
+            <div style="display:none" id="endMessage">
+                <div id="summarymessage"/>
+            </div>
+            
+            <apex:pageMessages id="topmessages" />
+            <apex:pageBlockButtons location="top">
+                <input type="button" onclick="checkSelection();" class="btn" id="clearButton" value="{!$Label.Data_Clear}"></input>
+                <apex:commandButton value="{!$Label.Cancel}" action="{!Cancel}" id="cancelButton" status="theStatus" immediate="true"/>
+            </apex:pageBlockButtons>
+            <apex:outputPanel styleClass="title" id="titlePanel">{!$Label.Select_Products_To_Delete}:</apex:outputPanel>
+            <table class="itb-table-style-01" id="itbtable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="allCheck" onclick="checkAll(this.checked)"></input></th>
+                        <th>{!$ObjectType.Product_vod__c.Fields.Name.Label}</th>
+                        <th>{!$ObjectType.Product_vod__c.Fields.Id.Label}</th>
+                    </tr>
+                </thead>
+                <tbody id="tablebody">
+
+                </tbody>
+            </table>
+            <input type="hidden" id="cycId" value="{!cycId}"/>
+        </apex:pageBlock>
+    </apex:form>
+    <div id="statusDiv"></div>
+    <span id="htmlEntity" style="display:none">&nbsp;</span>
+    
+</apex:page>

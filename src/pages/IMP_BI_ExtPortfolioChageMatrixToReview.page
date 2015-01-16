@@ -1,0 +1,24 @@
+<apex:page standardController="Portfolio_BI__c" extensions="IMP_BI_ExtPortfolioChageMatrixToReview">
+	<script type="text/javascript">
+		var hintText = '{!$Label.IMP_BI_ErrMsg_PF_Change_Matrix_Status}';
+		var hasError = {!hasError};
+	
+		window.onload = function(){
+			if(!hasError){
+				if(confirm(hintText)){
+					changeMatrixStatusToReview();
+				}
+				else{
+					cancel();
+				}
+			}
+		};
+	</script>
+	
+	<apex:pageMessages id="msg" escape="false"/>
+
+	<apex:form id="theTopForm">
+		<apex:actionFunction name="changeMatrixStatusToReview" action="{!changeMatrixStatusToReview}"/>
+		<apex:actionFunction name="cancel" action="{!cancel}"/>
+	</apex:form>
+</apex:page>

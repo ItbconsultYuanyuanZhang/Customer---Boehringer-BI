@@ -1,0 +1,23 @@
+<apex:page standardController="Portfolio_BI__c" extensions="IMP_BI_SetPortfolioActive">
+<script type="text/javascript">
+		var hintText = '{!$Label.IMP_BI_Set_Portfolio_Active}';
+		var hasError = {!hasError};
+	
+		window.onload = function(){
+			if(!hasError){
+				if(confirm(hintText)){
+					setPortfolioActive();
+				}
+				else{
+					cancel();
+				}
+			}
+		};
+	</script>
+	<apex:pageMessages id="msg" escape="false"/>
+
+	<apex:form id="theTopForm">
+		<apex:actionFunction name="setPortfolioActive" action="{!action_setPorfotlioActive}"/>
+		<apex:actionFunction name="cancel" action="{!action_cancel}"/>
+	</apex:form>
+</apex:page>

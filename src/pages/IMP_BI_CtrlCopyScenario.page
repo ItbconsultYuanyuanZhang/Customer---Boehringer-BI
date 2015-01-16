@@ -1,0 +1,11 @@
+<apex:page controller="IMP_BI_CtrlCopyScenario" showHeader="false" sidebar="false" action="{!copyScenario}">
+    <apex:pageMessages id="errorMessage" escape="false" />
+    <apex:form >
+        <apex:pageBlock >
+            <apex:pageBlockButtons location="top">
+                <apex:commandButton action="{!cancel}" value="Back" immediate="true" rendered="{!!isValid}"/>
+            </apex:pageBlockButtons>
+        </apex:pageBlock>
+    </apex:form>
+    
+</apex:page>

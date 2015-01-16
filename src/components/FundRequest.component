@@ -1,0 +1,183 @@
+<apex:component >
+    <apex:attribute name="planViewController" description="This is the value for the component." type="PlanViewSummaryControllerPMBI" required="true"/>
+    <apex:attribute name="wrappedPlan" description="This is the value for the component." type="PlanAndChildren" required="false"/>
+    <apex:attribute name="openValue" description="This is the value for the component." type="String" required="true"/>
+    <apex:attribute name="fundRequests" description="This is the value for the component." type="Fund_Request_BI__c[]" required="true"/>
+                    <div id="myModal-{!openValue}" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                    <apex:outputPanel id="myModalPanel">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                            <h1 id="myModalLabel" style="font-size: 16px">{!$Label.BI_MODAL_FUND_REQUESTS} {!wrappedPlan.plan.Name}</h1>
+                                <apex:outputPanel layout="none" rendered="{! openValue = 'productPlans'}" >
+                                           <span class="input-prepend input-append">
+                                            <select style="margin: 4px 0px 0px 4px;" id="productSelect">
+                                                <apex:repeat var="item" value="{!planViewController.planOptions}">
+                                                    <option value="{!item.Id}">{!item.Name}</option>
+                                                </apex:repeat>
+                                            </select>
+                                            </span>
+                                    </apex:outputPanel>                            
+                        </div>
+                        <div class="modal-body">    
+                             <apex:outputPanel id="modalErrorPanel">
+                                <apex:outputPanel rendered="{!planViewController.hasError || planViewController.hasMessages}">
+                                    <apex:outputPanel rendered="{!planViewController.hasError}">
+                                        <div style="margin-top:5px;" class="alert alert-error">{!planViewController.errorMessage}</div>
+                                    </apex:outputPanel>
+                                    <apex:outputPanel rendered="{! planViewController.hasMessages }">
+                                        <div style="margin-top:5px;" class="alert">
+                                            <apex:messages />
+                                        </div>
+                                    </apex:outputPanel>
+                                </apex:outputPanel>
+                            </apex:outputPanel>                
+                            <div class="form-inline">
+                               <fieldset>
+                                    <div class="control-group" id="programNameModal" style="padding-bottom: 14px;">
+                                        <label for="txtQuestion" class="control-label">{!$Label.BI_MODAL_AMOUNT}</label>
+                                        <div class="controls">
+                                            <span class="input-prepend input-append">
+                                                {!$Label.BI_MODAL_AMOUNT_REQUESTED}
+                                                <span class="add-on">{!planViewController.userIsoCode}</span>
+                                                <input type="text" maxlength="12" onkeydown="$('#myModal{!openValue}').modal('show');" id="amountRequested{!openValue}" styleClass="input-small" value="0" style="text-align:right;width: 150px"/>
+                                            </span>
+                                        </div>
+                                    <br/>    
+                                    <div class="control-group" id="assessmentTypeModal" style="padding-bottom: 14px;">
+                                        <label for="txtQuestion" class="control-label">Details</label>
+                                        <div class="controls">
+                                            <textArea style="width: 500px; font-size: 14px;" rows="4" value="" id="details{!openValue}"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="accordion" id="accordion2">
+                                        <apex:repeat id="refreshRequests" var="fr" value="{!fundRequests}">
+                                            <div class="accordion-group">
+                                                 <div class="accordion-heading form-horizontal" style="background-color: {!IF(AND(fr.Approver_BI__c == $User.Id, CONTAINS($Setup.Config_Settings_PMBI__c.Fund_Request_Working_Status__c, fr.Status__c)), '#6f9', null)}">
+                                                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapse{!fr.id}{!openValue}">
+                                                                {!$Label.BI_MODAL_AMOUNT_REQUESTED}
+                                                                &nbsp;&nbsp;
+                                                            <b>
+                                                                <apex:outputField value="{!fr.Amount_Requested__c}"/>
+                                                                <apex:outputPanel layout="inline" style="float: right;margin-left:10%;">
+                                                                    <apex:outputField value="{!fr.Date_Requested__c}"/>
+                                                                </apex:outputPanel>
+                                                                <apex:outputText style="float: right;" rendered="{! openValue = 'productPlans'}" value="{!fr.Plan__r.Name}"/> 
+                                                           </b>                                                      
+                                                        </a>
+                                                    </div>
+                                                    <div id="collapse{!fr.id}{!openValue}" class="accordion-body collapse">
+                                                    <div class="accordion-inner">
+                                                        <table class="table table-striped table-bordered">
+                                                            <tr>
+                                                                <td width="120px">
+                                                                    <i>{!$ObjectType.Fund_Request_BI__c.Fields.Amount_Granted__c.Label}</i>
+                                                                </td>
+                                                                <td>
+                                                                    <apex:outputField rendered="{!(fr.Approver_BI__c == null && $User.Id != fr.OwnerId) 
+                                                                                                   || (fr.Approver_BI__c != null && $User.Id != fr.Approver_BI__c)}" value="{!fr.Amount_Granted__c}"/>
+                                                                     <apex:outputPanel rendered="{!(fr.Approver_BI__c == null && $User.Id == fr.OwnerId) 
+                                                                                                   || (fr.Approver_BI__c != null && $User.Id == fr.Approver_BI__c)}">
+                                                                        <input id="amountGranted{!fr.Id}{!openValue}" maxlength="12" value="{!fr.Amount_Granted__c}" type="text" style="width: 150px" /> 
+                                                                    </apex:outputPanel>
+                                                                </td>
+                                                            </tr>
+                                                           <tr>
+                                                                <td>
+                                                                    <i>{!$ObjectType.Fund_Request_BI__c.Fields.LastModifiedDate.Label}</i>
+                                                                </td>
+                                                                <td>
+                                                                    <apex:outputField value="{!fr.LastModifiedDate}" />
+                                                                    
+                                                                </td>
+                                                           </tr>
+                                                           <tr>
+                                                                <td>
+                                                                    <i>{!$ObjectType.Fund_Request_BI__c.Fields.Details__c.Label}</i>
+                                                                </td>
+                                                                <td>
+                                                                    {!fr.Details__c}
+                                                                </td>
+                                                           </tr>
+                                                           <tr>
+                                                                <td>
+                                                                    <i>{!$ObjectType.Fund_Request_BI__c.Fields.Status__c.Label}</i>
+                                                                </td>
+                                                                <td>
+                                                                    
+                                                                    <apex:outputPanel rendered="{!(fr.Approver_BI__c == null && $User.Id != fr.OwnerId) 
+                                                                                                   || (fr.Approver_BI__c != null && $User.Id != fr.Approver_BI__c)}">
+                                                                        {!fr.Status__c}
+                                                                    </apex:outputPanel>
+                                                                     <apex:outputPanel rendered="{!(fr.Approver_BI__c == null && $User.Id == fr.OwnerId) 
+                                                                                                   || (fr.Approver_BI__c != null && $User.Id == fr.Approver_BI__c)}">
+                                                                        <select id="status{!fr.Id}{!openValue}" type="text" style="width: 150px">
+                                                                            <apex:repeat value="{!planViewController.statusOptions}" var="option">
+                                                                                <apex:outputPanel rendered="{!fr.Status__c==option.value}">
+                                                                                    <option selected="true">
+                                                                                        {!option.value} 
+                                                                                    </option>
+                                                                                </apex:outputPanel>
+                                                                                 <apex:outputPanel rendered="{!fr.Status__c!=option.value}">
+                                                                                    <option>
+                                                                                        {!option.value} 
+                                                                                    </option>
+                                                                                </apex:outputPanel>
+                                                                            </apex:repeat>
+                                                                        </select> 
+                                                                    </apex:outputPanel>
+                                                                </td>
+                                                            </tr>
+                                                             <apex:outputPanel rendered="{!(fr.Approver_BI__c == null && $User.Id != fr.OwnerId) 
+                                                                                                   || (fr.Approver_BI__c != null && $User.Id != fr.Approver_BI__c)}">
+                                                                <tr>
+                                                                    <td>
+                                                                        <i>{!$Label.BI_MODAL_REQUESTER}</i>
+                                                                    </td>
+                                                                    <td>                                                        
+                                                                        {!fr.CreatedBy.Name}
+                                                                    </td>
+                                                                </tr>
+                                                             </apex:outputPanel>
+                                                        </table>
+                                                        <apex:outputPanel rendered="{!(fr.Approver_BI__c == null && $User.Id == fr.OwnerId) 
+                                                                                       || (fr.Approver_BI__c != null && $User.Id == fr.Approver_BI__c)}">
+                                                            <div class="pmbi-btn pmbi-btn-primary pull-right" onclick="updateFR{!fr.Id}{!openValue}();">Save</div>
+                                                            <script>
+                                                                function updateFR{!fr.Id}{!openValue}(){
+                                                                    updateFundRequest('{!fr.Id}', $('#amountGranted{!fr.Id}{!openValue}').val(), $('#status{!fr.Id}{!openValue}').val());
+                                                                }
+                                                            </script>
+                                                        </apex:outputPanel>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                                </apex:repeat>
+                                            </div>
+                                            
+                                        </div>
+                                       
+                                </fieldset> 
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="pmbi-btn btn-large" data-dismiss="modal" aria-hidden="true" onclick="close{!openValue}();">{!$Label.BI_MODAL_CLOSE}</button>
+                            <div class="pmbi-btn pmbi-btn-primary pull-right" onclick="saveFR{!openValue}();">{!$Label.BI_MODAL_SUBMIT_REQUEST}</div>
+                            <script>
+                                function saveFR{!wrappedPlan.plan.Id}(){
+                                    saveFundRequest('{!wrappedPlan.plan.Id}', $('#amountRequested{!wrappedPlan.plan.Id}').val(), $('#details{!wrappedPlan.plan.Id}').val(), '{!IF(wrappedPlan.plan.Approver_BI__c != null, wrappedPlan.plan.Approver_BI__c, wrappedPlan.plan.ownerId)}');
+                                }
+                                function saveFRproductPlans(){
+                                    saveFundRequest($('#productSelect').val(), $('#amountRequestedproductPlans').val(), $('#detailsproductPlans').val(), '{!$User.Id}');
+                                }
+                                function close{!openValue}(){
+                                    $('[id*=modalErrorPanel]').hide();
+                                    $('#amountRequested{!openValue}').val('');
+                                    $('#details{!openValue}').val('');
+                                }
+                            </script>
+   
+                        </div>
+                    </apex:outputPanel>
+                </div> 
+</apex:component>

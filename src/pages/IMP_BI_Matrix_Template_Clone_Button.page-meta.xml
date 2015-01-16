@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ApexPage xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>28.0</apiVersion>
+    <description>This VP is used for the Matrix Template clone button.</description>
+    <label>IMP_BI_Matrix_Template_Clone_Button</label>
+    <packageVersions>
+        <majorNumber>1</majorNumber>
+        <minorNumber>45</minorNumber>
+        <namespace>ITBclone</namespace>
+    </packageVersions>
+</ApexPage>

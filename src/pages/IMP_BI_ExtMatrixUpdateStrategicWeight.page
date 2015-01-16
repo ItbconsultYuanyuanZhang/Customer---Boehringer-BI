@@ -1,0 +1,24 @@
+<apex:page standardController="Matrix_BI__c" extensions="IMP_BI_ExtMatrixUpdateStrategicWeight">
+	<script type="text/javascript">
+		var hintText = "{!$Label.IMP_BI_Tip_Update_SW}";
+		var hasError = {!hasError};
+	
+		window.onload = function(){
+			if(!hasError){
+				if(confirm(hintText)){
+					updateMatrixCellStrategicWeight();
+				}
+				else{
+					cancel();
+				}
+			}
+		};
+	</script>
+	
+	<apex:pageMessages id="msg" escape="false"/>
+
+	<apex:form id="theTopForm">
+		<apex:actionFunction name="updateMatrixCellStrategicWeight" action="{!updateMatrixCellStrategicWeight}"/>
+		<apex:actionFunction name="cancel" action="{!cancel}"/>
+	</apex:form>
+</apex:page>

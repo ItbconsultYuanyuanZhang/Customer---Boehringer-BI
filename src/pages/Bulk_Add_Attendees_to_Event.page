@@ -1,0 +1,102 @@
+<apex:page standardController="Medical_Event_vod__c" tabstyle="Medical_Event_vod__c"
+    extensions="BulkAddAttendees" standardStylesheets="true">
+    <apex:messages style="color:red"/>
+    <apex:form >
+    <apex:pageBlock title="{!BA_ADD} {!Medical_Event_vod__c.name}"> 
+    
+    <apex:selectRadio value="{!selectedViewType}" > 
+    <apex:selectOptions value="{!ViewType}" />
+    <apex:actionSupport event="onchange" rerender="view" />
+    </apex:selectRadio>
+    
+        <table>
+            <tr>
+                <td>{!BA_SOURCE}</td>
+                <td><apex:selectList value="{!selectedView}"
+                        multiselect="false" size="1" id="view">
+                        <apex:selectOptions value="{!ListItems}" />
+                        <apex:actionSupport event="onchange" action="{!RefreshListAccounts}" />
+                    </apex:selectList></td>
+            </tr>
+  
+                 <!-- CSAB AAdd some code below 2012.04.19.-->
+               <td> </td> 
+               <td>{!BA_FILTER} </td>
+               <td>
+               <apex:inputText value="{!ApplyNameFilter}" id="theTextInput"/>
+               </td>
+               <td>
+               <apex:commandButton value="{!BA_APPLY}"  action="{!RefreshListAccounts}"/>
+               </td>
+               <!-- CSAB AAdd some code above 2012.04.19. -->           
+            
+            
+            <tr>
+                <td>{!BA_EVENT}</td>
+                <td><apex:outputField value="{!Medical_Event_vod__c.name}" />
+                    <apex:outputField value="{!Medical_Event_vod__c.Start_Date_vod__c}" />
+                    <!--  apex:outputField value="{!Medical_Event_vod__c.Venue_pfi__r.Name}" />) -->
+                    </td> 
+            </tr>
+        </table>
+        <br/><br/>
+        
+        <apex:commandButton action="{!AddAttendees}" value="{!BA_ADDTO}" id="btnAddToEvent" rendered="{!resultsToDisplay}"/>
+        <br/><br/>
+            <apex:dataTable value="{!AccountList}" var="item" cellPadding="4" rendered="{!resultsToDisplay}"
+                border="1" >
+                <apex:column >
+                    <apex:facet name="header">
+                      <input onclick="toggleAllRows(this)" type="checkbox" name="headerCheckbox" title="{!BA_TOGGLE}"/> {!BA_SELECT}
+                    </apex:facet>
+                    <apex:inputCheckbox value="{!item.IsSelected}" disabled="{!item.IsAttending}" />
+                    <apex:outputText style="display:none" id="accountId"
+                        value="{!item.Id}" />
+                </apex:column>
+                <apex:column >
+                    <apex:facet name="header">{!BA_NAME}</apex:facet>
+                    <apex:outputLink value="/{!item.Id}" target="_blank">{!item.Name}</apex:outputLink>
+                </apex:column>
+                <apex:column >
+                    <apex:facet name="header">{!$ObjectType.Account.fields.Specialty_BI__c.label}</apex:facet>
+                     <apex:outputText value="{!item.Specialty}" />
+                </apex:column>
+                <apex:column >
+                    <apex:facet name="header">{!BA_ADDRESS}</apex:facet>
+                    <apex:outputText value="{!item.Address}" />
+                </apex:column>
+                <apex:column >
+                    <apex:facet name="header">{!BA_CITY}</apex:facet>
+                    <apex:outputText value="{!item.City}" />
+                </apex:column>
+                <apex:column >
+                    <apex:facet name="header">{!BA_STATE}</apex:facet>
+                    <apex:outputText value="{!item.State}" />
+                </apex:column>
+                <apex:column >
+                    <apex:facet name="header">{!BA_ZIP}</apex:facet>
+                    <apex:outputText value="{!item.PostCode}" />
+                </apex:column>
+            </apex:dataTable>
+            <br/>
+            <apex:outputLink value="/{!Medical_Event_vod__c.id}">{!BA_RETURN} {!Medical_Event_vod__c.name}</apex:outputLink>
+        </apex:pageBlock>
+        <script type="text/javascript"> 
+        function toggleAllRows(headerCheckbox) {
+            var container = headerCheckbox;
+            while (container.tagName != "TABLE") {
+                container = container.parentNode;           
+            }
+            
+            var inputs = container.getElementsByTagName("input");
+            var checked = headerCheckbox.checked;
+            for (var i = 0; i < inputs.length; i++) {
+                var input = inputs.item(i);
+                if (input.type == "checkbox" && input != headerCheckbox && !input.disabled) {
+                    input.checked = checked;
+                }
+            }
+        }   
+    </script>
+    </apex:form>
+</apex:page>

@@ -1,0 +1,96 @@
+<apex:page id="countryViewAll" standardController="Country_BI__c" extensions="IMP_BI_CountryViewAll" tabStyle="Product_vod__c" title="{!$ObjectType.Product_vod__c.label}: {!country.Name}">
+	<style type="text/css">
+		.next {
+		    float: right;
+		    font-size: 91%;
+		    padding-top: 5px;
+		    text-align: right;
+		    white-space: nowrap;
+		}
+	</style>
+    <apex:form id="allProducts" rendered="{!!hasError}">
+        <div class="bPageTitle">
+            <div class="ptBody">
+                <div class="content">
+                    <img title="{!$ObjectType.Product_vod__c.label}" class="pageTitleIcon" alt="{!$ObjectType.Product_vod__c.label}" src="/s.gif" />
+                    <h1 class="pageType">{!$ObjectType.Product_vod__c.label}<span class="titleSeparatingColon">:</span></h1>
+                    <h2 class="pageDescription"> {!country.Name}</h2>
+                    <div class="blank">&nbsp;</div>
+                </div>
+                <div class="links">
+                    <a title="Help for this Page (New Window)" href="javascript:openPopupFocusEscapePounds(%27https://help.salesforce.com/apex/htdoor?loc=help&target=co_view.htm&section=CustomObjects&language=en_US&release=188.20.2&instance=CS18%27, %27Help%27, 1024, 768, %27width=1024,height=768,resizable=yes,toolbar=yes,status=yes,scrollbars=yes,menubar=yes,directories=no,location=yes,dependant=no%27, false, false);">
+                        <span class="helpLink">Help for this Page</span>
+                        <img class="helpIcon" alt="" src="/s.gif"/>
+                    </a>
+                </div>
+            </div>
+            <div class="ptBreadcrumb">&nbsp;&nbsp;
+                <a href="/{!country.Id}">{!$ObjectType.Country_BI__c.label}: {!country.Name}</a>
+            </div>
+        </div>
+        <br /><br />
+        
+         <!-- PAGINATOR PANEL TOP-->
+		<div class="bNext" style="display:{!IF(products.size < itemsPaging.maxPerPage,'none','')}">
+			<div class="withFilter">
+				<div class="next">
+					<apex:outputText escape="false" value="&lt;Previous Page" rendered="{!itemsPaging.isFirstPage}"/> <apex:commandLink action="{!prev}" rerender="allProducts" rendered="{!NOT(itemsPaging.isFirstPage)}">&lt;Previous Page</apex:commandLink> 
+					| 
+					<apex:outputText escape="false" value="Next Page&gt;" rendered="{!itemsPaging.isLastPage}"/><apex:commandLink action="{!next}" rerender="allProducts" rendered="{!NOT(itemsPaging.isLastPage)}"> Next Page&gt; </apex:commandLink>
+				</div>
+			</div>
+		</div>
+		<!-- END PAGINATOR PANEL TOP-->
+        <apex:pageBlock id="countryBlock" mode="inlineEdit">
+        	<apex:pageBlockTable id="products" value="{!products}" var="p" first="{!itemsPaging.startRecord}" rows="{!itemsPaging.maxPerPage}" rendered="{!products.size > 0}">
+                <apex:column >
+                     <apex:facet name="header">   
+                        <apex:commandLink action="{!sortData}" id="cmdSort" rerender="products">
+                            {!$ObjectType.Product_vod__c.fields.Name.label}
+                            <img title="Sorted Descending" class="sortDesc" alt="Sorted Descending" src="/s.gif" style="display:{!IF(sortDirection='ASC','none','')};"/>
+                            <img title="Sorted Ascending" class="sortAsc" alt="Sorted Ascending" src="/s.gif" style="display:{!IF(sortDirection='DESC','none','')};"/>
+                            <apex:param value="Name" name="column" assignTo="{!sortExpression}" ></apex:param>
+                        </apex:commandLink>
+                     </apex:facet>
+                     <apex:outputLink value="/{!p.Id}">{!p.Name}</apex:outputLink>
+               </apex:column>
+                <apex:column value="{!p.Active_BI__c}"/>
+                <apex:column value="{!p.Product_Type_vod__c}"/>
+            </apex:pageBlockTable>
+            <apex:outputPanel id="productsNoRecords" rendered="{!products.size == 0}"> 
+                No records to display
+            </apex:outputPanel>
+        </apex:pageBlock>
+        <!-- PAGINATOR PANEL BOTTOM-->
+		<div class="bNext" style="display:{!IF(products.size < itemsPaging.maxPerPage,'none','')}">
+			<div class="withFilter">
+				<div class="next">
+					<apex:outputText escape="false" value="&lt;Previous Page" rendered="{!itemsPaging.isFirstPage}"/> <apex:commandLink action="{!prev}" rerender="allProducts" rendered="{!NOT(itemsPaging.isFirstPage)}">&lt;Previous Page</apex:commandLink> 
+					| 
+					<apex:outputText escape="false" value="Next Page&gt;" rendered="{!itemsPaging.isLastPage}"/><apex:commandLink action="{!next}" rerender="allProducts" rendered="{!NOT(itemsPaging.isLastPage)}"> Next Page&gt; </apex:commandLink>
+				</div>
+			</div>
+		</div>
+		<!-- END PAGINATOR PANEL BOTTOM-->
+    </apex:form>
+    
+    <apex:outputPanel rendered="{!hasError}">
+        <table cellspacing="10">
+      <tbody>
+            <tr>
+                <td><span style="font-weight: bold; font-size: 12pt;">Data Not Available</span></td>
+            </tr>
+            <tr>
+                <td>
+                    The data you were trying to access could not be found. It may be due to another user deleting the data or a system error. 
+                    If you know the data is not deleted but cannot access it, please look at our 
+                    <a title="support (New Window)" href="javascript:openPopupFocusEscapePounds('https://help.salesforce.com/apex/htdoor?body=%2Ftrain%2FonlineSupport.jsp&amp;loc=support&amp;language=en_US&amp;release=188.20.2&amp;instance=CS18', 'Help', 1024, 768, 'width=1024,height=768,resizable=yes,toolbar=yes,status=yes,scrollbars=yes,menubar=yes,directories=no,location=yes,dependant=no', false, false);">
+                        support
+                    </a> page.
+                    <br/><br/>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    </apex:outputPanel>
+</apex:page>

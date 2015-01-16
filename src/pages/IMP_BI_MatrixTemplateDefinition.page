@@ -1,0 +1,380 @@
+<apex:page id="matrixTemplate" standardcontroller="Matrix_Template_BI__c" extensions="IMP_BI_MatrixTemplateDefinition" title="{!pageTitle}" tabStyle="Matrix_BI__c" docType="html-5.0" >
+	<!-- style -->
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}"/>
+    <apex:stylesheet value="{!$Resource.IMP_BI_ExtMatrixDefinition_style}" />
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" />
+    
+    <style type="text/css">
+    	#feedback{font-size: 1.4em;}
+		#selectable .ui-selecting { background: #FB908A;}
+		#selectable .ui-selected { background: #FB908A; }
+		#selectable { 
+			list-style-type: none; 
+			margin: 0; 
+			padding: 0; 
+			width: 100%; 
+			float: left;
+			border: 2px solid #ECECEC;
+    		padding-bottom: 3px !important;
+    		padding-top: 1px !important;
+   		}
+		#selectable li {
+			border: 1px solid #E0E3E5; 
+			padding: 5px; 
+			font-size: 12px;
+    		font-weight: normal;
+			border-radius: 4px;
+		    float: left;
+		    margin-left: 3px;
+		    margin-top: 3px;
+		    z-index: 50;
+		    cursor:default;
+		}
+	</style>
+    
+    <script type="text/javascript">
+    	var j$ = jQuery.noConflict();
+    	var jsonMTofLaunch = j$.parseJSON('{!jsonMTofLaunch}');
+
+    	//Load message errors
+    	var IMP_BI_Input_Null = '{!$Label.IMP_BI_Input_Null}';
+    	var IMP_BI_Select_Null = '{!$Label.IMP_BI_Select_Null}';
+    	var IMP_COLUMN_BTW = '{!$Label.IMP_BI_ErrMsg_Matrix_Column}';
+    	var IMP_ROW_BTW = '{!$Label.IMP_BI_ErrMsg_Matrix_Row}';
+    	
+    	/**
+    	* Setting components
+    	*/
+    	j$(function() {
+    		j$( "#selectable" ).selectable();
+    		
+    		/**
+    		//Set lifecycle template values
+    		var cycleTemplateId = '{!matrixTemplate.Lifecycle_Template_BI__c}'
+    		
+    		if(cycleTemplateId != null && j$.trim(cycleTemplateId) != ''){
+    			var jsonMTObj = jsonMTofLaunch[cycleTemplateId];
+				var j$inputColumn = j$('#column');
+				if(jsonMTObj.isLaunch_Phase_BI__c){
+					j$inputColumn.attr('disabled', 'disabled');
+				}
+				else{
+					j$inputColumn.removeAttr('disabled');
+				}
+   			}
+   			*/
+    	});
+    	
+    	function checkAllRequiredFields(){
+            var isValid = true;
+            
+            var j$product = j$('.productPanel').find('select');
+			if(j$.trim(j$product.val()) == ''){
+				j$product.siblings('.erMsg').find('font').text(IMP_BI_Select_Null).parent().show();
+				isValid = false;
+			}else{
+				j$product.siblings('.erMsg').hide();
+			}
+			
+			var j$cycleTemplate = j$('.cycleTemplatePanel').find('select');
+			if(j$.trim(j$cycleTemplate.val()) == ''){
+				j$cycleTemplate.siblings('.erMsg').find('font').text(IMP_BI_Select_Null).parent().show();
+				isValid = false;
+			}else{
+				j$cycleTemplate.siblings('.erMsg').hide();
+			}
+			
+			var j$name = j$('#nameTemplate'); 
+			if(j$.trim(j$name.val()) == ''){
+				j$name.siblings('.erMsg').find('font').text(IMP_BI_Input_Null).parent().show();
+				isValid = false;
+			}else{
+				j$name.siblings('.erMsg').hide();
+			}
+			
+			var j$row = j$('#row'); 
+			if(j$.trim(j$row.val()) == ''){
+				j$row.siblings('.erMsg').find('font').text(IMP_BI_Input_Null).parent().show();
+				isValid = false;
+			}else if(j$row.val() < 1 || j$row.val() > 20 ){
+				j$row.siblings('.erMsg').find('font').text(IMP_ROW_BTW).parent().show();
+				isValid = false;
+			}else{
+				j$row.siblings('.erMsg').hide();
+			}
+			
+			var j$column = j$('#column'); 
+			if(j$.trim(j$column.val()) == ''){
+				j$column.siblings('.erMsg').find('font').text(IMP_BI_Input_Null).parent().show();
+				isValid = false;
+			}else if(j$column.val() < 2 || j$column.val() > 21 ){
+				j$column.siblings('.erMsg').find('font').text(IMP_COLUMN_BTW).parent().show();
+				isValid = false;
+			}else{
+				j$column.siblings('.erMsg').hide();
+			}
+			
+            return isValid; 
+        }
+    	
+    	function checkMatrixTemplateName(obj){
+            if(j$.trim(j$(obj).val()) == ''){
+                j$(obj).siblings('.erMsg').find('font').text(errMsg_Name_Null).parent().show();
+            }
+            else{
+                j$(obj).siblings('.erMsg').hide();
+            }
+        }
+        
+        function checkNullField(obj){
+            if(j$.trim(j$(obj).val()) == ''){
+                j$(obj).siblings('.erMsg').find('font').text(IMP_BI_Input_Null).parent().show();
+            }
+            else{
+                j$(obj).siblings('.erMsg').hide();
+            }
+        }
+        
+        function checkNullSelectList(obj){
+            if(j$.trim(j$(obj).val()) == ''){
+                j$(obj).siblings('.erMsg').find('font').text(IMP_BI_Select_Null).parent().show();
+            }
+            else{
+                j$(obj).siblings('.erMsg').hide();
+            }
+        }
+        
+        /**
+        function validteBetweenCol(column){
+        	var j$column = j$(column);
+        	
+        	if(j$column.val() < 2 || j$column.val() > 21 ){
+				j$column.siblings('.erMsg').find('font').text(IMP_COLUMN_BTW).parent().show();
+			}else{
+				j$column.siblings('.erMsg').hide();
+			}
+        }
+        
+        
+        function validteBetweenRow(row){
+        	var j$row = j$(row);
+        	if(j$row.val() < 1 || j$row.val() > 20 ){
+				j$row.siblings('.erMsg').find('font').text(IMP_ROW_BTW).parent().show();
+			}else{
+				j$row.siblings('.erMsg').hide();
+			}
+        }*/
+        
+        function showLoading(){
+            j$('#loading-curtain-div').appendTo(j$('#bodyTable').parent()).show();           
+        }
+        
+        function cancelToBack(){
+            showLoading();
+            cancel();
+        }
+        
+        /**
+        * create/update new matrix template
+        * @return 
+        */
+        function saveMatrixTemplate(){
+        	//Load pin loding process
+        	showLoading();
+
+        	if(checkAllRequiredFields()){
+        		var mTemplateJSON = {},specialties = [];
+        		
+        		//Set values matrix template to JSON object
+        		mTemplateJSON.Id = '{!matrixTemplate.Id}';
+        		mTemplateJSON.name = j$('#nameTemplate').val();
+        		mTemplateJSON.countryId = '{!country.Id}';
+        		mTemplateJSON.countryCode = '{!countryCode}';
+        		mTemplateJSON.countryCodeRegion = '{!countryCodeRegion}'
+        		mTemplateJSON.productId = j$('.productPanel').find('select').val();
+        		mTemplateJSON.cycleTemplateId = j$('.cycleTemplatePanel').find('select').val();
+        		mTemplateJSON.row = j$('#row').val();
+        		mTemplateJSON.column = j$('#column').val();
+        		mTemplateJSON.potentialLabel = j$('#potentialLabel').val();
+        		mTemplateJSON.adoptionLabel = j$('#adoptionLabel').val();
+        		
+        		//Get Specialties Selected and push into an array
+        		j$("div[id^='specialtiesDIV'] li").each(function(){
+        			var $specialty = j$(this);
+        			if($specialty.hasClass('ui-selected')){
+        				specialties.push(j$.trim($specialty.text()));
+        			}
+        		});
+        		mTemplateJSON.specialties = specialties;
+        		//Parse object to JSON Structure
+        		mTemplateJSON = JSON.stringify(mTemplateJSON);
+        		
+        		IMP_BI_MatrixTemplateDefinition.saveMatixTemplate(mTemplateJSON, function(data){
+            		j$('#htmlEntity').html(data);
+            		data = j$('#htmlEntity').text();
+            		data = j$.parseJSON( data );
+            
+		            if(data && !data.success){
+		                j$("div[id='errorMsg']").html(data.message);
+		                j$("div[id='errorMsg']").show();
+		                j$('#loading-curtain-div').hide();
+		            }
+		            else{
+	                	cancel();
+		            }
+	        	});
+		    }else{
+		        j$('#loading-curtain-div').hide();
+		    }
+        }
+        
+        /**
+		 * This function is used to fill info for life cycle template
+		 *
+		 @author  Jefferson Escobar
+		 @created 18-Aug-2014
+		 @version 1.0
+		 *
+		 @changelog
+		 * 18-Aug-2014 Jefferson Escobar <jescobar@omegacrmconsulting.com>
+		 * - Created
+		 */
+		function setColumnsForLaunchTemplate(obj){
+			var cycleTemplateId = j$(obj).val();
+			var j$inputRow = j$('#row');
+			var j$inputColumn = j$("#column");
+		
+			if(cycleTemplateId!= null && j$.trim(cycleTemplateId) != ''){
+				var jsonMTObj = jsonMTofLaunch[cycleTemplateId];
+				j$inputRow.val(jsonMTObj.Row_BI__c);
+				j$inputColumn.val(jsonMTObj.Column_BI__c);
+				
+				/**
+				//console.log(':: Is launch: ' + jsonMTObj.isLaunch_Phase_BI__c);
+				if(jsonMTObj.isLaunch_Phase_BI__c){
+					j$inputColumn.attr('disabled', 'disabled');
+				}
+				else{
+					j$inputColumn.removeAttr('disabled');
+				}*/
+			}else{
+				//j$inputColumn.removeAttr('disabled');
+				j$inputRow.val(null);
+				j$inputColumn.val(null);
+			}
+		}
+    </script>
+    
+    <apex:sectionHeader title="{!sectionHeaderTitle}" subtitle="{!sectionHeaderSubTitle}"/>
+    <apex:pageMessages id="msg" escape="false"/>
+    <div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');"></div>
+    
+    <apex:form id="frmMatrixTemplate" rendered="{!!hasError}">
+    	
+    	<div id="errorMsg" style="color:#ff0000;margin-left:60px;display:none;"></div>
+    	<span id="htmlEntity" style="display:none">&nbsp;</span>
+    	<apex:pageBlock mode="maindetail" id="detailPageBlock" tabStyle="Matrix_Template_BI__c">
+    		<apex:pageBlockButtons location="both">
+    			<input type="button" class="btn"  value="Save" onclick="saveMatrixTemplate();"/>
+		        <input type="button" class="btn"  value="Cancel" onclick="cancelToBack();"/>
+		        <apex:actionFunction name="cancel" action="{!cancel}"/>
+    		</apex:pageBlockButtons>
+    		<apex:pageBlockSection columns="2" title="Detail Information">
+    			<apex:pageBlockSectionItem >
+    				<apex:outputLabel value="{!$ObjectType.Matrix_Template_BI__c.fields.Name.label}" />
+    				<div class="requiredInput">
+                        <div class="requiredBlock"></div>
+                        <input type="text" size="20" maxlength="80" id="nameTemplate" value="{!matrixTemplate.Name}" onchange="checkNullField(this);" />
+                        <div class="erMsg" style="display:none; font-size:12px;">
+                            <font color="#C00 !important"></font>
+                        </div>
+                    </div>
+    			</apex:pageBlockSectionItem>
+    			<apex:outputField value="{!country.Name}" />
+    			<apex:pageBlockSectionItem >
+    				<apex:outputLabel value="Select Product:" for="theProductList"/>
+    				<apex:outputPanel styleClass="productPanel">
+    					<div class="requiredInput">
+                            <div class="requiredBlock">
+                            </div>
+                                <apex:selectList value="{!matrixTemplate.Product_Catalog_BI__c}" multiselect="false" size="1" id="theProductList" onchange="checkNullSelectList(this);">
+                                    <apex:selectOptions value="{!products}"/>
+                                </apex:selectList>
+                            <div class="erMsg" style="display:none; font-size:12px;">
+                                <font color="#C00 !important"><strong>Error: </strong>You must select one Product!</font>
+                            </div>
+                        </div>
+    				</apex:outputPanel>
+    			</apex:pageBlockSectionItem>
+    			<apex:pageBlockSectionItem >
+    				<apex:outputLabel value="{!$ObjectType.Matrix_Template_BI__c.fields.Lifecycle_Template_BI__c.label}:" for="cycleTemplateList"/>
+    				<apex:outputPanel styleClass="cycleTemplatePanel">
+    					<div class="requiredInput">
+                            <div class="requiredBlock">
+                            </div>
+                                <apex:selectList value="{!matrixTemplate.Lifecycle_Template_BI__c}" multiselect="false" size="1" id="cycleTemplateList" onchange="setColumnsForLaunchTemplate(this);">
+                                    <apex:selectOptions value="{!cycleTemplates}"/>
+                                </apex:selectList>
+                            <div class="erMsg" style="display:none; font-size:12px;">
+                                <font color="#C00 !important"><strong>Error: </strong>You must select one Cycle Template!</font>
+                            </div>
+                        </div>
+    				</apex:outputPanel>
+    			</apex:pageBlockSectionItem>
+    			
+    			<apex:pageBlockSectionItem >
+	        		<apex:outputLabel value="{!$ObjectType.Matrix_Template_BI__c.fields.Row_BI__c.label}" />
+	        		<div>
+                        <!--input type="text" size="2" maxlength="2" id="row" value="{!matrixTemplate.Row_BI__c}" onchange="checkNullField(this); validteBetweenRow(this);" onkeyup="value=value.replace(/[^\d]/g,'')"/-->
+                        <input type="text" value="{!matrixTemplate.Row_BI__c}" disabled="disabled" size="2" maxlength="2" id="row" style="background-color:#EBEBE4;"/>
+                        <div class="erMsg" style="display:none; font-size:12px;">
+                            <font color="#C00 !important"></font>
+                        </div>
+                    </div>
+		        </apex:pageBlockSectionItem>
+		        <apex:pageBlockSectionItem >
+	        		<apex:outputLabel value="{!$ObjectType.Matrix_Template_BI__c.fields.Column_BI__c.label}" />
+	        		<div>
+                        <!--input type="text" size="2" maxlength="2" id="column" value="{!matrixTemplate.Column_BI__c}" onchange="checkNullField(this); validteBetweenCol(this);" onkeyup="value=value.replace(/[^\d]/g,'')"/-->
+                        <input type="text" value="{!matrixTemplate.Column_BI__c}" disabled="disabled" size="2" maxlength="2" id="column" style="background-color:#EBEBE4;"/>
+                        <div class="erMsg" style="display:none; font-size:12px;">
+                            <font color="#C00 !important"></font>
+                        </div>
+                    </div>
+		        </apex:pageBlockSectionItem>
+    			<apex:pageBlockSectionItem >
+    				<apex:outputLabel value="{!$ObjectType.Matrix_Template_BI__c.fields.Potential_Data_Label_BI__c.label}" />
+                    <input type="text" size="20" maxlength="25" id="potentialLabel" value="{!matrixTemplate.Potential_Data_Label_BI__c}" />
+    			</apex:pageBlockSectionItem>
+		        <apex:pageBlockSectionItem >
+    				<apex:outputLabel value="{!$ObjectType.Matrix_Template_BI__c.fields.Adoption_Data_Label_BI__c.label}" />
+    				<input type="text" size="20" maxlength="25" id="adoptionLabel" value="{!matrixTemplate.Adoption_Data_Label_BI__c}" />
+    			</apex:pageBlockSectionItem>
+    		</apex:pageBlockSection>
+    		<apex:pageBlockSection columns="1" title="Add Specilaties">
+    			<table id="matrixTemplateTable" class="pfOuterTable " style="width:100%;">
+					<tr>
+						<td class="dataCol" colspan="3" style="font-weight:bold;color: #4A4A56;" >(Click on the specialty which you would like to add to the template)</td>
+					</tr>
+					<tr>
+						<td class="dataCol">
+							<apex:outputPanel id="theSpecialPanel" layout="block">
+								<div id="specialtiesDIV">
+									<ul id="selectable">
+										<apex:repeat value="{!list_clsSpcial}" var="sp">
+											<li id="{!sp.Id}" style="opacity: 1;" class="{!IF(sp.isAssigned, 'ui-selected', '')}">
+				                            	<span id="csNameSpan" class="csNameSpan" title="{!sp.sName}">{!sp.sName}</span>
+				                            </li>
+										</apex:repeat>
+									</ul>
+								</div>
+							</apex:outputPanel>
+						</td>
+					</tr>
+				</table>
+			</apex:pageBlockSection>
+    	</apex:pageBlock>
+	</apex:form>
+</apex:page>

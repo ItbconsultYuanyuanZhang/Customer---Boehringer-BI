@@ -1,0 +1,326 @@
+<apex:page id="thePage" standardcontroller="Portfolio_BI__c" extensions="IMP_BI_ExtPortfolioParams" title="{!pageTitle}" tabStyle="Portfolio_BI__c" docType="html-5.0" sidebar="false">
+	<!-- style -->
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}"/>
+    <apex:stylesheet value="{!$Resource.IMP_BI_ExtPortfolioParams_style}" />
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" />
+    <script type="text/javascript">
+    	var cycId = "{!cycle.Id}";
+    	var country = "{!cycle.Country_Lkp_BI__r.Name}";
+    </script>
+    <apex:includeScript value="{!$Resource.IMP_BI_ExtPortfolioParams_controller}" />
+    
+    <style type="text/css">
+        /* for solving the ie9 overflow bug*/
+        #pfInnerTableDiv:hover {		
+			height:100%;
+		}
+    </style>
+    
+	<script type="text/javascript">
+		Visualforce.remoting.timeout = 120000;//added by Peng Zhu 2013-08-09
+		var potoFolios = '{!$Label.IMP_BI_Portfolios}',
+			pName = '{!$ObjectType.Portfolio_BI__c.fields.Name.label}',
+			pFTE = '{!$ObjectType.Portfolio_BI__c.fields.Number_of_FTEs_BI__c.label}',
+			pDay = '{!$ObjectType.Portfolio_BI__c.fields.Number_of_days_in_the_field_BI__c.label}',
+			pCall = '{!$ObjectType.Portfolio_BI__c.fields.Number_of_calls_per_day_BI__c.label}',
+			pDetail = '{!$ObjectType.Portfolio_BI__c.fields.Numbers_of_details_per_call_BI__c.label}',
+			calBaseUrl = '{!calBaseUrl}';
+	
+	
+		var j$ = jQuery.noConflict();
+    	var maxMatrixSize = '{!maxMatrixListSize}';
+		var portfolioIndex = "{!portfolioIndex}";
+    	 
+		j$(function(){
+			initComponent();
+			
+			resetPFDivWidth();  
+			
+			register_event();
+			
+			j$(window).resize(function(){
+				resetPFDivWidth();
+            });
+            refreshMatrixIndex();
+		});
+    	 
+		function setFocus(){}
+		
+    	function initComponent(){
+    		j$("#addPortfolioBtn").css("float","right");
+    	}
+    	
+		function resetPFDivWidth(){
+			var windowWidth = 0;
+                
+            if (window.innerWidth)
+                windowWidth = window.innerWidth;
+            else if ((document.body) && (document.body.clientWidth))
+                windowWidth = document.body.clientWidth;
+            else windowWidth = window.screen.width;
+            
+            if(windowWidth < 800) windowWidth = 800;
+            
+            var mainDivWidth = parseInt(windowWidth*0.71);
+            
+            j$('#pfInnerTableDiv').css("max-width", mainDivWidth);
+            j$('#matricesSeletorDivId').css("max-width", mainDivWidth);
+		}
+		function showLoading(){
+            j$('#loading-curtain-div').appendTo(j$('#bodyTable').parent()).show();           
+        }
+		function savaPortfoliosInPage(){
+			var not100 = false;
+			var fillName = false;
+			j$("input[id$='pfNameInput']").each(function(){
+				if(!j$(this).val()){
+					fillName = true;
+				}
+			});
+			if(fillName){
+				alert('Please fill the name of each portfolio!');
+				return;
+			}
+			j$("div[id^='portfolio']").each(function(){
+        		var sum = 0;
+        		var hasMatrix = false;
+        		
+        		j$(this).find('li').each(function(){
+        			if(this.id){
+        				hasMatrix = true;
+        			}
+        		});
+        		
+        		j$(this).find('li').find('span').find('input').each(function(){
+        			//alert(j$(this).val());
+        			//console.log(typeof this.id);
+        			if(j$(this).val() && j$(this).attr('id').indexOf('weight') > -1){
+        				
+        				sum += parseInt(j$(this).val(),10);
+        			}
+        		});
+        		if(sum != 100 && hasMatrix){
+        			var pid = this.id;
+        			if(pid.indexOf('.') >=0){
+        				pid = pid.substring(0, pid.indexOf('.'));
+        			}
+        			alert('Weights sum of ' + pid + ' must be 100!');
+        			not100 = true;
+        		}
+        	});
+			
+			if(not100){
+				return;
+			}
+			showLoading();
+            //console.log(collectPortfolioValues());
+            
+            IMP_BI_ExtPortfolioParams.savePortfolio(collectPortfolioValues(), function(data){
+                j$('#htmlEntity').html(data);
+                data = j$('#htmlEntity').text();
+                data = j$.parseJSON( data );
+                
+                if(data && !data.success){
+                    j$("div[id='errorMsg']").html(data.message);
+                    j$("div[id='errorMsg']").show();
+                    j$('#loading-curtain-div').hide();
+                }
+                else{
+                    cancel();
+                }
+            });
+            
+        }
+		function cancelToBack(){
+            showLoading();
+            cancel();
+        }
+        
+        function calculateNTL(){
+        	var not100 = false;
+			var fillName = false;
+			j$("input[id$='pfNameInput']").each(function(){
+				if(!j$(this).val()){
+					fillName = true;
+				}
+			});
+			if(fillName){
+				alert('Please fill the name of each portfolio!');
+				return;
+			}
+			j$("div[id^='portfolio']").each(function(){
+        		var sum = 0;
+        		var hasMatrix = false;
+        		
+        		j$(this).find('li').each(function(){
+        			if(this.id){
+        				hasMatrix = true;
+        			}
+        		});
+        		
+        		j$(this).find('li').find('span').find('input').each(function(){
+        			//alert(j$(this).val());
+        			//console.log(typeof this.id);
+        			if(j$(this).val() && j$(this).attr('id').indexOf('weight') > -1){
+        				
+        				sum += parseInt(j$(this).val(),10);
+        			}
+        		});
+        		if(sum != 100 && hasMatrix){
+        			alert('Weights sum of ' + this.id + ' must be 100!');
+        			not100 = true;
+        		}
+        	});
+			
+			if(not100){
+				return;
+			}
+			showLoading();
+            //console.log(collectPortfolioValues());
+            
+            IMP_BI_ExtPortfolioParams.savePortfolio(collectPortfolioValues(), function(data){
+                j$('#htmlEntity').html(data);
+                data = j$('#htmlEntity').text();
+                data = j$.parseJSON( data );
+                
+                if(data && !data.success){
+                    j$("div[id='errorMsg']").html(data.message);
+                    j$("div[id='errorMsg']").show();
+                    j$('#loading-curtain-div').hide();
+                }
+                else{
+                	//console.log('yydata ' + data);
+                   // console.log(data.orgId);
+                   // console.log(data.pfIdString);
+                    //var url = 'https://boehringer-ingelheim.herokuapp.com/itbconsult/queue/ntlCalculation/' + data.orgId + '&' + cycId + '&' + data.pfIdString; 
+                    var url = calBaseUrl + data.orgId + '&' + cycId + '&' + data.pfIdString; 
+					//window.open(url); 
+					window.location.href = url;
+					//j$('#loading-curtain-div').hide();
+                }
+            });
+        }
+        
+    </script>
+    
+    <apex:sectionHeader title="{!sectionHeaderTitle}" subtitle="{!sectionHeaderSubTitle}"/>
+    <apex:pageMessages id="msg" escape="false"/>
+    <input id="portfolioIndex" type="hidden" value="{!portfolioIndex}" />
+    <div id="errorMsg" style="color:#ff0000;margin-left:60px;display:none;"></div>
+	<apex:form >
+	<apex:pageBlock mode="maindetail" id="detailPageBlock" tabStyle="Portfolio_BI__c">
+	<table id="pfOuterTable" class="pfOuterTable pbSubheader tertiaryPalette" style="width:100%;">
+		<tr>
+			<td class="labelCol" style="width:15%;">{!$ObjectType.Portfolio_BI__c.fields.Cycle_BI__c.label}:</td>
+			<td class="dataCol" style="width:25%;"><apex:outputField value="{!cycle.Name}" /></td>
+			<td class="labelCol" style="width:15%;">{!$Label.IMP_BI_Country}:</td>
+			<td class="dataCol" style="width:35%;"><apex:outputField value="{!cycle.Country_Lkp_BI__r.Name}" id="pfcountry"/></td>
+		</tr>
+		<tr>
+			<td class="labelCol">{!$Label.IMP_BI_Matrix}:</td>
+			<td class="dataCol" colspan="3">
+				<div id="matricesSeletorDivId" class="specialCls heightCls ui-droppable" style="width:90%;">
+					<ul class="dropUlCls ui-sortable">
+						<apex:repeat value="{!list_cm}" var="cm">
+							<li class="draggable {!IF(cm.isAssigned ,'ui-state-disabled special-state-disabled', '')}" id="{!cm.cmId}">
+                            	<span id="cmNameSpan" style="padding: 0px 2px;" title="{!cm.cmTitle}">{!cm.cmName}</span>
+<!--                            	<input type="text" id="{!cm.cmId}weightInput" value="{!cm.weight}" class="ui-state-disabled inputCls" onblur="updateWeightInPro(this);" onkeyup="value=value.replace(/[^\d]/g,'')"/>-->
+                            </li>
+						</apex:repeat>
+					</ul>
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td class="labelCol" style="vertical-align:top !important;">
+				{!$Label.IMP_BI_Portfolios}:
+				
+				<div id="addPortfolioBtn" title="add a Portfolio" onclick="addPortfolio();register_event();" style="margin-top:15px; margin-right:15px; cursor:pointer; height:15px; width:15px; background:transparent url(/img/feeds/follow_sprite.png) no-repeat 0 0;" ></div>
+      
+			</td>
+			<td class="dataCol" colspan="3" style="white-space:nowrap;">
+				<div id="pfInnerTableDiv" style="overflow:auto; border:1px solid #EEE; padding:5px 0px;">
+				<apex:variable var="portfolioEditIndex" value="{!1}" />
+				
+				<!-- <apex:repeat value="{!list_pf}" var="p"> -->
+				<apex:repeat value="{!list_cpf}" var="p">
+<!-- 					<div id="stylediv" style="display:block;z-index:9999;position:absolute;"/> -->
+					<table style="display:inline-block;" class="portfolioTable" id="pf-{!p.pf.Id}">
+						<tr>
+							<td class="labelCol" colspan="2" style="text-align:center !important;">Portfolio <span style="padding-left:3px;" class="pfIndexSpan">{!portfolioEditIndex}</span><img title="delete this Portfolio" class="deleteMatrixImg" style="cursor:pointer; margin-left:5px; vertical-align:middle; height:15px; width:15px;" onclick="removeGivenPortfolio(this);" src="/img/func_icons/util/recycle.gif"></img></td>
+						</tr>
+						<tr>
+							<td class="labelCol">{!$ObjectType.Portfolio_BI__c.fields.Name.label}:</td>
+							<td class="dataCol"><apex:inputField id="pfNameInput" value="{!p.pf.Name}"></apex:inputField></td>
+						</tr>
+						<tr>
+							<td colspan="2" style="width:364px">
+								<div id="portfolio{!portfolioEditIndex}" name="pfMatrices" style=" width:100%;height: 100%; border: 1px solid #000; " class="specialCls heightCls ui-droppable">
+									<ul class="targerDropUlCls matrixDropUlCls ui-sortable">
+										<apex:repeat value="{!p.list_cm}" var="cm">
+											<li id="{!cm.cmId}" class="matrixDraggable {!IF(cm.cmId != NULL, 'pgover', 'ui-state-disabled')}"><span style="padding: 0px 2px;" class="matrixTitleCls mightOverflow" title="{!cm.cmTitle}">{!cm.cmName}</span>
+<!--											<span id="{!cm.cmId}weight">{!cm.weight}</span>-->
+												<span class="{!IF(cm.cmId != null,'spanInputCls', 'hiddenCls')} ">Weight:<input type="text" id="{!cm.cmId}weightInput" value="{!cm.weight}" class="ui-state-disabled {!IF(cm.cmId != null,'inputCls', 'hiddenCls')}" onkeyup="value=value.replace(/[^\d]/g,'')" onblur="showWeightValueIn100(this);"/>
+												<span style="margin-left:30px;">All Details Required:</span><apex:inputField id="fullCoverage" styleClass="ui-state-disabled {!IF(cm.cmId != null,'fullCoverageCb', 'hiddenCls')}" value="{!cm.sbw.Full_Coverage_BI__c}"/>
+												<!-- <span>% Required Details:</span><input type="text" id="{!cm.cmId}prioriInput" value="{!cm.priori}" class="ui-state-disabled {!IF(cm.cmId != null,'inputCls', 'hiddenCls')}" onkeyup="value=value.replace(/[^\d]/g,'')" onblur="showPriorityValueIn100(this);"/> -->
+												</span><!-- onblur="check100(this);" -->
+											</li>
+										</apex:repeat>
+									</ul>
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td class="labelCol">{!$ObjectType.Portfolio_BI__c.fields.Number_of_FTEs_BI__c.label}:</td>
+							<td class="dataCol"><apex:inputField id="nfInput" value="{!p.pf.Number_of_FTEs_BI__c}"></apex:inputField></td>
+						</tr>
+						<tr>
+							<td class="labelCol">{!$ObjectType.Portfolio_BI__c.fields.Number_of_days_in_the_field_BI__c.label}:</td>
+							<td class="dataCol"><apex:inputField id="dfInput" value="{!p.pf.Number_of_days_in_the_field_BI__c}"></apex:inputField></td>
+						</tr>
+						<tr>
+							<td class="labelCol">{!$ObjectType.Portfolio_BI__c.fields.Number_of_calls_per_day_BI__c.label}:</td>
+							<td class="dataCol"><apex:inputField id="cdInput" value="{!p.pf.Number_of_calls_per_day_BI__c}"></apex:inputField></td>
+						</tr>
+						<tr>
+							<td class="labelCol">{!$ObjectType.Portfolio_BI__c.fields.Numbers_of_details_per_call_BI__c.label}:</td>
+							<td class="dataCol"><apex:inputField id="dcInput" value="{!p.pf.Numbers_of_details_per_call_BI__c}"></apex:inputField></td>
+						</tr>
+					</table>
+					<apex:variable var="portfolioEditIndex" value="{!portfolioEditIndex+1}"/>
+					
+				</apex:repeat>
+				</div>
+			</td>
+		</tr>
+		<tr>
+<!-- 			<td class="dataCol" colspan="1"> -->
+<!-- 				<input type="button" value="Save" class="btn" onclick="savaPortfoliosInPage();"/> -->
+<!-- 			</td> -->
+<!-- 			<td class="dataCol" colspan="1"> -->
+<!-- 				<input type="button" value="Cancel" class="btn" onclick="cancelToBack();"/> -->
+<!-- 			</td> -->
+<!-- 			<td class="dataCol" colspan="1"> -->
+<!-- 				<input type="button" value="Calculate NTL" class="btn" onclick="calculateNTL();"/> -->
+<!-- 			</td> -->
+<!-- 			<td class="dataCol" colspan="1"> -->
+<!-- 			</td> -->
+				<td class="dataCol" style="text-align:center;" colspan="4">
+				<input type="button" value="{!$Label.IMP_BI_Save}" class="btn" onclick="savaPortfoliosInPage();"/>
+			
+				<input type="button" value="{!$Label.IMP_BI_Cancel}" class="btn" onclick="cancelToBack();"/>
+			
+				<input type="button" value="{!$Label.IMP_BI_CalculateNTL}" class="btn" onclick="calculateNTL();"/>
+			
+			</td>
+		</tr>
+	</table>
+	<apex:actionFunction name="cancel" action="{!cancel}"/>
+                        
+	</apex:pageBlock>
+	<span id="htmlEntity" style="display:none">&nbsp;</span>
+	</apex:form>
+    <div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');"></div>
+</apex:page>

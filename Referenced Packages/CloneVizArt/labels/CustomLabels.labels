@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomLabels xmlns="http://soap.sforce.com/2006/04/metadata">
+    <labels>
+        <fullName>Available</fullName>
+        <categories>Visualforce Titles</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Available</shortDescription>
+        <value>Available</value>
+    </labels>
+    <labels>
+        <fullName>BackButton</fullName>
+        <categories>Visualforce Buttons</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Back Button</shortDescription>
+        <value>Back</value>
+    </labels>
+    <labels>
+        <fullName>CancelButton</fullName>
+        <categories>Visualforce Buttons</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>CancelButton</shortDescription>
+        <value>Cancel</value>
+    </labels>
+    <labels>
+        <fullName>Chosen</fullName>
+        <categories>Visualforce Titles</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Chosen</shortDescription>
+        <value>Chosen</value>
+    </labels>
+    <labels>
+        <fullName>CloneError</fullName>
+        <categories>Visualforce Messages</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>CloneError</shortDescription>
+        <value>Error occurred during cloning, please contact your system administrator.</value>
+    </labels>
+    <labels>
+        <fullName>ConfirmButton</fullName>
+        <categories>Visualforce Buttons</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Confirm Button</shortDescription>
+        <value>Confirm</value>
+    </labels>
+    <labels>
+        <fullName>ConfirmMessage</fullName>
+        <categories>Visualforce Messages</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Clone Confirm Message</shortDescription>
+        <value>Please click CONFIRM to clone current record, or click BACK to go back to the original record.</value>
+    </labels>
+    <labels>
+        <fullName>EditButton</fullName>
+        <categories>Visualforce Buttons</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>EditButton</shortDescription>
+        <value>Edit</value>
+    </labels>
+    <labels>
+        <fullName>Information</fullName>
+        <categories>Visualforce Tiles</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Information</shortDescription>
+        <value>Information</value>
+    </labels>
+    <labels>
+        <fullName>Loading</fullName>
+        <categories>Visualforce Tiles</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>Loading</shortDescription>
+        <value>Loading</value>
+    </labels>
+    <labels>
+        <fullName>NewButton</fullName>
+        <categories>Visualforce Buttons</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>NewButton</shortDescription>
+        <value>New</value>
+    </labels>
+    <labels>
+        <fullName>SaveButton</fullName>
+        <categories>Visualforce Buttons</categories>
+        <language>en_US</language>
+        <protected>false</protected>
+        <shortDescription>SaveButton</shortDescription>
+        <value>Save</value>
+    </labels>
+</CustomLabels>

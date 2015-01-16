@@ -1,0 +1,50 @@
+<apex:page standardController="Call_Cycle_Entry_vod__c" extensions="VEEVA_BI_CALL_CYCLE_RELOCATE_CONTROLLER" >
+
+ <apex:form >
+        <apex:pageBlock mode="edit">
+            <apex:pageMessages />
+            
+            <apex:pageBlockSection >
+            	<apex:outputText style="font-weight:700; font-size:16px" value="{!title}" /><br></br><br></br>
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection columns="1">
+            	<apex:outputText value="{!description}" label="{!descLabel}" /><br></br><br></br>
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection columns="2">
+                    
+                <apex:outputtext id="UserFrom" value="{!fromUser}" label="{!fromUserLabel}" />
+                
+	        	<apex:selectList id="filterWeek" value="{!selectedWeekID}" size="1" label="{!weekLabel}">
+	        		<apex:actionsupport event="onchange" rerender="resultList" action="{!display}"/>
+					<apex:selectOptions value="{!weeks}"></apex:selectOptions> 
+				</apex:selectList>
+				
+				<apex:inputField id="UserTo" value="{!c1.User_Relocate__c}" label="{!toUserLabel}"/>
+	        
+	        	<apex:selectList id="filterDay" value="{!selectedDayID}" size="1" label="{!dayLabel}">
+	        		<apex:actionsupport event="onchange" rerender="resultList" action="{!display}"/>
+					<apex:selectOptions value="{!days}"></apex:selectOptions>
+				</apex:selectList>
+	    		
+	    	</apex:pageBlockSection><br></br><br></br>
+	    	
+	    	<apex:pageBlock title="Relocate Results">
+		        <apex:pageBlockTable id="resultList" value="{!cceToDisplay}" var="item">
+		            <apex:column style="width:200px" value="{!item.Account_vod__r.Name}"/>
+		            <apex:column style="width:200px" value="{!item.Week_vod__c}"/>
+		            <apex:column style="width:200px" value="{!item.Day_of_Week_vod__c}"/>
+		            <apex:column style="width:200px" value="{!item.Duration_vod__c}"/>
+		        </apex:pageBlockTable> 
+		    </apex:pageBlock>
+			
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton action="{!save}" value="Save" /><br></br><br></br>
+                <apex:outputText value="{!responseMessage}" style="color:#FF0000; font-weight:800" /> 
+            </apex:pageBlockButtons> 
+            
+        </apex:pageBlock>
+    </apex:form>
+
+</apex:page>

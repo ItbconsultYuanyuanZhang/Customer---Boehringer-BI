@@ -1,0 +1,554 @@
+<apex:page standardController="SAP_Preparation_BI__c" extensions="VEEVA_BI_SAP_Preparation_Extension" id="thePage" action="{!init}">
+ 	
+    <!-- <apex:includeScript value="{!URLFOR($Resource.jQuery, 'jquery-1.9.1.min.js')}"/>
+     <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2, 'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}"/>
+     <apex:includeScript value="{!URLFOR($Resource.jQuery_tablesorter, 'jquery-latest.js')}"/> 
+    <apex:includeScript value="{!URLFOR($Resource.jQuery_tablesorter, 'jquery.tablesorter.js')}"/>
+    <apex:includeScript value="{!URLFOR($Resource.JQuery_fixheadertable, 'javascript/jquery.fixheadertable.js')}"/>
+   	<apex:stylesheet value="{!URLFOR($Resource.JQuery_fixheadertable, 'css/base.css')}"/>
+	<apex:stylesheet value="{!URLFOR($Resource.JQuery_fixheadertable, 'jquery-ui/css/ui-lightness/jquery-ui-1.8.4.custom.css')}"/>
+
+	
+	<script type="text/javascript">
+   var j$ = jQuery.noConflict();
+    j$(document).ready(function() {
+        j$('.list ').fixheadertable({
+            caption : 'My header is fixed !',
+             height  : 400
+        });
+    });
+    j$(document).ready(function() {
+        j$('#targettable').tablesorter(); 
+    });
+	</script>
+	
+-->
+	<style>
+		.center{
+		margin:auto;
+		text-align:center;
+		
+		}
+		.center td 
+		{
+		color:red;
+		}
+		
+		.rowClass{
+			border-bottom-color: rgb(227, 222, 184);
+			border-bottom-style: solid;
+			border-bottom-width: 1px;
+		}
+		.rowClass tr{
+			border-bottom-color: rgb(227, 222, 184);
+			border-bottom-style: solid;
+			border-bottom-width: 1px;
+		}
+		.rowClass td{
+			border-bottom-color: rgb(227, 222, 184);
+			border-bottom-style: solid;
+			border-bottom-width: 1px;
+		}
+	</style>
+	
+	<apex:form id="theForm">
+		<apex:messages layout="table" styleClass="center"/> 		
+		
+		<apex:pageBlock title="{!P.Name}" mode="edit" rendered="{!edit}">
+			<apex:pageBlockButtons > 
+				<apex:commandButton action="{!saveedit}" value="{!$Label.Common_SaveButton_vod}" id="save1"/>
+				<apex:commandButton action="{!canceledit}" value="{!$Label.Common_CancelButton_vod}" id="cancel1" immediate="true"/>
+			</apex:pageBlockButtons> 
+			<apex:pageBlockSection title="{!$ObjectType.SAP_Preparation_BI__c.label}" columns="2">
+				<apex:pageBlockSectionItem rendered="{!Tpick}">  
+					 <apex:outputLabel value="{!$ObjectType.SAP_Preparation_BI__c.fields.Territory_BI__c.label}"/>
+					 <apex:outputPanel layout="block" styleClass="requiredInput">
+					 <apex:outputPanel styleClass="requiredBlock" /> 
+						<apex:selectList value="{!Terr}" size="1" multiselect="false" required="false"  id="terrselect">
+							<apex:selectOptions value="{!Tnames}" />
+				   		 </apex:selectList>
+				   	</apex:outputPanel>  
+			    </apex:pageBlockSectionItem>
+			    <apex:outputField value="{!P.Territory_BI__c}" rendered="{!!Tpick}" />
+			    <apex:outputField value="{!P.Total_Planned_Interactions_BI__c}"/>
+			    <apex:inputField value="{!P.Status_BI__c}" />
+			    <apex:outputField value="{!P.Total_Adjusted_Interactions_BI__c}"/>
+				<apex:outputField value="{!P.Start_Date_BI__c}" />
+				<apex:outputField value="{!P.Total_Planned_Details_BI__c}"/>
+				<apex:outputField value="{!P.End_Date_BI__c}"/>
+				<apex:outputField value="{!P.Total_Adjusted_Details_BI__c}" />
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="{!$ObjectType.SAP_Target_Preparation_BI__c.label} {!$Label.SAPP_Filter_BI}"  columns="1" > 
+			 <apex:panelGrid columns="2" width="80%" style="text-align: left">
+			 	<apex:panelGroup id="theGroup1">
+			 	 <apex:panelGrid columns="2" id="theGrid2" style="line-height:2.2em">
+				 	 <apex:outputText value="{!$Label.SAPP_Modified_BI}" />
+				 	 <apex:selectRadio value="{!modified}" style="text-align: left">
+				 	 	<apex:selectOption itemValue="" itemLabel="{!$Label.SAPP_No_filter_BI}"/>
+				 	 	<apex:selectOption itemValue="true" itemLabel="{!$Label.Common_Yes_vod}"/>
+				 	 	<apex:selectOption itemValue="false" itemLabel="{!$Label.Common_No_vod}"/>
+				 	 </apex:selectRadio>
+				 </apex:panelGrid>
+			        <apex:outputLabel value="{!$Label.SAPP_Segment_Filter_BI + '   '} " /> &nbsp;
+			        <apex:selectList value="{!ProductName}" size="1" multiselect="false" >
+			            <apex:selectOptions value="{!ProductSelectOptionList}" />
+			        </apex:selectList>
+			        <apex:selectList value="{!SegmentName}" size="1" multiselect="false" >
+			            <apex:selectOptions value="{!SegmentSelectOptionList}" />
+			        </apex:selectList>
+				 <apex:panelGrid columns="4" id="theGrid" styleClass="td" >
+				 	  
+					 <apex:selectList value="{!FieldName}" size="1" multiselect="false" >
+			            <apex:selectOptions value="{!FieldsSelectOptionList}" />
+			        </apex:selectList>
+			        <apex:selectList value="{!Operator}" size="1" multiselect="false" id="op1">
+			            <apex:selectOptions value="{!OperatorList}" />
+			        </apex:selectList>
+			        <apex:inputText value="{!Value}" />
+			        <apex:outputText value="" />
+			        
+			        <apex:selectList value="{!FieldName2}" size="1" multiselect="false">
+			            <apex:selectOptions value="{!FieldsSelectOptionList}" />
+			        </apex:selectList>
+			        <apex:selectList value="{!Operator2}" size="1" multiselect="false" id="op2">
+			            <apex:selectOptions value="{!OperatorList}" />
+			        </apex:selectList>
+			        <apex:inputText value="{!Value2}" />
+			        <apex:outputText value="" />
+			        
+			        <apex:selectList value="{!FieldName3}" size="1" multiselect="false" >
+			            <apex:selectOptions value="{!FieldsSelectOptionList}" />
+			        </apex:selectList>
+			        <apex:selectList value="{!Operator3}" size="1" multiselect="false" id="op3">
+			            <apex:selectOptions value="{!OperatorList}" />
+			        </apex:selectList>
+			        <apex:inputText value="{!Value3}" />
+			        <apex:commandButton action="{!filtertable}" value="{!$Label.SAPP_Filter_BI}" id="filterButton" rendered="true"/>
+			        
+				    <apex:commandButton action="{!clearFilterTable}" value="{!$Label.SAPP_Filter_Clear_BI}" id="clearFilterButton" rendered="true"/>
+				 </apex:panelGrid>
+				</apex:panelGroup>
+				 <apex:pageblocktable value="{!filterPlanned}" 
+									var="f" 
+									id="filterValuetable" >
+				        <apex:column >
+				        	<apex:facet name="header">
+				        		{!$Label.SAPP_Summary_BI}
+				        	</apex:facet>
+				          <apex:outputLabel value="{!f}" />
+				        </apex:column>
+				        <apex:column >
+				        	<apex:facet name="header">
+				        		{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Planned_Details_BI__c.label}
+				        	</apex:facet>
+				          <apex:outputText value="{!filterPlanned[f]}" />
+				        </apex:column>
+				        <apex:column >
+				        	<apex:facet name="header">
+				        		{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Adjusted_Details_BI__c.label}
+				        	</apex:facet>
+				          <apex:outputText value="{!filterAdjusted[f]}" />
+				        </apex:column>
+				 </apex:pageblocktable>
+			 </apex:panelGrid>
+		    </apex:pageBlockSection>
+			<apex:pageBlockSection title="{!$ObjectType.SAP_Target_Preparation_BI__c.label}" columns="1" id="table">
+				<apex:pageblocktable value="{!targets}" 
+									var="target" 
+									id="targettable" > <!-- ADD this to column center alignment: style="text-align:center" -->
+				        <apex:column >
+				          <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Target_Customer_BI__c.label}{!IF(sortExpression=='Target_Customer_BI__r.Name',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Target_Customer_BI__r.Name" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLink value="/{!target.Target_Customer_BI__c}" target="_blank">{!target.Target_Customer_BI__r.Name}</apex:outputLink>
+				        </apex:column>
+				         <apex:column >
+				          <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Primary_Parent_BI__c.label}{!IF(sortExpression=='Primary_Parent_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Primary_Parent_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLabel value="{!target.Primary_Parent_BI__c}" />
+				        </apex:column>
+				         <apex:column >
+				          <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Hospital_BI__c.label}{!IF(sortExpression=='Hospital_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Hospital_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLabel value="{!target.Hospital_BI__c}" />
+				        </apex:column>
+				         <apex:column >
+				         	<apex:facet name="header">
+					          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Primary_Specialty_BI__c.label}{!IF(sortExpression=='Primary_Specialty_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+					          		<apex:param value="Primary_Specialty_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+					          	</apex:commandLink>
+					          </apex:facet>
+				         	<apex:outputLabel value="{!target.Primary_Specialty_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         	<apex:facet name="header">
+					          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Column_1_BI__c.label}{!IF(sortExpression=='Column_1_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+					          		<apex:param value="Column_1_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+					          	</apex:commandLink>
+					          </apex:facet>
+				         	<apex:outputLabel value="{!target.Column_1_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         	<apex:facet name="header">
+					          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Column_2_BI__c.label}{!IF(sortExpression=='Column_2_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+					          		<apex:param value="Column_2_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+					          	</apex:commandLink>
+					          </apex:facet>
+				         	<apex:outputLabel value="{!target.Column_2_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         	<apex:facet name="header">
+					          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.NTL_Value_BI__c.label}{!IF(sortExpression=='NTL_Value_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+					          		<apex:param value="NTL_Value_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+					          	</apex:commandLink>
+					          </apex:facet>
+				         	<apex:outputLabel value="{!target.NTL_Value_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Planned_Interactions_BI__c.label}{!IF(sortExpression=='Planned_Interactions_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Planned_Interactions_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLabel value="{!target.Planned_Interactions_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         <apex:facet name="header">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Remaining_Interactions_BI__c.label}</apex:facet>
+				          <apex:outputText value="{!TPRemMap[target.Target_Customer_BI__c]}" />
+				        </apex:column>
+				        <apex:column >
+				         <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Adjusted_Interactions_BI__c.label}{!IF(sortExpression=='Adjusted_Interactions_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Adjusted_Interactions_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:inputField value="{!target.Adjusted_Interactions_BI__c}"  style="width:25px" styleClass="req"/>
+				        </apex:column>
+				        <apex:column >
+				         <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Total_Adjusted_Details_BI__c.label}{!IF(sortExpression=='Total_Adjusted_Details_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Total_Adjusted_Details_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLabel value="{!target.Total_Adjusted_Details_BI__c}" />
+				        </apex:column>
+				        <apex:repeat value="{!prods}" var="prod" >
+					        <apex:column >
+					        	<apex:facet name="header">{!prod.Name}</apex:facet>
+					        	<apex:outputpanel rendered="{!renderMap[target.External_ID_BI__c+'_'+prod.Id]}">
+						        	<table class="list " border="0" cellpadding="0" cellspacing="0">
+						        		<thead class="rich-table-thead">
+						        			<tr class="headerRow ">
+							        			<th class="headerRow  " width="100px">{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Segment_BI__c.label}</th>
+							        			<th class="headerRow  ">{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Planned_Details_BI__c.label}</th>
+							        			<th class="headerRow  ">{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Remaining_Details_BI__c.label}</th>
+							        			<th class="headerRow  ">{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Adjusted_Details_BI__c.label}</th>
+						        			</tr>
+						        		</thead>
+						        		<tr class="dataRow even  first">
+						        			<td class="dataCell  " colspan="1" bgcolor="{!detailMap[target.External_ID_BI__c+'_'+prod.Id].Segment_Color_BI__c}">{!detailMap[target.External_ID_BI__c+'_'+prod.Id].Segment_BI__c}({!detailMap[target.External_ID_BI__c+'_'+prod.Id].Column_BI__c},{!detailMap[target.External_ID_BI__c+'_'+prod.Id].Row_BI__c})</td> 
+						        			<td class="dataCell  " colspan="1">{!detailMap[target.External_ID_BI__c+'_'+prod.Id].Planned_Details_BI__c}</td>
+						        			<td class="dataCell  " colspan="1">{!DPRemMap[target.Target_Customer_BI__c+'_'+prod.Id]}</td>
+						        			<td class="dataCell  " colspan="1"><apex:inputField value="{!detailMap[target.External_ID_BI__c+'_'+prod.Id].Adjusted_Details_BI__c}"  style="width:25px" /></td>
+						        		</tr>
+						        	</table>
+						        </apex:outputpanel>
+					        </apex:column>
+				        </apex:repeat>
+				    </apex:pageblocktable>
+				
+			    <apex:outputPanel id="myButtons" layout="block"  style="text-align: center;">
+				        <apex:commandButton action="{!Beginning}" title="Beginning" value="<<" disabled="{!disablePrevious}" reRender="targettable,myButtons"/>
+				        <apex:commandButton action="{!Previous}" title="Previous" value="<" disabled="{!disablePrevious}" reRender="targettable,myButtons"/> 
+				        {!pageNumber} / {!totalPages}
+				        <apex:commandButton action="{!Next}" title="Next" value=">" disabled="{!disableNext}" reRender="targettable,myButtons"/>
+				        <apex:commandButton action="{!End}" title="End" value=">>" disabled="{!disableNext}" reRender="targettable,myButtons"/> 
+			   </apex:outputPanel>
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+		
+		<apex:pageBlock title="{!P.Name}" mode="detail" rendered="{!detail}">
+			<apex:pageBlockButtons > 
+				<apex:commandButton action="{!editPrep}" value="{!$Label.SAPP_Edit_BI}" id="edit2" rendered="{!showEdit}"/> 
+				<apex:commandButton action="{!returntolist}" value="{!$Label.Common_ReturnToPreviousPage_vod}" id="return2" immediate="true"/>
+				<apex:commandButton action="{!createSAP}" value="{!$Label.SAPP_Create_SAP_BI}" id="createSAP2" rendered="{!$ObjectType.SAP_Preparation_BI__c.fields.Status_BI__c.Updateable}"/>
+			</apex:pageBlockButtons> 
+			<apex:pageBlockSection title="{!$ObjectType.SAP_Preparation_BI__c.label}" columns="2">
+				<apex:outputField value="{!P.Territory_BI__c}"/>
+			    <apex:outputField value="{!P.Total_Planned_Interactions_BI__c}"/>
+			    <apex:outputField value="{!P.Status_BI__c}" />
+			    <apex:outputField value="{!P.Total_Adjusted_Interactions_BI__c}"/>
+				<apex:outputField value="{!P.Start_Date_BI__c}" />
+				<apex:outputField value="{!P.Total_Planned_Details_BI__c}"/>
+				<apex:outputField value="{!P.End_Date_BI__c}" />
+				<apex:outputField value="{!P.Total_Adjusted_Details_BI__c}" />
+				<!-- <apex:outputText value="{!filterCount}" label="Number of filtered targets"/> -->
+			</apex:pageBlockSection>
+			<apex:pageBlockSection title="{!$ObjectType.SAP_Target_Preparation_BI__c.label} {!$Label.SAPP_Filter_BI}"  columns="1" > 
+			 <apex:panelGrid columns="2" width="80%" style="text-align: left">
+			 	<apex:panelGroup id="theGroup1">
+			 	 <apex:panelGrid columns="2" id="theGrid2" style="line-height:2.2em">
+				 	 <apex:outputText value="{!$Label.SAPP_Modified_BI}" />
+				 	 <apex:selectRadio value="{!modified}" style="text-align: left">
+				 	 	<apex:selectOption itemValue="" itemLabel="{!$Label.SAPP_No_filter_BI}"/>
+				 	 	<apex:selectOption itemValue="true" itemLabel="{!$Label.Common_Yes_vod}"/>
+				 	 	<apex:selectOption itemValue="false" itemLabel="{!$Label.Common_No_vod}"/>
+				 	 </apex:selectRadio>
+				 </apex:panelGrid>
+			        <apex:outputLabel value="{!$Label.SAPP_Segment_Filter_BI + '   '} " /> &nbsp;
+			        <apex:selectList value="{!ProductName}" size="1" multiselect="false" >
+			            <apex:selectOptions value="{!ProductSelectOptionList}" />
+			        </apex:selectList>
+			        <apex:selectList value="{!SegmentName}" size="1" multiselect="false" >
+			            <apex:selectOptions value="{!SegmentSelectOptionList}" />
+			        </apex:selectList>
+				 <apex:panelGrid columns="4" id="theGrid" styleClass="td" >
+				 	  
+					 <apex:selectList value="{!FieldName}" size="1" multiselect="false" >
+			            <apex:selectOptions value="{!FieldsSelectOptionList}" />
+			        </apex:selectList>
+			        <apex:selectList value="{!Operator}" size="1" multiselect="false" id="op1">
+			            <apex:selectOptions value="{!OperatorList}" />
+			        </apex:selectList>
+			        <apex:inputText value="{!Value}" />
+			        <apex:outputText value="" />
+			        
+			        <apex:selectList value="{!FieldName2}" size="1" multiselect="false">
+			            <apex:selectOptions value="{!FieldsSelectOptionList}" />
+			        </apex:selectList>
+			        <apex:selectList value="{!Operator2}" size="1" multiselect="false" id="op2">
+			            <apex:selectOptions value="{!OperatorList}" />
+			        </apex:selectList>
+			        <apex:inputText value="{!Value2}" />
+			        <apex:outputText value="" />
+			        
+			        <apex:selectList value="{!FieldName3}" size="1" multiselect="false" >
+			            <apex:selectOptions value="{!FieldsSelectOptionList}" />
+			        </apex:selectList>
+			        <apex:selectList value="{!Operator3}" size="1" multiselect="false" id="op3">
+			            <apex:selectOptions value="{!OperatorList}" />
+			        </apex:selectList>
+			        <apex:inputText value="{!Value3}" />
+			        <apex:commandButton action="{!filtertable}" value="{!$Label.SAPP_Filter_BI}" id="filterButton" rendered="true"/>
+			        
+				    <apex:commandButton action="{!clearFilterTable}" value="{!$Label.SAPP_Filter_Clear_BI}" id="clearFilterButton" rendered="true"/>
+				 </apex:panelGrid>
+				</apex:panelGroup>
+				 <apex:pageblocktable value="{!filterPlanned}" 
+									var="f" 
+									id="filterValuetable" >
+				        <apex:column >
+				        	<apex:facet name="header">
+				        		{!$Label.SAPP_Summary_BI}
+				        	</apex:facet>
+				          <apex:outputLabel value="{!f}" />
+				        </apex:column>
+				        <apex:column >
+				        	<apex:facet name="header">
+				        		{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Planned_Details_BI__c.label}
+				        	</apex:facet>
+				          <apex:outputText value="{!filterPlanned[f]}" />
+				        </apex:column>
+				        <apex:column >
+				        	<apex:facet name="header">
+				        		{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Adjusted_Details_BI__c.label}
+				        	</apex:facet>
+				          <apex:outputText value="{!filterAdjusted[f]}" />
+				        </apex:column>
+				 </apex:pageblocktable>
+			 </apex:panelGrid>
+		    </apex:pageBlockSection>
+			<apex:pageBlockSection title="{!$ObjectType.SAP_Target_Preparation_BI__c.label}" columns="1">
+				<!-- FLOATING HEADER
+				<apex:dataTable value="{!null}" 
+									var="header" 
+									id="headertable"
+									columnClasses="headerRow"
+									columnsWidth="5,300,250,250,150,30,30,30,30,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200"
+									style="padding-bottom: 0px;padding-left: 0px;padding-right: 0px;padding-top: 0px;">
+					 <apex:column width="5" style="column-width:5px;">
+				     </apex:column>
+					<apex:column width="300px" style="column-width:300px;">
+			          <apex:facet name="header">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Target_Customer_BI__c.label}</apex:facet>
+			        </apex:column>
+			         <apex:column width="250px" style="column-width:250px;">
+			          <apex:facet name="header">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Primary_Parent_BI__c.label}</apex:facet>
+			        </apex:column>
+			         <apex:column width="250px" style="column-width:250px;">
+			          <apex:facet name="header">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Hospital_BI__c.label}</apex:facet>
+			        </apex:column>
+			         <apex:column width="150px" style="column-width:150px;">
+			          <apex:facet name="header">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Primary_Specialty_BI__c.label}</apex:facet>
+			        </apex:column>
+			        <apex:column width="30px" style="column-width:30px;">
+			          <apex:facet name="header">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Planned_Interactions_BI__c.label}</apex:facet>
+			        </apex:column>
+			        <apex:column width="30px" style="column-width:30px;">
+			          <apex:facet name="header">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Remaining_Interactions_BI__c.label}</apex:facet>
+			        </apex:column>
+			        <apex:column width="30px" style="column-width:30px;">
+			          <apex:facet name="header">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Adjusted_Interactions_BI__c.label}</apex:facet>
+			        </apex:column>
+			        <apex:column width="30px" style="column-width:30px;">
+			          <apex:facet name="header">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Total_Adjusted_Details_BI__c.label}</apex:facet>
+			        </apex:column>
+			        <apex:repeat value="{!prods}" var="prod" >
+        				<apex:column width="200px" style="column-width:200px;">
+				          <apex:facet name="header" >{!prod.Name}</apex:facet>
+				        </apex:column>
+		        	</apex:repeat>
+		        	<apex:column width="18px" style="column-width:18px;">
+			        </apex:column>
+				</apex:dataTable>
+				 
+				<table border="0" cellpadding="0" cellspacing="0" style="padding-left: 10px;">
+	        		 <thead class="rich-table-thead">
+	        			<tr class="headerRow ">
+		        			<th class="headerRow  " width="300px" >{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Target_Customer_BI__c.label}</th>
+		        			<th class="headerRow  " width="250px">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Primary_Parent_BI__c.label}</th>
+		        			<th class="headerRow  " width="250px">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Hospital_BI__c.label}</th>
+		        			<th class="headerRow  " width="150px">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Primary_Specialty_BI__c.label}</th>
+		        			<th class="headerRow  " width="30px">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Planned_Interactions_BI__c.label}</th>
+		        			<th class="headerRow  " width="30px">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Remaining_Interactions_BI__c.label}</th>
+		        			<th class="headerRow  " width="30px">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Adjusted_Interactions_BI__c.label}</th>
+		        			<th class="headerRow  " width="30px">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Total_Adjusted_Details_BI__c.label}</th>
+		        			<apex:repeat value="{!prods}" var="prod" >
+		        				<th class="headerRow"  width="200px">
+		        				{!prod.Name}
+		        				</th>
+		        			</apex:repeat>
+		        			<th class="headerRow  " width="18px"></th>
+	        			</tr>
+	        		</thead>    		
+	        	</table>  
+				<apex:outputpanel style="overflow-y:auto;max-height:600px;;display:inline-block" layout="block">-->
+					<apex:pageblocktable value="{!targets}" 
+									var="target" 
+									id="targettable" > <!-- ADD this to column center alignment: style="text-align:center" -->
+				        <apex:column >
+				          <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Target_Customer_BI__c.label}{!IF(sortExpression=='Target_Customer_BI__r.Name',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Target_Customer_BI__r.Name" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLink value="/{!target.Target_Customer_BI__c}" target="_blank">{!target.Target_Customer_BI__r.Name}</apex:outputLink>
+				        </apex:column>
+				         <apex:column >
+				          <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Primary_Parent_BI__c.label}{!IF(sortExpression=='Primary_Parent_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Primary_Parent_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLabel value="{!target.Primary_Parent_BI__c}" />
+				        </apex:column>
+				         <apex:column >
+				          <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Hospital_BI__c.label}{!IF(sortExpression=='Hospital_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Hospital_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLabel value="{!target.Hospital_BI__c}" />
+				        </apex:column>
+				         <apex:column >
+				         	<apex:facet name="header">
+					          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Primary_Specialty_BI__c.label}{!IF(sortExpression=='Primary_Specialty_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+					          		<apex:param value="Primary_Specialty_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+					          	</apex:commandLink>
+					          </apex:facet>
+				         	<apex:outputLabel value="{!target.Primary_Specialty_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         	<apex:facet name="header">
+					          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Column_1_BI__c.label}{!IF(sortExpression=='Column_1_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+					          		<apex:param value="Column_1_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+					          	</apex:commandLink>
+					          </apex:facet>
+				         	<apex:outputLabel value="{!target.Column_1_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         	<apex:facet name="header">
+					          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Column_2_BI__c.label}{!IF(sortExpression=='Column_2_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+					          		<apex:param value="Column_2_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+					          	</apex:commandLink>
+					          </apex:facet>
+				         	<apex:outputLabel value="{!target.Column_2_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         	<apex:facet name="header">
+					          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.NTL_Value_BI__c.label}{!IF(sortExpression=='NTL_Value_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+					          		<apex:param value="NTL_Value_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+					          	</apex:commandLink>
+					          </apex:facet>
+				         	<apex:outputLabel value="{!target.NTL_Value_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Planned_Interactions_BI__c.label}{!IF(sortExpression=='Planned_Interactions_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Planned_Interactions_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLabel value="{!target.Planned_Interactions_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         <apex:facet name="header">{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Remaining_Interactions_BI__c.label}</apex:facet>
+				          <apex:outputText value="{!TPRemMap[target.Target_Customer_BI__c]}" />
+				        </apex:column>
+				        <apex:column >
+				         <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Adjusted_Interactions_BI__c.label}{!IF(sortExpression=='Adjusted_Interactions_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Adjusted_Interactions_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLabel value="{!target.Adjusted_Interactions_BI__c}" />
+				        </apex:column>
+				        <apex:column >
+				         <apex:facet name="header">
+				          	<apex:commandLink action="{!displayData}" value="{!$ObjectType.SAP_Target_Preparation_BI__c.fields.Total_Adjusted_Details_BI__c.label}{!IF(sortExpression=='Total_Adjusted_Details_BI__c',IF(sortDirection='ASC','▼','▲'),'')}" reRender="targettable">
+				          		<apex:param value="Total_Adjusted_Details_BI__c" name="column" assignTo="{!sortExpression}" ></apex:param>
+				          	</apex:commandLink>
+				          </apex:facet>
+				          <apex:outputLabel value="{!target.Total_Adjusted_Details_BI__c}" />
+				        </apex:column>
+				        <apex:repeat value="{!prods}" var="prod" >
+					        <apex:column style="column-width:200px;" width="200px">
+					        	<apex:facet name="header">{!prod.Name}</apex:facet>
+					        	<apex:outputpanel rendered="{!renderMap[target.External_ID_BI__c+'_'+prod.Id]}">
+						        	<table class="list " border="0" cellpadding="0" cellspacing="0">
+						        		<thead class="rich-table-thead">
+						        			<tr class="headerRow ">
+							        			<th class="headerRow  " width="100px">{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Segment_BI__c.label}</th>
+							        			<th class="headerRow  ">{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Planned_Details_BI__c.label}</th>
+							        			<th class="headerRow  ">{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Remaining_Details_BI__c.label}</th>
+							        			<th class="headerRow  ">{!$ObjectType.SAP_Detail_Preparation_BI__c.fields.Adjusted_Details_BI__c.label}</th>
+						        			</tr>
+						        		</thead>
+						        		<tr class="dataRow even  first">
+						        			<td class="dataCell  " colspan="1" bgcolor="{!detailMap[target.External_ID_BI__c+'_'+prod.Id].Segment_Color_BI__c}">{!detailMap[target.External_ID_BI__c+'_'+prod.Id].Segment_BI__c}({!detailMap[target.External_ID_BI__c+'_'+prod.Id].Column_BI__c},{!detailMap[target.External_ID_BI__c+'_'+prod.Id].Row_BI__c})</td> 
+						        			<td class="dataCell  " colspan="1">{!detailMap[target.External_ID_BI__c+'_'+prod.Id].Planned_Details_BI__c}</td>
+						        			<td class="dataCell  " colspan="1">{!DPRemMap[target.Target_Customer_BI__c+'_'+prod.Id]}</td>
+						        			<td class="dataCell  " colspan="1">{!detailMap[target.External_ID_BI__c+'_'+prod.Id].Adjusted_Details_BI__c}</td>
+						        		</tr>
+						        	</table>
+						        </apex:outputpanel>
+					        </apex:column>
+				        </apex:repeat>
+				    </apex:pageblocktable>
+				   <apex:outputPanel id="myButtons" layout="block"  style="text-align: center;">
+					        <apex:commandButton action="{!Beginning}" title="Beginning" value="<<" disabled="{!disablePrevious}" reRender="targettable,myButtons"/>
+					        <apex:commandButton action="{!Previous}" title="Previous" value="<" disabled="{!disablePrevious}" reRender="targettable,myButtons"/> 
+					        {!pageNumber} / {!totalPages}
+					        <apex:commandButton action="{!Next}" title="Next" value=">" disabled="{!disableNext}" reRender="targettable,myButtons"/>
+					        <apex:commandButton action="{!End}" title="End" value=">>" disabled="{!disableNext}" reRender="targettable,myButtons"/>
+				   </apex:outputPanel>
+			</apex:pageBlockSection>
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

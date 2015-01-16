@@ -1,0 +1,59 @@
+<apex:component id="compMultiSPickList" controller="ITBclone.CompMultiPickList">
+	<apex:attribute name="selectedFields" assignTo="{!selectedFields}"
+		description="selected list options" type="SelectOption[]"
+		required="true" />
+	<apex:attribute name="unSelectedFields" assignTo="{!unSelectedFields}"
+		description="unselected list options" type="SelectOption[]"
+		required="true" />
+	<apex:attribute name="inputHiddenId" assignTo="{!inputHiddenId}"
+		description="inputHiddden Id to passing" type="String" required="true" />
+	<apex:attribute name="separator" assignTo="{!separator}"
+		description="comma or semicolon" type="String" default=";"
+		required="false" />
+	<apex:attribute name="sortable" assignTo="{!sortable}"
+		description="show sort button" type="Boolean" default="false"
+		required="false" />
+
+	<apex:includeScript value="{!URLFOR($Resource.ITBclone__MultiSelectListBox)}" />
+
+	<table border="0" cellspacing="0" cellpadding="0"
+		class="multiSelectPicklistTable">
+		<tr class="multiSelectPicklistRow">
+			<td align="center" class="multiSelectPicklistCell"
+				style="font-weight: 700;">{!$Label.Available}</td>
+
+			<td class="multiSelectPicklistCell"></td>
+
+			<td align="center" class="multiSelectPicklistCell"
+				style="font-weight: 700;">{!$Label.Chosen}</td>
+		</tr>
+
+		<tr class="multiSelectPicklistRow">
+			<td class="multiSelectPicklistCell"><select
+				id="{!unSelectedListId}" multiple="multiple" size="20"
+				style="width: 150px"
+				ondblclick="move('{!unSelectedListId}', '{!selectedListId}', '{!selectedListId}', '{!inputHiddenId}', '{!separator}');">
+					<apex:repeat var="l" value="{!unSelectedList}">
+						<option value="{!l.api}">{!l.label}</option>
+					</apex:repeat>
+			</select></td>
+			<td class="multiSelectPicklistCell"><apex:image value="/img/ple/directionals/right.gif"
+					onclick="move('{!unSelectedListId}', '{!selectedListId}', '{!selectedListId}', '{!inputHiddenId}', '{!separator}');" />
+				<br /> <br /> <br /> <apex:image value="/img/ple/directionals/left.gif"
+					onclick="move('{!selectedListId}', '{!unSelectedListId}', '{!selectedListId}', '{!inputHiddenId}', '{!separator}');" />
+			</td>
+			<td class="multiSelectPicklistCell"><select id="{!selectedListId}"
+				multiple="multiple" size="20" style="width: 150px"
+				ondblclick="move('{!selectedListId}', '{!unSelectedListId}', '{!selectedListId}', '{!inputHiddenId}', '{!separator}');">
+					<apex:repeat var="l" value="{!selectedList}">
+						<option value="{!l.api}">{!l.label}</option>
+					</apex:repeat>
+			</select></td>
+			<td class="multiSelectPicklistCell"><apex:image value="/img/ple/directionals/up.gif"
+					onclick="moveOptionUp('{!selectedListId}', true);"
+					rendered="{!sortable}" /> <br /> <br /> <br /> <apex:image value="/img/ple/directionals/down.gif"
+					onclick="moveOptionUp('{!selectedListId}', false);"
+					rendered="{!sortable}" /></td>
+		</tr>
+	</table>
+</apex:component>

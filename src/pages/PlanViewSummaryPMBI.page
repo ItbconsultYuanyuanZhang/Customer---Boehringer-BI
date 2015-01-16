@@ -1,0 +1,103 @@
+<apex:page controller="PlanViewSummaryControllerPMBI" title="{!$Label.PMBI_PLAN_MANAGEMENT_APPLICATION_TITLE}" sidebar="false" docType="html-5.0"> 
+    <head>
+        <meta charset="utf-8" />
+        <apex:stylesheet value="{!urlfor($Resource.pmbi, 'css/pmbi.css')}"/>
+        <apex:stylesheet value="{!urlfor($Resource.pmbi, 'css/pmbi-bootstrap.css')}"/>
+        <apex:includeScript value="{!urlfor($Resource.JQueryBI, 'js/jquery.js')}"/>
+        <apex:includeScript value="{!urlfor($Resource.bootstrap, 'js/bootstrap.js')}"/>
+    </head>
+    <c:CalculatingOverlay />
+    
+    <script>
+        var finished = false;
+        var saveFired = false;
+    </script>
+    
+    <apex:form id="frm">
+        <apex:outputPanel id="msgPanel">
+            <apex:outputPanel rendered="{!hasError || hasMessages}">
+                <apex:outputPanel rendered="{!hasError}">
+                    <div style="margin-top:5px;" class="alert alert-error">{!errorMessage}</div>
+                </apex:outputPanel>
+                <apex:outputPanel rendered="{!hasMessages}">
+                    <div style="margin-top:5px;" class="alert">
+                        <apex:messages />
+                    </div>
+                </apex:outputPanel>
+            </apex:outputPanel>
+        </apex:outputPanel>
+        <div id="headerToolbar" class="well">
+                <apex:image value="{!urlfor($Resource.pmbi, 'img/icon-calendar-32x32.png')}" width="32" height="32" styleClass="img-rounded"/>
+                
+                <apex:selectList value="{!selectedPlanYear}" size="1" rendered="{! !isEditMode && planYearsAvailable.size > 0}" style="text-indent: 6px;" styleClass="yearPicklist">
+                    <apex:selectOptions value="{!planYearsAvailable}"/>
+                    <apex:actionSupport event="onchange" action="{!refreshData}" /> 
+                </apex:selectList>
+                <apex:outputPanel rendered="{! isEditMode }">
+                    &nbsp;&nbsp;<apex:outputText value="{!selectedPlanYear}" style="font-size: 20px;" />
+                </apex:outputPanel>
+            <apex:actionFunction name="toggleEditMode" action="{!toggleEditMode}"/>
+            <apex:outputPanel rendered="{!isEditMode}">
+                <a href="/apex/PlanViewSummaryPMBI?year={!selectedPlanYear}{!IF($CurrentPage.parameters.id != null, '&id='+$CurrentPage.parameters.id, '')}&sfdc.tabName={!$CurrentPage.parameters.sfdc.tabName}" id="btnCancel" class="pmbi-btn pull-right">
+                    <i class="icon-remove"></i> {!$Label.BI_PAGE_CANCEL}
+                </a>
+            </apex:outputPanel> 
+            <apex:outputPanel rendered="{!isEditMode}">
+                <a href="#" onclick="finished=true;if(!saveFired && {!IF(!hasError && !hasMessages, true, false)}){toggleEditMode();}" id="btnSave" class="pmbi-btn pmbi-btn-primary pull-right">
+                    {!$Label.BI_PAGE_FINISH_EDITS}
+                </a>
+            </apex:outputPanel>           
+            <apex:commandLink id="btnEditPlans" styleClass="pmbi-btn pmbi-btn-primary pull-right" rendered="{! not(isEditMode) && selectedPlanYearIsCurrentOrFuture}" action="{! toggleEditMode }">
+                <i class="icon-edit icon-white"></i> {!$Label.BI_PAGE_EDIT_PLANS}
+            </apex:commandLink>
+            <apex:outputPanel rendered="{!selectedPlanYearIsCurrentOrFuture && not(isEditMode)}">
+                <a class="pmbi-btn pmbi-btn-primary pull-right" href="#myModal-productPlans" data-toggle="modal"><i class="icon-thumbs-up icon-white"></i> Request Additional Funds <i class="icon-thumbs-down icon-white"></i></a>
+            </apex:outputPanel>
+
+            <script>var btnRequestAdditionalFunds = document.getElementById('{!$Component.btnRequestAdditionalFunds}');</script>
+            <script>var btnSavePlans = document.getElementById('{!$Component.btnSavePlans}');</script>
+            <script>var btnEditPlans = document.getElementById('{!$Component.btnEditPlans}');</script>
+        </div>
+        <ul class="breadcrumb">
+            <li>
+                <a href="/apex/PlanViewSummaryPMBI?year={!selectedPlanYear}">{!$Label.BI_PAGE_MY_PLANS}</a> <span class="divider">/</span>
+            </li>
+                <apex:outputPanel layout="none"  rendered="{! parentPlanHierarchy.size > 0 }" >
+                    <apex:repeat var="parent" value="{!parentPlanHierarchy}" >
+                        <li>                            
+                             <apex:outputPanel layout="none" >
+                                <a href="/apex/PlanViewSummaryPMBI?id={!parent.id}&year={!selectedPlanYear}&sfdc.tabName={!$CurrentPage.parameters.sfdc.tabName}">{! parent.UI_Name_Display_BI__c }</a> <span class="divider">/</span>
+                             </apex:outputPanel>
+                        </li>
+                    </apex:repeat>
+        
+                </apex:outputPanel>
+        </ul>
+        <apex:actionFunction name="savePlan" action="{!savePlan}" rerender="msgPanel,frm" oncomplete="hide_loading_overlay();saveFired=false;">
+            <apex:param id="tempPlanId" name="tempPlanId" assignTo="{! tempPlanId }" value=""/>
+            <apex:param id="tempPlanAmount" name="tempPlanAmount" assignTo="{! tempPlanAmount }" value=""/>
+            <apex:param id="tempParentPlanId" name="tempParentPlanId" assignTo="{! tempParentPlanId }" value=""/>
+            <apex:param id="isEditMode" name="isEditMode" assignTo="{! isEditMode }" value=""/>
+        </apex:actionFunction>
+        <apex:actionFunction name="saveFundRequest" action="{!saveFundRequest}" rerender="modalErrorPanel">
+            <apex:param id="planId" name="planId" assignTo="{! planId }" value=""/>
+            <apex:param id="amountRequested" name="amountRequested" assignTo="{! amountRequested }" value=""/>
+            <apex:param id="details" name="details" assignTo="{! details }" value=""/>
+            <apex:param id="tempPlanOwnerId" name="tempPlanOwnerId" assignTo="{! tempPlanOwnerId }" value=""/>
+        </apex:actionFunction>
+        <apex:actionFunction name="updateFundRequest" action="{!updateFundRequest}" rerender="modalErrorPanel">
+            <apex:param id="fundRequestId" name="fundRequestId" assignTo="{! fundRequestId }" value=""/>
+            <apex:param id="amountGranted" name="amountGranted" assignTo="{! amountGranted }" value=""/>
+            <apex:param id="status" name="status" assignTo="{! status }" value=""/>
+        </apex:actionFunction>
+        
+        <apex:dynamicComponent componentValue="{!thePanel}" />
+        
+        <apex:repeat value="{!topLevelPlans}" var="wrappedPlan">
+            <c:FundRequest fundRequests="{!wrappedPlan.fundRequests}" planViewController="{!this}" wrappedPlan="{!wrappedPlan}" openValue="{!wrappedPlan.plan.Id}"/>
+        </apex:repeat>
+        <c:FundRequest planViewController="{!this}" openValue="productPlans" fundRequests="{!productFundRequests}"/>  
+    </apex:form>
+    
+    <script src="{!urlfor($Resource.pmbi, 'js/plan_view_summary_controller.js')}"></script>
+</apex:page>

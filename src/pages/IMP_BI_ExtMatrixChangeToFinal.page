@@ -1,0 +1,24 @@
+<apex:page standardController="Matrix_BI__c" extensions="IMP_BI_ExtMatrixChangeToFinal">
+	<script type="text/javascript">
+		var hintText = 'The Matrix status will be set to "{!finalStatus}"!';
+		var hasError = {!hasError};
+	
+		window.onload = function(){
+			if(!hasError){
+				if(confirm(hintText)){
+					changeMatrixStatusToFinal();
+				}
+				else{
+					cancel();
+				}
+			}
+		};
+	</script>
+	
+	<apex:pageMessages id="msg" escape="false"/>
+
+	<apex:form id="theTopForm">
+		<apex:actionFunction name="changeMatrixStatusToFinal" action="{!changeMatrixStatusToFinal}"/>
+		<apex:actionFunction name="cancel" action="{!cancel}"/>
+	</apex:form>
+</apex:page>

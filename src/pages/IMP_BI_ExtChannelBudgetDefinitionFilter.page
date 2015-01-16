@@ -1,0 +1,1373 @@
+<apex:page id="thePage" standardcontroller="Matrix_BI__c" extensions="IMP_BI_ExtChannelBudgetDefinitionFilter" docType="html-5.0" title="{!pageTitle}" tabStyle="Matrix_BI__c" sidebar="false" action="{!checkMatrixCellDetail}">
+<system.webServer>
+    <httpProtocol>
+      <customHeaders>
+        <clear />
+        <add name="X-UA-Compatible" value="IE=edge" />
+      </customHeaders>
+    </httpProtocol>
+</system.webServer>
+<head>
+    <apex:outputText escape="false" value="{!lt}!--[if lt IE 9]{!gt}"/>
+        <script src="{!URLFOR($Resource.IMP_BI_jQuery182, '/html5/html5.js')}" type="text/javascript"></script>
+    <apex:outputText escape="false" value="{!lt}![endif]--{!gt}"/>
+    <apex:outputText escape="false" value="{!lt}!--[if lt IE 9]{!gt}"/>
+        <script type="text/javascript" src="{!URLFOR($Resource.IMP_BI_jQuery182,'/PIE-2.0beta1/PIE1.0/PIE.js')}"></script>
+    <apex:outputText escape="false" value="{!lt}![endif]--{!gt}"/>
+    <apex:stylesheet value="{!URLFOR($Resource.IMP_BI_jQuery182,'jQueryUI/jquery-ui-1.9.2.custom.min.css')}"/>
+    <link rel="stylesheet" type="text/css" href="{!URLFOR($Resource.IMP_BI_jQuery182, '/chart/jquery.jqplot.min.css')}" />
+    <apex:stylesheet value="{!$Resource.IMP_BI_ExtChannelBudgetDefinitionFilter_style}" />
+    <apex:stylesheet value="{!$Resource.IMP_BI_MatrixSegementStyle}" />
+    <script src="{!URLFOR($Resource.IMP_BI_jQuery182, '/jquery-1.8.2.min.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.IMP_BI_jQuery182, '/jQueryUI/droppable-min.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.IMP_BI_jQuery182, '/jQueryUI/jquery-ui-1.9.2.custom.min.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.IMP_BI_jQuery182, '/color-animation/jquery.animate-colors-min.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.IMP_BI_jQuery182, '/progressbar/jquery.ui.progressbar.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.IMP_BI_jQuery182, '/glob-cultures/globalize.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.IMP_BI_jQuery182, '/json/json2.js')}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.IMP_BI_jQuery182, emConfig.jsPath)}" type="text/javascript"></script>
+    <script src="{!URLFOR($Resource.IMP_BI_jQuery182, '/Utils.js')}" type="text/javascript"></script>
+    <script src="{!$Resource.IMP_BI_ExtChannelBudgetDefinitionFilter_controller}" type="text/javascript"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.IMP_BI_jQuery182, '/chart/jquery.jqplot.min.js')}"></script>
+    <apex:outputText escape="false" value="{!lt}!--[if lt IE 9]{!gt}"/>
+        <script src="{!URLFOR($Resource.IMP_BI_jQuery182, '/chart/excanvas.min.js')}" type="text/javascript"></script>
+    <apex:outputText escape="false" value="{!lt}![endif]--{!gt}"/>
+    <script type="text/javascript" src="{!URLFOR($Resource.IMP_BI_jQuery182, '/chart/plugins/jqplot.barRenderer.min.js')}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.IMP_BI_jQuery182, '/chart/plugins/jqplot.pointLabels.min.js')}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.IMP_BI_jQuery182, '/chart/plugins/jqplot.categoryAxisRenderer.min.js')}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.IMP_BI_jQuery182, '/chart/plugins/jqplot.canvasTextRenderer.min.js')}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.IMP_BI_jQuery182, '/chart/plugins/jqplot.canvasAxisTickRenderer.min.js')}"></script>
+    <script type="text/javascript" src="{!URLFOR($Resource.IMP_BI_jQuery182, '/chart/plugins/jqplot.highlighter.min.js')}"></script>
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+  
+    <apex:outputText escape="false" value="{!lt}!--[if lt IE 9]{!gt}"/>
+    <style type="text/css">
+        behavior: url({!URLFOR($Resource.IMP_BI_jQuery182, '/PIE-2.0beta1/PIE1.0/PIE.htc')});
+    </style>
+    <apex:outputText escape="false" value="{!lt}![endif]--{!gt}"/>
+    <!--[if lte IE 8]>
+        <style>
+            .hdvhc {
+                filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3);
+                -ms-filter: "progid:DXImageTransform.Microsoft.BasicImage(rotation=3)";
+            }
+        </style>
+    <![endif]-->
+    <style type="text/css">
+        .matrixDataDivCls{
+            float: left; width: 43px; position: relative; cursor: default !important;
+            height: 100%;text-align: center !important;
+        }
+        .jqplot-target.fontfm{
+            font-family: Arial, Helvetica, sans-serif;
+            /*background: rgb(203, 226, 167);*/
+            background: #f2f3f3;
+        }
+
+        .allcontentwidth{width:{!maxWidth}px; *width: {!maxWidth}px;/*IE7*/ width: {!maxWidth}px\0/;/*IE7,8,9,10*/  }
+        /*:root .allcontentwidth{width : {!realWidth}px\9;}*//*IE,9,10*/
+        .allcontentwidthIe{width:{!realWidth}px;}
+         #matrixBody {width:{!IF((realWidth+60) > 900, realWidth+60, 900)}px !important;}
+        .startdiv {width:{!IF((realWidth+60) > 900, realWidth+60, 900)}px !important;}
+        .leftSec.overrideCls {top:{!realHeight/2}px;}
+        
+        .hdvhc.h{width:30px; *width:90px;/*IE7,IE8*/}
+        .channelalldiv{width:800px;  height:100%; float: left; position: relative;}
+        .chartCls{z-index:5000; width: 42px; float: left;height: 90px;*line-height:0px; line-height:0px\9\0; position: relative; cursor: pointer;}
+        .channeldropCls{float: left; position: relative;}
+        .headpadding{padding-left: 50px;}
+        .ie7float{*float:left;}
+        #colors1 {padding: 0px;margin:6px; overflow: hidden;}
+        .tipsTotalDivCls{float:left; position: relative; height: 100%;z-index: 10; cursor: pointer;}
+        .tipsTotalDivCls.w1{width: 42%;}
+        .tipsTotalDivCls.w2{width:48%; margin-left:8px;}
+        .tipsSpan1{display:block; float: left; height: 21px; line-height: 21px; }
+        .tipsSpan2{display: block;float: left; height: 20px; line-height: 20px; border: 1px solid #ccc; width:20px; margin-left: 5px;}
+        .tipsSpan2.bg{background: #cc4444;}
+        .tipsSpan2.bgf{background: #fff;}
+        .downUpCls{background-image: url({!URLFOR($Resource.IMP_BI_jQuery182, '/img/Arrow_down.png')});background-position: left;background-repeat: no-repeat;height: 12px;width: 14px;position: relative;left: 2px;}
+        .downUpCls.over{background-position: right;}
+        .downDownCls{background-image: url({!URLFOR($Resource.IMP_BI_jQuery182, '/img/Arrow_up.png')});background-position: right;background-repeat: no-repeat;height: 12px;width: 14px;position: relative;left: 2px;}
+        .downDownCls.over{background-position: left;}
+        .overMenu{/*border: 1px solid #999;-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius:4px;*/ position: relative; cursor:pointer;  margin: 0; padding: 0; height: 15px;line-height: 15px;}
+        .overdownCls{line-height: 25px; height: 25px;}
+        .downUpChartCls{background-image: url({!URLFOR($Resource.IMP_BI_jQuery182, '/img/Arrow_left.png')});background-position: top;background-repeat: no-repeat;height: 14px;width: 12px;position: relative;top: 1px;}
+        .downUpChartCls.over{background-position: bottom;}
+        .hideMatrixDivCls{height: 100%; position: relative;}
+        .hideCls{display: none;}
+        .fwb{font-weight: bold;}
+        .matrixBodyCls{height: 100%; float:left;}
+        .leftSec.overrideCls{height:100%;line-height:100%; width:30px;  margin-left: 0;margin-right: 0; left:85px;}
+        
+        /*.rightSec ol li.liborder_none {width:87px !important; height:34px !important;}*/
+        .rightSec ol li.liborder_none {width:43px !important; height:34px !important;}
+        .rightSec ol li.liside_l {width:43px !important;}
+        .lidivb_l div.physDiv {visibility:hidden;}
+        #theMatrixDescriptionBITa {margin-left:0px; margin-right:2px; width:300px;}
+        .matrixTotalCls{width:{!IF((realWidth+500) > 1220, realWidth+500, 1220)}px !important;}
+        
+        .budgetHelpText{
+            background-image:url(/img/help/helpOrbs.gif);
+            background-position:top left;
+            width:20px;
+            height:15px;
+            float:left;
+        }
+        
+        .budgetHelpTextOn{
+            background-image:url(/img/help/helpOrbs.gif);
+            background-position:top right;
+            width:20px;
+            height:15px;
+            float:left;
+        }        
+
+
+        td.w1{width:90px;}
+        .bPageBlock .detailList td.w2{width:100px;vertical-align:middle;}
+        .bPageBlock .detailList td.w3{width:100px;vertical-align:middle;}
+        td.w2 button{width:20px;}
+        td.w2 input{width:20px;}
+        td.w3 button{width:40px;}
+        td.w3 input{width:20px;}
+        #matrixData li div.lidivcls div{line-height:10px;}
+        #matrixBody div.colorpick{width:300px;}
+        #matrixBody div.colorpick div#colorbody{width:354px;}
+        .hideEl{display:none;}
+        
+        .my_legend {position:relative; float:left; left:-2px;}
+        .lgHdFilter{font-weight:bold;text-align:left;margin:5px 0px;padding-left: 0px;}
+        .lgBdFilter{border:2px solid #999;height:39px;width:92px;line-height:1;text-align:left;}
+        /*.lgBdFilter{border:2px solid #999;height:25px;width:112px;line-height:1;}*/
+        
+        .filterSelectorDiv {margin-left:auto; margin-right:auto;padding-left:174px; width:{!IF((realWidth+460) > 960, realWidth+460, 960)}px;}
+        
+        .physDiv {padding-top:3px; text-align:center; /*width:86px;*/}
+        .channelBudgetDiv {padding-top:2px;}
+        
+        #popdata {table-layout:fixed;}
+        #popdata tr, #popdata td {white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+        
+        .matrixTabTotalCls tfoot tr.headerRow th {font-size:12px !important; font-weight:bold;}
+        /*End: added by Peng Zhu 2013-05-21 for only F2F*/
+        
+        .allcontentwidth {width: 100%;}
+        .matrixTotalCls {
+            float: right;
+            margin-top: 2px;
+            margin-right: -18%;
+            overflow: hidden;
+            padding-left: 0px;
+            width: 1220px;
+        }
+        .ptBreadcrumb a {color: #015BA7; text-decoration: none;}
+        .matrixTabTotalCls th.segmentHeader {text-align:center;}
+        
+        .ui-widget-content {
+            background: #FFFFFF;
+            border: 1px groove #AAAAAA;
+            color: #222222;
+        }
+        .ui-dialog .ui-dialog-titlebar-close {
+            height: 20px;
+            margin: -10px 0 0;
+            padding: 1px;
+            position: absolute;
+            right: 0.3em;
+            top: 50%;
+            width: 20px;
+        }
+        .ui-widget-header {
+            background: #CCCCCC;
+            border: 1px solid #AAAAAA;
+            color: #222222;
+            font-weight: bold;
+            }
+    </style>
+
+<!--    <script src="{!$Resource.MatrixMultiSelectCellJS}" type="text/javascript"></script> -->
+    
+    <script type="text/javascript">
+        Visualforce.remoting.timeout = 120000;
+        var _timeoutCounter = 0, _timeoutMax = 10;//used for remote action timeout case
+        
+        //Prevent close or leave the page without have been saved
+        var isFinal = '{!isFinal}';
+        var matrixHasChanged=false;
+        var msgLeaving = '{!$Label.IMP_BI_Prevent_Leave_Page}';
+        var msgWarning = '{!$Label.IMP_BI_Warning_Resource_Allocation}';
+        var timeoutId;
+        
+        $(window).on('beforeunload', function(e) {
+            var warnBeforeLeave=(isFinal=='true' || matrixHasChanged == false) ? false : true;  
+            if(warnBeforeLeave){
+                return msgLeaving;
+            }
+        });
+        
+        var headerH = null, selectedChannelId = '{!selectedChannelId}', JSON_CHANNELS, filterShowAll = true, filterSelectIndex;
+        /*Begin: added by Peng Zhu for initializing some variables*/
+        var filterSize = {!filterSize}, physLbl = '{!$Label.IMP_BI_Matrix_Phys}';
+        var matrixDrillDownReportUrl = '{!matrixDrillDownReportUrl}';
+        var theLocale = "{!theLocale}";
+        var matrixId = "{!matrix.Id}";
+    
+        //Apply Filter on Matrix new
+        window.onload = function(){
+            if(filterSize == 0 ){
+                matrixHasChanged = false;
+                var matrixInfo = {}, filterSet = [], filterString = '';
+                matrixInfo.matrixId = matrixId;
+                var voidValue = false, voidError = false, duplicateValue = false;
+                
+                $("select[id$=filterSelect]").each(function(){
+                    var fv = $(this).val();
+                    if(fv && (fv = $.trim(fv)) != ''){
+                        if(voidValue) voidError = true;
+                        filterSet.push(fv);
+                        if(filterString.indexOf(fv) == -1){
+                            if(filterString == '') filterString = fv;
+                            else filterString += ';' + fv;
+                        }
+                        else{
+                            duplicateValue = true;
+                        }
+                    }
+                    else{
+                        voidValue = true;
+                    }
+                });
+                
+                $("input[id$=filterCombHiddenId]").val(filterString);
+                //console.log('filterString : ' + filterString);
+                matrixInfo.filterStr = filterString;
+                $('#loading-curtain-div').show();
+                generateMatrixCellDetailNew(JSON.stringify(matrixInfo));
+            }
+        }
+        
+        /**
+        * Shows pop up warning if the user has been for a long time in the page
+        */
+        function WARNING_TIMEOUT(){
+            window.alert(msgWarning);
+        }
+        
+        /**
+        * Clear up warning message
+        */
+        function CLEAR_WARNING(){
+            window.clearTimeout(timeoutId);
+        }
+        
+        var Msg_Connection_Timeout = 'Unable to connect to the server, please check your network connection!';
+        /*End: added by Peng Zhu for initializing some variables*/
+        function setfocus(){}
+        $(function() {
+            
+            //Set timeout warning if the matrix is calculated
+            if(isFinal=='false'){
+                timeoutId=setTimeout(WARNING_TIMEOUT, 2100000);
+            }
+                
+            //Begin: added by Peng Zhu 2014-01-23
+            $("#chartBarId").click(function(){
+                var _left = $("#chartOuterDiv").css('left');
+                if(_left == '0px'){
+                    //$("#chartOuterDiv").css({'left':'-510px'});
+                    $("#chartOuterDiv").animate({left:'-510px'}, 400);
+                    $("#reportIconUp").html('&gt;');
+                    $("#reportIconDown").html('&gt;');
+                }
+                else{
+                    //$("#chartOuterDiv").css({'left':'0px'});
+                    $("#chartOuterDiv").animate({left:'0px'}, 400);
+                    $("#reportIconUp").html('&lt;');
+                    $("#reportIconDown").html('&lt;');
+                }
+                
+                //if($("#barChartId").is(':hidden')){
+                //  $("#barChartId").show();
+                //}
+                //else{
+                //  $("#barChartId").hide();
+                //}
+            });
+            //End: added by Peng Zhu 2014-01-23
+         
+            //initialize select value
+            var $channel1 = $("select[id$='channel1Picklist']"), $channel2 = $("select[id$='channel2Picklist']");
+            var channel1 = $channel1.get(0), channel2 = $channel2.get(0);
+            var lastSelecValCh1 , lastSelecTxtCh1, lastSelecValCh2, lastSelecTxtCh2;
+            
+            if(channel1!=null){
+            
+                lastSelecValCh1 = channel1.value;
+                lastSelecTxtCh1 = channel1.options[channel1.selectedIndex].text;
+                
+                $channel1.data('lastSelecVal', lastSelecValCh1);
+                $channel1.data('lastSelecTxt', lastSelecTxtCh1);
+            }
+            
+            if(channel2!=null){
+                lastSelecValCh2 = channel2.value;
+                lastSelecTxtCh2 = channel2.options[channel2.selectedIndex].text;
+                
+                $channel2.data('lastSelecVal', lastSelecValCh2);
+                $channel2.data('lastSelecTxt', lastSelecTxtCh2);
+            }
+            
+        
+            if(theLocale && $.trim(theLocale) != ''){
+                theLocale = theLocale.substring(0,2);
+            }
+            else{
+                theLocale = 'other';
+            }
+            //console.log('theLocale : ' + theLocale);
+            //$(window).resize(function(e){ });
+            
+            var clps = $(document.getElementById('{!$Component.thePage.thePb.pbsect}')).children('.pbSubheader').children('img')[0];
+            if(clps && clps.nodeType == 1)twistSection(clps);
+            
+            var scen = $(document.getElementById('{!$Component.thepb.scensect}')).children('.pbSubheader').children('img')[0];
+            if(scen && scen.nodeType == 1)twistSection(scen);
+            
+            headerH = $('#AppBodyHeader').height(); 
+            //Begin: commented by Peng Zhu 2013-06-18 for moving this statement into method initDocumentPage()
+            JSON_CHANNELS = $.parseJSON($.trim($('#jsonDivId input[type="hidden"]').val()));
+            //End: commented by Peng Zhu 2013-06-18
+            initDocumentPage();
+			
+			//if user have not access to create/edit, remove the buttons
+            var  isCreateable = '{!$ObjectType.Matrix_BI__c.createable}';
+            
+            if(isCreateable == 'false' || isFinal == 'false'){
+            	$("input[id$='btnSave']").remove();
+            	$("input[id$='filterApplyBtn']").remove();
+            }
+        });
+        
+        
+        $(window).load(function(){
+            
+        });
+
+        //Begin: added by Peng Zhu 2013-05-30 for replacing label by field on Matrix
+        function labelConfig(){
+            return (
+                {
+                    'a': '{!IF(matrix.Segment_1_Label_BI__c != null && matrix.Segment_1_Label_BI__c != '', matrix.Segment_1_Label_BI__c, $Label.channel_budget_page_lab11)}', 
+                    'b': '{!IF(matrix.Segment_2_Label_BI__c != null && matrix.Segment_2_Label_BI__c != '', matrix.Segment_2_Label_BI__c, $Label.channel_budget_page_lab12)}',
+                    'c': '{!IF(matrix.Segment_3_Label_BI__c != null && matrix.Segment_3_Label_BI__c != '', matrix.Segment_3_Label_BI__c, $Label.channel_budget_page_lab13)}',
+                    'd': '{!IF(matrix.Segment_4_Label_BI__c != null && matrix.Segment_4_Label_BI__c != '', matrix.Segment_4_Label_BI__c, $Label.channel_budget_page_lab14)}',
+                    'e': '{!IF(matrix.Segment_5_Label_BI__c != null && matrix.Segment_5_Label_BI__c != '', matrix.Segment_5_Label_BI__c, $Label.channel_budget_page_lab15)}',
+                    'f': 'Remaining'
+                }
+            );
+        }
+        //End: added by Peng Zhu 2013-05-30
+        
+        function initDocumentPage(){
+            //Begin: added by Peng Zhu 2013-06-18
+            filterSelectIndex = $("#quantityFilterDivId").children('select').val();
+                //console.log('filterSelectIndex : ' + filterSelectIndex);
+            if(/^\d/.test($.trim(filterSelectIndex))) 
+                filterShowAll = false;
+            else 
+                filterShowAll = true;
+            
+            //JSON_CHANNELS = $.parseJSON($.trim($('#jsonDivId input[type="hidden"]').val()));
+            //End : added by Peng Zhu 2013-06-18
+            $('#loading-curtain-div').fadeIn('fast', function(){
+                if (window.PIE && $.NV('name') == 'ie' && $.NV('version') <= 8) {
+                    $('.rounded').each(function() { PIE.attach(this); });
+                }
+                
+                Globalize.culture("{!emConfig.locale}").numberFormat.currency.symbol = "";
+            //  formateTipChanneInput();
+                register_event();
+                
+            });
+            
+                        //Begin: added by Peng Zhu 2013-05-21 
+            //' + $("span[id$=theMatrixDescOf]").get(0).innerHTML + ' 
+            $("span[id$=theMatrixDescOf]").text('');
+            var innerHtml = '<textarea id=\"theMatrixDescriptionBITa\" maxlength=\"5000\" onchange=\"copyMatrixDescBIValue(this);\"  rows=\"5\" type=\"text\" wrap=\"soft\"></textarea>';
+            $("span[id$=theMatrixDescOf]").append($(innerHtml).html($("textarea[id$=theMatrixDescIfHidden]").html()));                
+            //$("#theMatrixDescriptionBITa").html($("textarea[id$=theMatrixDescIfHidden]").html());      
+            //End: added by Peng Zhu 2013-05-21  
+            $("img[class^='budgetHelpText']").hover(
+                function () {
+                    $(this).removeClass("budgetHelpText").addClass("budgetHelpTextOn");
+                },
+                function () {
+                    $(this).removeClass("budgetHelpTextOn").addClass("budgetHelpText");
+                }
+            );
+            
+            $("div[class*='adoptionHdDiv']").each(function(){
+                var $this = $(this);
+                var divText = $this.text();
+                if(divText && divText.length > 5){
+                    $this.attr('title', divText);
+                    $this.text(divText.substring(0, 5));
+                }
+            });
+            initFilterSelector();          
+            //added by Peng Zhu 2013-06-05
+            
+            //added by Peng Zhu for showing the budget overview by default
+            showBudgetOverviewTable();
+            
+            //show legend
+            var sValue = $('select[id$=theFilterCombinationNameList]').val();
+            var $spans = $('div[class=lgBdFilter] span');
+            /**
+            if(sValue){
+                $spans.text('');
+                $($spans.get(0)).text('Ch.1 Qty | Ch.2 Qty').css({'margin-top':'6px', 'display':'block'});
+            }
+            else{
+                //$($spans.get(0)).text('# Phys');
+                $($spans.get(0)).text('# ' + physLbl).css({'margin-top':'','display':''});
+                $($spans.get(1)).text('Avg Qty(Ch.1 | Ch.2)');
+            }
+            **/
+            
+            if(sValue){
+                $spans.text('');
+                //$($spans.get(0)).text('Quantity');
+                //$($spans.get(0)).text('Qty Ch.1');
+                $($spans.get(0)).text('').append('<input type="checkbox"  checked="checked"  id="chkPhys" /> # Qty Ch.1');
+            }
+            else{
+                /**$($spans.get(0)).text('# ' + physLbl);
+                $($spans.get(1)).text('Avg Qty Ch.1');
+                */
+                $($spans.get(0)).text('').append('<input type="checkbox"  checked="checked"  id="chkPhys" /> # ' + physLbl);
+                $($spans.get(1)).text('').append('<input type="checkbox"  checked="checked"  id="chkAvgQty" /> Avg Qty Ch.1');
+            }            
+            //
+        }
+        
+        function saveChannelBudget(target){
+            matrixHasChanged = false;
+            $('#loading-curtain-div').show();
+            //Begin: commented by Peng Zhu 2013-06-19
+            //var $this = $(target);
+            //var matrixCellChannel = '{"MatrixCellChannel" : '+ JSON.stringify(JSON_CHANNELS) +'}';
+            //$('#jsonDivId input[type="hidden"]').val(matrixCellChannel);
+            //End: commented by Peng Zhu 2013-06-19
+            //Begin: added by Peng Zhu 2013-06-19
+            $('#jsonDivId input[type="hidden"]').val(JSON.stringify(JSON_CHANNELS));
+            //End: added by Peng Zhu 2013-06-19
+            
+            saveChannelBudgets();
+            
+        }
+        
+        /**
+        * Start process for saving matrix changes
+        */
+        function startSaving(){
+            var jsonmcd = $.parseJSON($.trim($('input[id$="jsonMatrixCellDetailsInputHiddenId"]').val()));
+            saveMatrixInBacth(jsonmcd, 0);
+        }
+        
+        /**
+        * Save Changes of Matrix in Batch
+        */
+        function saveMatrixInBacth(list_mcd, idx){
+            if(list_mcd[idx]){
+                IMP_BI_ExtChannelBudgetDefinitionFilter.updtMatrixCellDetailsInBatch(JSON.stringify(list_mcd[idx]), 
+                    function(data, event){
+                        if (event.status) {
+                            _timeoutCounter = 0;
+                            $('#htmlEntity').html(data);
+                            data = $('#htmlEntity').text();
+                            data = $.parseJSON(data);
+                            
+                            if(data && data.status && data.status == 'ERROR'){
+                                alert('[ERROR] ' + data.message);
+                                $('#loading-curtain-div').hide();
+                                
+                            }else{
+                                idx++;
+                                saveMatrixInBacth(list_mcd, idx);
+                            }
+                        }else if (event.type === 'exception') {
+                            if(event.message.indexOf('Unable to connect to the server') > -1 && _timeoutCounter < _timeoutMax){
+                                //Run again the deletion
+                                _timeoutCounter++;
+                                saveMatrixInBacth(list_mcd, idx);
+                            }
+                            else{
+                                alert('[ERROR] ' + event.message);
+                                $('#loading-curtain-div').hide();
+                            }
+                        }else {
+                            alert('[ERROR] ' + event.message);
+                            $('#loading-curtain-div').hide();
+                        }
+                    }, 
+                {escape: true});
+            }
+            else{
+                saveMatrix();//save matrix data
+            }
+        }
+        
+        //Added by Peng Zhu 2013-05-21 for updating the field Matrix.Matrix_Description_BI__c
+        function copyMatrixDescBIValue(oTa){
+            //console.log('Log BI value2 : ' + $(oTa).val());
+            //console.log('Log BI value3 : ' + $("textarea[id=theMatrixDescriptionBITa]").val());
+            $("textarea[id$=theMatrixDescIfHidden]").val($(oTa).val());
+        }
+
+        //added by Peng
+        function disableFilterSelector(){
+            $('#filterDivId').children('select').each(function(){
+                $(this).attr("disabled", "disabled");
+            });
+        }
+        
+        function initFilterSelector(){
+            $('select[id$="index1filterSelect"]').removeAttr("disabled");
+            $('#filterDivId').children('select').each(function(){
+                var $this = $(this);
+                var fid = $this.attr('id');
+                
+                var hasValue = false;
+                if($this.val() && $.trim($this.val()) != '' && $.trim($this.val()) != '--No Filter--'){
+                    hasValue = true;
+                }
+                
+                if(fid && fid.indexOf('index1') > -1){
+                    if(hasValue){
+                        $('select[id$="index2filterSelect"]').removeAttr("disabled");
+                    }
+                    else{
+                        $('select[id$="index2filterSelect"]').val('');
+                        $('select[id$="index2filterSelect"]').attr("disabled", "disabled");
+                        $('select[id$="index3filterSelect"]').val('');
+                        $('select[id$="index3filterSelect"]').attr("disabled", "disabled");
+                    }
+                }
+                else if(fid && fid.indexOf('index2') > -1){
+                    if(hasValue){
+                        $('select[id$="index3filterSelect"]').removeAttr("disabled");
+                    }
+                    else{
+                        $('select[id$="index3filterSelect"]').val('');
+                        $('select[id$="index3filterSelect"]').attr("disabled", "disabled");
+                    }
+                } 
+            });
+        }
+        
+
+        function reRenderDataAfterApply(){
+            filterSize = parseInt($("input[id='filterSizeInputHiddenId']").val());
+            JSON_CHANNELS = $.parseJSON($.trim($('#jsonDivId input[type="hidden"]').val()));
+            initDocumentPage();
+        }
+        
+        /**
+        * Batch process to delete Matrix Cell Details
+        */
+        function preSaveMateixCellDetails(){
+            $('#loading-curtain-div').show();
+            var jsonCellDetails = $.parseJSON($.trim($('input[id$="jsonCellDetailIdsHiddenId"]').val()));
+            delCellDetailsInBatch(jsonCellDetails);
+        }
+        
+        /**
+        * Delete in Batcht Matrix Cell Detail records
+        */
+        function delCellDetailsInBatch(jsonCellDetails){
+            IMP_BI_ExtChannelBudgetDefinitionFilter.delCellDetailsInBatch(JSON.stringify(jsonCellDetails),
+                function(data, event){
+                    if (event.status) {
+                        _timeoutCounter=0;
+                        $('#htmlEntity').html(data);
+                        data = $('#htmlEntity').text();
+                        data = $.parseJSON(data);
+                        
+                        if(data.status && data.status == 'ERROR'){
+                            alert('[ERROR] ' + data.message);
+                            $('#loading-curtain-div').hide();
+                        }
+                        else if(data && data.goToNext && data.goToNext == 'goToNext'){
+                            delCellDetailsInBatch(jsonCellDetails);
+                        }else{
+                            //alert(':: Continue !!!');
+                            var jsonmcd = $.parseJSON($.trim($('input[id$="jsonMatrixCellDetailsInputHiddenId"]').val()));
+                            saveMatrixCellDetailsInJs(jsonmcd, 0);          
+                        }
+                    }else if (event.type === 'exception') {
+                        if(event.message.indexOf('Unable to connect to the server') > -1 && _timeoutCounter < _timeoutMax){
+                            //Run again the deletion
+                            _timeoutCounter++;
+                            delCellDetailsInBatch(jsonCellDetails);
+                        }
+                        else{
+                            alert('[ERROR] ' + event.message);
+                            $('#loading-curtain-div').hide();
+                        }
+                    }else {
+                        alert('[ERROR] ' + event.message);
+                        $('#loading-curtain-div').hide();
+                    }
+                }, 
+            {escape: true});
+        }
+
+        function saveMatrixCellDetailsInJs(list_mcd, idx){
+            $('#loading-curtain-div').show();
+            if(list_mcd[idx]){
+                IMP_BI_ExtChannelBudgetDefinitionFilter.saveMatrixCellDetailsInBatch(JSON.stringify(list_mcd[idx]), function(data){
+                    if(data){
+                        _timeoutCounter = 0;
+                        $('#htmlEntity').html(data);
+                        data = $('#htmlEntity').text();
+                        data = $.parseJSON(data);
+                        if(data && data.status && data.status == 'SUCCESS'){
+                            idx++;
+                            saveMatrixCellDetailsInJs(list_mcd, idx);
+                        }
+                        else{
+                            refreshPage();//refresh page for loading new data
+                            $('#loading-curtain-div').hide();
+                        }
+                    }
+                    else{
+                        _timeoutCounter++;
+                    
+                        if(_timeoutCounter < _timeoutMax){
+                            saveMatrixCellDetailsInJs(list_mcd, idx);
+                        }
+                        else{
+                            //console.log('network exception, please check your network connection!');
+                            alert(Msg_Connection_Timeout);
+                            _timeoutCounter = 0;
+                            $('#loading-curtain-div').hide();
+                        }
+                    }
+                });
+            }
+            else{
+                refreshPage();//refresh page for loading new data
+                $('#loading-curtain-div').hide();
+            }
+        }
+        
+        function buildJsonChannelByFilterInJs(inputData){
+            if($('#loading-curtain-div').is(':hidden')) $('#loading-curtain-div').show();
+            
+            IMP_BI_ExtChannelBudgetDefinitionFilter.buildJsonChannelByFilter(inputData, function(result, event){
+                if(result){
+                    _timeoutCounter = 0;
+                
+                    $('#htmlEntity').html(result);
+                    var data = $('#htmlEntity').text();
+                    data = $.parseJSON(data);
+                    //console.log(data);
+                    
+                    if(data && !data.isEnd){
+                        buildJsonChannelByFilterInJs(JSON.stringify(data));
+                    }
+                    else{
+                        $('#loading-curtain-div').hide();
+                    }
+                }
+                else{
+                    _timeoutCounter++;
+                
+                    if(_timeoutCounter < _timeoutMax){
+                        buildJsonChannelByFilterInJs(inputData);
+                    }
+                    else{
+                        //console.log('network exception, please check your network connection!');
+                        alert(Msg_Connection_Timeout);
+                        _timeoutCounter = 0;
+                        $('#loading-curtain-div').hide();
+                    }
+                }
+            });
+        }
+        
+        
+        function refreshPage(){
+            location.reload();
+        }
+        
+        //Begin: added by Peng Zhu 2013-07-30 for dynamic filters
+        function applyBtnNew(){
+            matrixHasChanged=true;
+            var matrixInfo = {}, filterSet = [], filterString = '';
+            matrixInfo.matrixId = matrixId;
+            
+            var voidValue = false, voidError = false, duplicateValue = false;
+            $("select[id$=filterSelect]").each(function(){
+                var fv = $(this).val();
+                if(fv && (fv = $.trim(fv)) != ''){
+                    if(voidValue) voidError = true;
+                    filterSet.push(fv);
+                    if(filterString.indexOf(fv) == -1){
+                        if(filterString == '') filterString = fv;
+                        else filterString += ';' + fv;
+                    }
+                    else{
+                        duplicateValue = true;
+                    }
+                }
+                else{
+                    voidValue = true;
+                }
+            });
+                
+            
+            if(voidError && duplicateValue){
+                alert('You should select the filter in order of left to right and can not select duplicate filter field!');
+                return;
+            }
+            else if(voidError){
+                alert('You should select the filter in order of left to right!');
+                return;
+            }
+            else if(duplicateValue){
+                alert('You can not select duplicate filter field!');
+                return;
+            }
+            
+            if(confirm("All previously applied resource allocations for this matrix will be deleted!")){
+                //clear timeout warning
+                CLEAR_WARNING();
+                $("input[id$=filterCombHiddenId]").val(filterString);
+                //console.log('filterString : ' + filterString);
+                matrixInfo.filterStr = filterString;
+                //console.log(':: Filter String: ' + filterString);
+                //matrixInfo.set_filter = filterSet;
+                $('#loading-curtain-div').show();
+                generateMatrixCellDetailNew(JSON.stringify(matrixInfo));
+            }
+        }
+
+        function generateMatrixCellDetailNew(matrixInfo){
+            //console.log(':: Re-run  !  Matrix Infor - ' + matrixInfo)
+            IMP_BI_ExtChannelBudgetDefinitionFilter.generateMatrixCellDetailsNew(matrixInfo, function(data, event){
+                if(data){
+                    //reset timeoutCounter
+                    _timeoutCounter = 0;
+                    
+                    $('#htmlEntity').html(data);
+                    data = $('#htmlEntity').text();
+                    data = $.parseJSON(data);
+    
+                    if(data && !data.isEnd){
+                        generateMatrixCellDetailNew(JSON.stringify(data));
+                    }
+                    else{
+                        $('#loading-curtain-div').hide();
+                        if(data){
+                            $("input[id$=jsonMatrixFilters]").val(JSON.stringify(data.list_cmcd));
+                            $("input[id$=matrixCellCounterMap]").val(JSON.stringify(data.map_mcId_matchKey_counter));
+                            
+                            var listMCESize = 0;
+                            if(typeof data.listCmcdSize != 'undefined' && data.listCmcdSize != null) listMCESize = parseInt(data.listCmcdSize);
+                            //console.log(':: List MCE Size: ' + listMCESize);
+                            checkListMCDSizeNew(listMCESize);
+                        }
+                    }
+                }
+                else{
+                    //console.log('In timeout exception...  Timeout counter: ' + _timeoutCounter + ' Timeout Max: ' + _timeoutMax );
+                    //timeout exception -- need to re-request
+                    _timeoutCounter++;
+                    
+                    if(_timeoutCounter < _timeoutMax){
+                        generateMatrixCellDetailNew(matrixInfo);
+                    }
+                    else{
+                        //console.log(Msg_Connection_Timeout);
+                        alert(Msg_Connection_Timeout);
+                        _timeoutCounter = 0;
+                        $('#loading-curtain-div').hide();
+                    }
+                }
+            });
+        }
+        
+        function checkListMCDSizeNew(listMCESize){
+            matrixHasChanged=false;
+            //console.log('listMCESize : ' + listMCESize);
+            if(listMCESize && listMCESize > 5){
+                if(confirm("The selected filter criteria would create " + listMCESize + " different filter variations. Do you want to proceed?")){
+                    genAndSaveMatrixCellDetailNew();
+                }
+            }
+            else{
+                genAndSaveMatrixCellDetailNew();
+                //reRenderDataAfterApply();
+            }
+        }
+        //End: added by Peng Zhu 2013-07-30
+        
+        /**
+         * Showing legends on Matrix determine segments
+         * @author jescobar 
+         * @return
+         */
+        $(function() {
+            $('#chkPhys').change(function() {
+                if($(this).is(':checked')) {
+                        $('#matrixData li.ui-selectee div.physDiv').css('display','');
+                } else {
+                    $('#matrixData li.ui-selectee div.physDiv').css('display','none');
+                }
+            });
+            $('#chkAvgQty').change(function() {
+                if($(this).is(':checked')) {
+                        $('#matrixData li.ui-selectee div.channelBudgetDiv').css('display','');
+                } else {
+                    $('#matrixData li.ui-selectee div.channelBudgetDiv').css('display','none');
+                }
+            });
+        });     
+    </script>
+</head>
+
+<body>
+        <div class="ptBreadcrumb">&nbsp;&laquo;&nbsp;<a href="/{!matrix.Cycle_BI__c}">Back to Cycle: {!matrix.Cycle_BI__r.Name} </a></div>
+        <apex:sectionHeader title="{!sectionHeaderTitle}" subtitle="{!sectionHeaderSubTitle}"/>
+        <apex:pageMessages id="msg" escape="false"/>
+        <apex:form id="resetForm">
+            <apex:actionStatus startText=" Loading... " stopText="" id="resetStatus" onstart="$('#loading-curtain-div').show();" onstop="refreshPage();">
+            </apex:actionStatus>
+        
+            <apex:actionFunction name="resetMatrixCellDetail" action="{!resetMatrixCellDetail}" rerender="resetForm, thePb" status="resetStatus"/>
+        </apex:form>
+        <!-- START pageBlock-->
+        <apex:pageBlock id="thePb" mode="maindetail" tabStyle="Matrix_BI__c" rendered="{!!hasError}">
+            <!-- commented by Peng Zhu 2013-05-16 for using sectionHeader replace the name -->
+            <!-- 
+            <apex:pageBlockSection showHeader="false" columns="2" id="pbs1">
+                <apex:outputField value="{!matrix.Name__c}"/>
+            </apex:pageBlockSection>
+             -->
+            <apex:pageBlockSection title="Matrix Data Section" columns="2" collapsible="true" id="pbsect">
+                <!-- <apex:outputField value="{!matrix.Cycle_BI__r.Country__c}"/> -->
+                <apex:outputField value="{!matrix.Cycle_BI__r.Country_Lkp_BI__r.Name}"/>
+                <apex:outputField value="{!matrix.Cycle_BI__r.Start_Date_BI__c}"/>
+                <apex:outputField value="{!matrix.Product_Catalog_BI__r.Name}" label="Product"/>
+                <apex:outputField value="{!matrix.Cycle_BI__r.End_Date_BI__c}"/>   
+                <apex:outputField value="{!matrix.Specialization_BI__c}"/>
+                <apex:outputField id="theMatrixDescOf" value="{!matrix.Matrix_Description_BI__c}" />
+            </apex:pageBlockSection>
+            
+            <apex:pageBlockSection title="Scenario Information" columns="2" collapsible="true" id="scensect">
+                <apex:outputField value="{!matrix.Current_BI__c}"/>
+                <apex:outputField value="{!matrix.Scenario_BI__c}"/>
+                <apex:outputField value="{!matrix.First_Scenario_BI__c}"/>
+                
+                
+            </apex:pageBlockSection>
+            
+            <!-- START pageBlockSection-->
+            <apex:pageBlockSection showHeader="false" collapsible="true" columns="1">
+            <apex:pageMessages id="errMsg" escape="false"/>
+            <apex:form id="theForm">
+                <!-- Begin: added by Peng Zhu 2013-05-21 for updating Matrix.Matrix_Description_BI__c -->
+                <apex:inputField id="theMatrixDescIfHidden" value="{!matrix.Matrix_Description_BI__c}" style="display:none"/>
+                <apex:inputHidden id="filterCombHiddenId" value="{!filterComb}" />
+                <!-- End: added by Peng Zhu 2013-05-21 -->
+                
+                <!-- Begin: added by Peng 2013-06-04 for filter function -->
+                <input type="hidden" value="{!filterSize}" id="filterSizeInputHiddenId"></input>
+                
+                <div id="filterDivId" class="filterInputDivCls filterSelectorDiv">
+                        
+                    <apex:actionStatus startText=" Loading... " stopText="" id="fiterFieldPicklistStatus" onstart="disableFilterSelector();" onstop="initFilterSelector();">
+                        <apex:facet name="start">
+                            <div id="pageLoading" title="Please Waiting..." class="mask" style="top:0px;left:0px;text-align:center;width:100%;height:100%;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');">
+                            </div>
+                        </apex:facet>
+                    </apex:actionStatus>
+                    
+                    <apex:repeat value="{!set_filterIdx}" var="idx">
+                        <apex:selectList value="{!map_idx_filterV[idx]}" multiselect="false" size="1" id="filterSelect" onchange="" style="margin-right:3px;">
+                            <apex:selectOptions value="{!map_idx_filter[idx]}"/>
+                        </apex:selectList>
+                    </apex:repeat> 
+                    
+                    <!-- End: added by Peng Zhu 2013-07-30 -->  
+                    
+                    <input id="filterApplyBtn" type="button" value="Apply"  onclick="applyBtnNew();" class="btn" style="margin-left:15px;"/>
+                    
+                    <apex:inputHidden value="{!jsonMatrixFilters}" id="jsonMatrixFilters"/>
+                    <apex:inputHidden value="{!matrixCellCounterMap}" id="matrixCellCounterMap"/>
+                    <apex:inputHidden value="{!json_MatrixFilterCondition}" id="json_MatrixFilterCondition"/>
+                    
+                    <input type="hidden" value="{!listMCDSize}" id="listMCDSizeInput"/>
+                    
+                    <apex:actionStatus startText="" stopText="" id="theFilterStatus1" onstop="preSaveMateixCellDetails();">
+                        <apex:facet name="start">
+                            <div id="pageLoading" class="mask" style="top:0px;left:0px;text-align:center;width:100%;height:100%;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');">
+                            </div>
+                        </apex:facet>
+                    </apex:actionStatus>
+                    
+                    <!-- Begin: added by Peng Zhu 2013-07-30 for dynamic filters -->
+                    <apex:actionFunction name="genAndSaveMatrixCellDetailNew" action="{!genAndSaveMatrixCellDetailNew}" status="theFilterStatus1" reRender="jsonMatrixCellDetailsInputHiddenId,jsonCellDetailIdsHiddenId"/>
+                    <apex:inputHidden id="jsonMatrixCellDetailsInputHiddenId" value="{!jsonMatrixCellDetails}" />
+                    <apex:inputHidden id="jsonCellDetailIdsHiddenId" value="{!jsonCellDetailIds}" />
+                    <!-- End: added by PEeng Zhu 2013-07-30 -->
+                </div>
+                <!-- End: added by Peng for filter function -->
+                <!-- Begin: added by Peng Zhu 2013-06-17 for applying resource allocation quantities with filters -->
+                <div id="quantityFilterDivId" class="filterInputDivCls filterSelectorDiv" style="margin-top:10px;">
+                    <apex:selectList value="{!filterIndex}" multiselect="false" size="1" id="theFilterCombinationNameList" onChange="initDocumentPage();" style="width:598px; margin-left:2px;">
+                        <apex:selectOptions value="{!filterCombinationName}"/>
+                    </apex:selectList>
+                </div>
+                
+                <div id="channelSelectDivId" class="filterInputDivCls filterSelectorDiv" style="margin-top:10px;">
+                    <apex:outputLabel value="Channel 1:" for="channel1Picklist"></apex:outputLabel>
+                    <apex:selectList value="{!matrix.Channel_1_BI__c}" multiselect="false" size="1" id="channel1Picklist" onChange="channel_change_fn('1', this.value);" style=" margin-left:10px; margin-right:3px;">
+                        <apex:selectOptions value="{!ChannelPicklist}"/>
+                    </apex:selectList>
+                    <apex:outputLabel value="Channel 2:" for="channel2Picklist"></apex:outputLabel>
+                    <apex:selectList value="{!matrix.Channel_2_BI__c}" multiselect="false" size="1" id="channel2Picklist" onChange="channel_change_fn('2', this.value);" style=" margin-left:10px;">
+                        <apex:selectOptions value="{!ChannelPicklist}"/>
+                    </apex:selectList>
+                </div>
+                <!-- End: added by Peng Zhu 2013-06-17 -->
+                
+                <div id="jsonDivId">
+                    <apex:inputHidden value="{!jsonChannels}" id="jsonChannel"/>
+                </div>
+                <!-- <apex:actionStatus id="theStatus" onstop="initDocumentPage()"/> -->
+                <apex:actionStatus id="theStatus" onstop=""/>
+                <!-- Modified by Peng Zhu 2013-06-19 -->
+                <!-- <apex:actionFunction name="saveChannelBudgets" action="{!saveChannelBudget}" status="theStatus" reRender="theForm" oncomplete="window.location.href='/{!$CurrentPage.parameters.id}';"/> -->
+                <apex:actionFunction name="saveChannelBudgets" action="{!saveChannelBudgetByFilter}" status="theStatus" reRender="theForm" oncomplete="startSaving();"/>
+                <apex:actionFunction name="saveMatrix" action="{!saveMatrix}" status="theStatus" />
+            
+                <div class="startdiv"><!-- START -->
+                
+                    <!-- <div id="barChartId" class="fontfm" style="position:fixed; *position:absolute; top:-1000px;z-index:100; width: 510px; height:  230px;"></div> -->
+                    <div id="chartOuterDiv" style=" position: fixed; top: 250px; left: -510px; z-index: 99; ">
+                        <div id="barChartId" class="fontfm" style="/*position:fixed; *position:absolute; top:200px;*/z-index:100; width: 510px; height:  230px; /*left:10px;*/ opacity:1; float:left;"></div>
+                        <!-- <div id="barChartChannelId" class="fontfm" style="position:fixed; *position:absolute; top:-1430px;z-index:100; width: 860px; height:  230px;"></div> -->
+                        <div id="chartBarId" style="/*top:200px;*/z-index:100;width:30px; height:230px;background-color:#1692BA;/*position:fixed;left:520px;*/float:left; cursor:pointer;">
+                            <span id="reportIconUp" style="font-size: 1.5em; margin-left: 1px; top: 20px; position: relative; color:#fff;">&gt;</span>
+                            <img id="reportImg1" src="/img/icon/reports16.png" style="position:relative; top:50px;" />
+                            <span id="reportChart" style="position:relative; top:72px; font-weight:bold; display:block; white-space:nowrap; -webkit-transform: rotate(-90deg); -moz-transform: rotate(-90deg); -o-transform: rotate(-90deg); -ms-transform: rotate(-90deg); transform: rotate(-90deg); letter-spacing:1px; color:#fff;">Chart</span>
+                            <img id="reportImg2" src="/img/icon/reports16.png" style="position:relative; top:94px;" />
+                            <span id="reportIconDown" style="font-size: 1.5em; margin-left: 1px; top: 118px; position: relative; color:#fff;">&gt;</span>
+                        </div>
+                    </div>
+                    
+                    <div class="tac oh channelalldiv" id="channelDropDiv" style="height:20px;">  <!--START channel drop layout -->
+                        <div id="chartDivId" class="chartCls" title="show chart" style="visibility:hidden;">
+                            <input type="checkbox" id="activeChart" style="cursor: pointer;"/>
+                            <img alt="Report" src="/s.gif" style="background-image:url(/img/sprites/master.png); background-position:0 -282px; width: 18px; height: 15px;" title="Report"></img>
+<!--                             <img src="/s.gif" class="downUpChartCls" /> -->
+                        </div>
+                        <div class="channeldropCls allcontentwidth" id="channelDropDivId">
+                            <div class="overMenu show" title="show">
+                                <img src="/s.gif" class="downUpCls" alt="show"/>
+                            </div>
+                            <table id="channelTab" border="0" cellpadding="0" cellspacing="0" class="list channelTabCls " style="margin: 0;">
+                                <thead>
+                                </thead>
+                                <tbody class="tbodycls">
+                                    <tr class="trcls">
+                                        <td class="tdcls w1 fw">{!$Label.channel_budget_page_lab1}</td>
+                                        <td class="tdcls w2 fw">&nbsp;</td>
+                                        <td class="tdcls w3 fw" style="width: auto\9;">{!$Label.channel_budget_page_lab3}</td>
+                                        <td class="tdcls w2 fw">&nbsp;</td>
+                                        <td class="tdcls w1 fw">{!$Label.channel_budget_page_lab2}</td>
+                                    </tr>
+                                    <tr class="trcls tdh channelTrDataH" id="channelTrId"><!-- START channel select table -->
+                                        <td class="tdcls">
+                                            <div class="channelCls heightCls" id="channel1">
+                                                <div class="h1" id="channel1DivContent">
+                                                    <ul class="channelDropulCls">
+                                                        <li id="" liUnit__c="" liCost_Rate__c="" class="channelDraggable ui-state-disabled"></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="h2">
+                                                    <div id="channel1barText" style="text-align:center; position:absolute; z-index: 10;left: 0px\9;"></div>
+                                                    <div id="channel1progressbar"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="tdcls">&nbsp;</td>
+                                        <td class="tdcls">
+                                            <div class="channelCls heightCls" id="channelDivId">
+                                                <ul class="dropulCls">
+                                                    <apex:repeat value="{!channels}" var="c">
+                                                    <!-- Commented by Peng Zhu 2013-05-22 for change Unit to Detail -->
+                                                        <!-- <li class="draggable" id="{!c.Id}" liUnit__c="{!c.Unit__c}" liCost_Rate__c="{!c.Cost_Rate_BI__c}"> -->
+                                                        <li class="draggable" id="{!c.Id}" liUnit__c="{!IF(c.Unit_Label_BI__c != null && c.Unit_Label_BI__c != '', c.Unit_Label_BI__c, $Label.Channel_Default_Unit_Label)}" liCost_Rate__c="{!c.Cost_Rate_BI__c}">
+                                                            <span style="padding: 5px; padding-left: 10px; padding-right: 10px;">{!c.Name}</span>
+                                                        </li>
+                                                    </apex:repeat>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                        <td class="tdcls">&nbsp;</td>
+                                        <td class="tdcls">
+                                            <div class="channelCls heightCls" id="channel2">
+                                                <div class="h1" id="channel2DivContent">
+                                                    <ul class="channelDropulCls">
+                                                        <li id="" class="channelDraggable ui-state-disabled"></li>
+                                                    </ul>
+                                                </div>
+                                                <div class="h2">
+                                                    <div id="channel2barText" style="text-align:center; position:absolute; z-index: 10;left: 0px\9;"></div>
+                                                    <div id="channel2progressbar"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr><!-- END channel select table -->
+                                </tbody>
+                            </table>
+                            <div class="overMenu hide" title="hidden" style="display:none;">
+                                <img src="/s.gif" class="downDownCls" alt="hidden"/>
+                            </div>
+                        </div>
+                    </div> <!--END channel drop layout -->
+                                        
+                    
+                    <!--START matrix table layout -->
+                    <div style="height: 100%; float: left;" id="centerDivId">
+                        <div class="matriHeader" style="float:left\9; height:24px; line-height:28px; margin:0px !important; padding:0px !important;text-align: center !important;">
+                            <div class="hideMatrixDivCls headpadding allcontentwidth allcontentwidthIe">
+                                <!--  <h1>{!$Label.channel_budget_page_lab4}</h1>  -->
+                                <!-- <h1>{!IF(matrix.Dimension_1_Name_BI__c != null && matrix.Dimension_1_Name_BI__c != '', matrix.Dimension_1_Name_BI__c, $Label.channel_budget_page_lab4)}</h1> -->
+                                <h1>{!IF(matrix.Dimension_2_Name_BI__c != null && matrix.Dimension_2_Name_BI__c != '', matrix.Dimension_2_Name_BI__c, $Label.channel_budget_page_lab4)}</h1>
+                            </div>
+                        </div>
+                        <div id="matrixBody" class="matrixBodyCls">
+                            <div class="leftSec overrideCls" style="">
+                                <!--  <h1 class="hdvhc h">{!$Label.channel_budget_page_lab5}</h1>  -->
+                                <!-- <h1 class="hdvhc h">{!IF(matrix.Dimension_2_Name_BI__c != null && matrix.Dimension_2_Name_BI__c != '', matrix.Dimension_2_Name_BI__c, $Label.channel_budget_page_lab5)}</h1> -->
+                                <h1 class="hdvhc h">{!IF(matrix.Dimension_1_Name_BI__c != null && matrix.Dimension_1_Name_BI__c != '', matrix.Dimension_1_Name_BI__c, $Label.channel_budget_page_lab5)}</h1>
+                            </div>
+                            <!-- Begin: added by Peng Zhu for legend -->
+                            <!-- <div class="{!IF(isMatrixOlRendered,'my_legend','hideElem')}" style="top:{!realHeight-79}px !important"> -->
+                            <div class="my_legend" style="top:{!realHeight-68}px !important">
+                                <div class="lgHd"><span>Legend:</span></div>
+                                <div class="lgBdFilter">
+                                    <!-- <span># Phys</span><br/><span>Potential</span><br/><span>Adoption</span><br/><span>Avg Qty</span> -->
+                                    <!-- <span># {!$Label.IMP_BI_Matrix_Phys}</span><br/><span>Avg Qty(Ch.1 | Ch.2)</span> -->
+                                    <span><input type="checkbox"  checked="checked"  id="chkPhys" /> # {!$Label.IMP_BI_Matrix_Phys}</span><br/>
+                                    <span><input type="checkbox"  checked="checked"  id="chkAvgQty" /> Avg Qty Ch.1</span>
+                                </div>
+                            </div>
+                            <!-- End: added by Peng Zhu for legend -->
+                            <div class="rightSec allcontentwidthIe" style="border: none; margin: 0;">
+                                <ol id="matrixData" class="olborderCls" style="">
+<!--                                     <li class="ui-state-default tdhd liborder_none liborder_t liborder_l">&nbsp;</li> -->
+                                    <li class="ui-state-default tdhd liborder_none liside_l">&nbsp;</li>
+                                    <apex:repeat value="{!columns}" var="colElem">
+<!--                                         <li class="ui-state-default tdhd liborder_none liborder_t liborder_l"> -->
+                                        <li class="ui-state-default tdhd liborder_none liborder_l">
+                                            <!-- <div class="lidivcls fwb">{!colElem}</div> -->
+                                            <div class="lidivcls fwb adoptionHdDiv">{!IF(isLaunch, list_adptnSts[colElem], colElem)}</div>
+                                        </li>
+                                    </apex:repeat>  
+                                <!--                                     
+                                    <li class="ui-state-default tdhd liborder_none liborder_t liborder_l liborder_r"><div class="lidivcls fwb">{!$Label.channel_budget_page_lab6}</div></li>
+                                -->
+                                    <apex:repeat value="{!rows}" var="rowElem">
+<!--                                         <li class="ui-state-default tdhd liborder_none liborder_t liborder_l"> -->
+                                        <li class="ui-state-default tdhd liborder_none liborder_t liside_l">
+                                            <div class="lidivcls fwb">{!rowElem}</div>
+                                        </li>
+                                        <apex:repeat value="{!map_matrixCell[rowElem]}" var="cell"> 
+<!--                                             <li TotalMarketShare="{!cell.Total_Market_Share_BI__c}" ProductRx="{!cell.Total_Intimacy_BI__c}" MarketRx="{!cell.Total_Potential_BI__c}" phys="{!cell.Total_Customers_BI__c}" class="row_{!cell.Row_BI__c} column_{!cell.Column_BI__c} {!cell.Row_BI__c}_{!cell.Column_BI__c}_cls ui-state-default tdda {!cell.Segment_BI__c} dataCell liborder_none liborder_t liborder_l" id="{!cell.Id}"> -->
+                                            <li TotalMarketShare="{!cell.Total_Market_Share_BI__c}" ProductRx="{!cell.Total_Intimacy_BI__c}" MarketRx="{!cell.Total_Potential_BI__c}" phys="{!cell.Total_Customers_BI__c}" class="row_{!cell.Row_BI__c} column_{!cell.Column_BI__c} {!cell.Row_BI__c}_{!cell.Column_BI__c}_cls ui-state-default tdda {!cell.Segment_BI__c} dataCell liborder_none liborder_t liborder_l" id="{!cell.Id}">
+<!--                                                <apex:inputHidden value="{!cell.channels}" /> -->
+                                                <div class="matrixDataDivCls lidivcls">
+                                                    &nbsp;
+                                                </div>
+                                            <div class="matrixDataDivCls lidivcls lidivb_l">
+<!--                                                <div class="matrixDataDivCls lidivcls lidivb_l hideEl">-->
+                                                    &nbsp;
+                                                </div>
+         
+                                            </li>
+                                        </apex:repeat>
+                                    <!-- 
+                                        <li class="ui-state-default tdhd row_{!rowElem}_total dataCell liborder_none liborder_t liborder_l liborder_r">
+                                            <div class="matrixDataDivCls lidivcls">
+                                                &nbsp;
+                                            </div>
+                                            <div class="matrixDataDivCls lidivcls lidivb_l">
+                                                &nbsp;
+                                            </div>
+                                        </li>
+                                    -->
+                                    </apex:repeat>
+                                <!-- 
+                                    <li class="ui-state-default tdhd liborder_none liborder_t liborder_l liborder_b"><div class="lidivcls fwb">{!$Label.channel_budget_page_lab6}</div></li>
+                                    <apex:repeat value="{!columns}" var="colElem">
+                                        <li class="ui-state-default tdhd column_{!colElem}_total dataCell liborder_none liborder_t liborder_l liborder_b">
+                                            <div class="matrixDataDivCls lidivcls">
+                                                &nbsp;
+                                            </div>
+                                            <div class="matrixDataDivCls lidivcls lidivb_l">
+                                                &nbsp;
+                                            </div>
+                                        </li>
+                                    </apex:repeat>
+                                    <li class="ui-state-default tdhd liborder_none liborder_t liborder_l liborder_r liborder_b">&nbsp;</li>
+                                -->
+                                </ol>
+                            </div>
+                            <div class="colorpick">
+                                <div id="colorbody" style="display:none; position: fixed;/*position: absolute !important; margin-left: 5px; margin-top: -35%;*/">
+                                    <div id="colors1">
+                                        <table id="matrixTips" class="list" border="0" cellpadding="0" cellspacing="0">
+                                            <thead>
+                                                <tr class="headerRow">
+                                                    <!-- Begin: added by Peng Zhu 2013-06-19 -->
+                                                    <th class="tac">&nbsp;</th>
+                                                    <!-- End: added by Peng Zhu 2013-06-19 -->
+                                                    <th class="tac"><span class="tipChannel1 head"></span>&nbsp;</th>
+                                                    <th class="tac"><span class="tipChannel2 head"></span>&nbsp;</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr id="channelInputTrId">
+                                                    <!-- Begin: added by Peng Zhu 2013-06-19 -->
+                                                    <td class="tac"><span class="filterLableName"></span></td>
+                                                    <!-- End: added by Peng Zhu 2013-06-19 -->
+                                                    <td class="tac">
+                                                        <input type="text" id="channelInput1" style="width: 50px;text-align: right;" value="" class="tipChannel1 input"/> <span id="channel1SpanId" class="tipChannel1 body"></span>
+                                                    </td>
+                                                    <td class="tac">
+                                                        <input type="text" id="channelInput2" style="width: 50px;text-align: right;" value="" class="tipChannel2 input"/> <span id="channel2SpanId" class="tipChannel2 body"></span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot class="displayCls">
+                                                <tr class="headerRow" id="channelButtonTrId">
+                                                    <th class="tac">
+                                                        <input id="channelAdd1" type="button" class="btn addCls channel1" value="+" style="width: 22px;"/>
+                                                        <input id="channelMinus1" type="button" class="btn minusCls channel1" value="-" style="width: 22px;"/>
+                                                    </th>
+                                                    <th class="tac">
+                                                        <input id="channelAdd2" type="button" class="btn addCls channel2" value="+" style="width: 22px;"/>
+                                                        <input id="channelMinus2" type="button" class="btn minusCls channel2" value="-" style="width: 22px;"/>
+                                                    </th>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                        <table id="" class="list" border="0" cellpadding="0" cellspacing="0" style="text-align: right !important; margin-top: 3px; border: none;">
+                                            <tbody>
+                                                <tr>
+                                                    <td class="fwb border_bn border_rn"><a title="Report" href="#" name="drillDownReport" target="_blank"># {!$Label.IMP_BI_Matrix_Phys}:</a></td>
+                                                    <td class="tipsTdW border_bn border_ln">&nbsp;<a title="Report" href="#" name="drillDownReport" target="_blank"><span id="physId"></span>
+                                                    <img src="/s.gif" alt="Report" title="Report" style="background-image:url(/img/sprites/master.png); background-position:0 -282px; width: 16px; height: 11px;margin-left: 5px;" />
+                                                    </a>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="fwb border_bn border_rn">{!matrix.Potential_data_Label_BI__c}:</td>
+                                                    <td class="tipsTdW border_bn border_ln">&nbsp;<span id="marketRXId"></span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="fwb border_bn border_rn">{!matrix.Adoption_data_Label_BI__c}:</td>
+                                                    <td class="tipsTdW border_bn border_ln">&nbsp;<span id="productRxId"></span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td class="fwb border_rn">Market Share:</td>
+                                                    <td class="tipsTdW border_ln">&nbsp;<span id="marketShareId"></span></td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="headerRow">
+                                                    <th colspan="2" class="border_bn">
+                                                        <div id="tipsnoClickId" style="width: 100%; height:21px; padding: 3px;">
+                                                            <div id="tipsTotalDivId" class="tipsTotalDivCls w1 inbg">
+                                                                <span class="tipsSpan1">Total </span>
+                                                                <span class="tipsSpan2 bg"></span>
+                                                            </div>
+                                                            <div id="tipsAverageDivId" class="tipsTotalDivCls w2">
+                                                                <span class="tipsSpan1">Average </span>
+                                                                <span class="tipsSpan2 bgf"></span>                                                         
+                                                            </div>
+                                                        </div>
+                                                    </th>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="clearright"></div>
+                     </div>
+                     <!--END matrix table layout -->
+                    
+                    
+                    <div class="matrixTotalCls ie7float" id="matrixTotalClsId" style="height:25px;">  <!--END matrixtotal table layout -->
+                        <div class="matrixDivLabel tmpCls allcontentwidth" style="display:none;"><h3 style=" padding-left: 18px;">{!$Label.channel_budget_page_lab7}</h3></div>
+                        <div class="matrixDivTable tmpCls allcontentwidth" style="display:none;">
+                            <table id="matrixTabTotal" border="0" cellpadding="0" cellspacing="0" class="list matrixTabTotalCls">
+                                <thead>
+                                    <tr class="headerRow">
+                                        <th class="brt">&nbsp;</th>
+                                        <th class="brt"><img src="/s.gif" alt="" class="budgetHelpText" title="{!$Label.BI_Channel_Budget_HT1}"></img>{!$Label.channel_budget_page_lab9}</th>
+                                        <th class="brt"><img src="/s.gif" alt="" class="budgetHelpText" title="{!$Label.BI_Channel_Budget_HT2}"></img>{!$Label.channel_budget_page_lab8}</th>
+                                        <th class="brt">Remaining Units</th>
+                                        <th class="brt"><img src="/s.gif" alt="" class="budgetHelpText" title="{!$Label.BI_Channel_Budget_HT3}"></img>{!$Label.channel_budget_page_lab10}</th>
+                                        <th colspan="2" class="brt segmentHeader">{!IF(matrix.Segment_1_Label_BI__c != null && matrix.Segment_1_Label_BI__c != '', matrix.Segment_1_Label_BI__c, $Label.channel_budget_page_lab11)}</th>
+                                        <th colspan="2" class="brt segmentHeader">{!IF(matrix.Segment_2_Label_BI__c != null && matrix.Segment_2_Label_BI__c != '', matrix.Segment_2_Label_BI__c, $Label.channel_budget_page_lab12)}</th>
+                                        <th colspan="2" class="brt segmentHeader">{!IF(matrix.Segment_3_Label_BI__c != null && matrix.Segment_3_Label_BI__c != '', matrix.Segment_3_Label_BI__c, $Label.channel_budget_page_lab13)}</th>
+                                        <th colspan="2" class="brt segmentHeader">{!IF(matrix.Segment_4_Label_BI__c != null && matrix.Segment_4_Label_BI__c != '', matrix.Segment_4_Label_BI__c, $Label.channel_budget_page_lab14)}</th>
+                                        <th colspan="2" class="brt segmentHeader">{!IF(matrix.Segment_5_Label_BI__c != null && matrix.Segment_5_Label_BI__c != '', matrix.Segment_5_Label_BI__c, $Label.channel_budget_page_lab15)}</th>
+                                        <th colspan="2" class="brt segmentHeader">Blank</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <tr id="customer_seg">
+                                    <th class="brt"># Customers</th>
+                                    <td colspan="4" rowspan="3">&nbsp;</td>
+                                    <td class="brt tar GainclsCustomer dataCelltd GainTd"></td>
+                                    <td rowspan="3" class="GainTd">&nbsp;</td>
+                                    <td class="brt tar BuildclsCustomer dataCelltd BuildTd"></td>
+                                    <td rowspan="3" class="BuildTd">&nbsp;</td>
+                                    <td class="brt tar DefendclsCustomer dataCelltd DefendTd"></td>
+                                    <td rowspan="3" class="DefendTd">&nbsp;</td>
+                                    <td class="brt tar ObserveclsCustomer dataCelltd ObserveTd"></td>
+                                    <td rowspan="3" class="ObserveTd">&nbsp;</td>
+                                    <td class="brt tar MaintainclsCustomer dataCelltd MaintainTd"></td>
+                                    <td rowspan="3" class="MaintainTd">&nbsp;</td>
+                                    <td class="brt tar BlankclsCustomer dataCelltd BlankTd"></td>
+                                    <td rowspan="3" class="BlankTd">&nbsp;</td>
+                                </tr>
+                                <tr id="potential_seg" class="dataRow">
+                                    <th class="brt">% Potential</th>
+                                    <td class="brt tar GainclsPotential dataCelltd GainTd"></td>
+                                    <td class="brt tar BuildclsPotential dataCelltd BuildTd"></td>
+                                    <td class="brt tar DefendclsPotential dataCelltd DefendTd"></td>
+                                    <td class="brt tar ObserveclsPotential dataCelltd ObserveTd"></td>
+                                    <td class="brt tar MaintainclsPotential dataCelltd MaintainTd"></td>
+                                    <td class="brt tar BlankclsPotential dataCelltd BlankTd"></td>
+                                </tr>
+                                <tr id="adoption_seg">
+                                    <th class="brt">% Adoption</th>
+                                    <td class="brt tar GainclsAdoption dataCelltd GainTd"></td>
+                                    <td class="brt tar BuildclsAdoption dataCelltd BuildTd"></td>
+                                    <td class="brt tar DefendclsAdoption dataCelltd DefendTd"></td>
+                                    <td class="brt tar ObserveclsAdoption dataCelltd ObserveTd"></td>
+                                    <td class="brt tar MaintainclsAdoption dataCelltd MaintainTd"></td>
+                                    <td class="brt tar BlankclsAdoption dataCelltd BlankTd"></td>
+                                </tr>
+                                <tr class="headerRow">
+                                    <th class="brt" colspan="5"></th>
+                                    <th class="brt"></th>
+                                    <th class="brt">{!$Label.IMP_BI_Detail_Avg_Customer}</th>
+                                    <th class="brt"></th>
+                                    <th class="brt">{!$Label.IMP_BI_Detail_Avg_Customer}</th>
+                                    <th class="brt"></th>
+                                    <th class="brt">{!$Label.IMP_BI_Detail_Avg_Customer}</th>
+                                    <th class="brt"></th>
+                                    <th class="brt">{!$Label.IMP_BI_Detail_Avg_Customer}</th>
+                                    <th class="brt"></th>
+                                    <th class="brt">{!$Label.IMP_BI_Detail_Avg_Customer}</th>
+                                    <th class="brt"></th>
+                                    <th class="brt">{!$Label.IMP_BI_Detail_Avg_Customer}</th>
+                                </tr>
+                                <!--tr class="headerRow">
+                                    <th class="brt" colspan="5"></th>
+                                    <th class="brt"></th>
+                                    <th class="brt">Avg #/Cust</th>
+                                    <th class="brt"></th>
+                                    <th class="brt">Avg #/Cust</th>
+                                    <th class="brt"></th>
+                                    <th class="brt">Avg #/Cust</th>
+                                    <th class="brt"></th>
+                                    <th class="brt">Avg #/Cust</th>
+                                    <th class="brt"></th>
+                                    <th class="brt">Avg #/Cust</th>
+                                </tr-->
+                                <apex:repeat value="{!list_channelDetails}" var="c">
+                                    <tr id="{!c.channelId}_id">
+                                        <td class="brt tar">{!c.channelName}
+                                            <input type="hidden" name="totalUnits" value="{!c.totalUnits}"/>
+                                            <input type="hidden" name="remainingUnits" value="{!c.remainingUnits}"/>
+                                        </td>
+                                        <td class="brt tar Totalcls dataCelltd">{!c.availableUnits}</td>
+                                        <td class="brt tar Plannedcls dataCelltd">{!c.allocatedUnits}</td>
+                                        <td class="brt tar Remainingcls dataCelltd"></td>
+                                        <td class="brt tar Plannedincls dataCelltd">{!c.planned}</td>
+                                        <td class="brt tar Gaincls dataCelltd GainTd">{!c.gain}</td>
+                                        <td class="brt tar AvgCustGain dataCelltd GainTd"></td>
+                                        <td class="brt tar Buildcls dataCelltd BuildTd">{!c.build}</td>
+                                        <td class="brt tar AvgCustBuild dataCelltd BuildTd"></td>
+                                        <td class="brt tar Defendcls dataCelltd DefendTd">{!c.defend}</td>
+                                        <td class="brt tar AvgCustDefend dataCelltd DefendTd"></td>
+                                        <td class="brt tar Observecls dataCelltd ObserveTd">{!c.observe}</td>
+                                        <td class="brt tar AvgCustObserve dataCelltd ObserveTd"></td>
+                                        <td class="brt tar nbrt Maintaincls dataCelltd MaintainTd">{!c.maintain}</td>
+                                        <td class="brt tar AvgCustMaintain dataCelltd MaintainTd"></td>
+                                        <td class="brt tar nbrt Blankcls dataCelltd BlankTd"></td>
+                                        <td class="brt tar AvgCustBlank dataCelltd BlankTd"></td>
+                                    </tr>
+                                </apex:repeat>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="headerRow">
+                                        <th class="brt nbbt " style="font-size: 13px !important;">{!$Label.channel_budget_page_lab6}<input type="hidden" name="totalUnits" value="{!totalChannelInfo.totalUnits}"/></th>
+                                        <th class="brt nbbt Totalcls dataCelltd">{!totalChannelInfo.availableUnits}</th>
+                                        <th class="brt nbbt Plannedcls dataCelltd">{!totalChannelInfo.allocatedUnits}</th>
+                                        <th class="brt nbbt Remainingcls dataCelltd"></th>
+                                        <th class="brt nbbt Plannedincls dataCelltd">{!totalChannelInfo.planned}</th>
+                                        <th class="brt nbbt Gaincls dataCelltd">{!totalChannelInfo.gain}</th>
+                                        <th class="brt"></th>
+                                        <th class="brt nbbt Buildcls dataCelltd">{!totalChannelInfo.build}</th>
+                                        <th class="brt"></th>
+                                        <th class="brt nbbt Defendcls dataCelltd">{!totalChannelInfo.defend}</th>
+                                        <th class="brt"></th>
+                                        <th class="brt nbbt Observecls dataCelltd">{!totalChannelInfo.observe}</th>
+                                        <th class="brt"></th>
+                                        <th class="brt nbbt nbrt Maintaincls dataCelltd">{!totalChannelInfo.maintain}</th>
+                                        <th class="brt"></th>
+                                        <th class="brt nbbt nbrt Blankcls dataCelltd">{!totalChannelInfo.blank}</th>
+                                        <th class="brt"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="ie7float overMenu show overdownCls allcontentwidth" title="show" id="overTableHideId">
+                            &nbsp;<img src="/s.gif" class="downUpCls" />&nbsp;
+                        </div>
+                    </div> <!--END matrix table layout -->
+
+                    <div class="matrixTotalCls" style="margin-top:5px;" id="btnDivId">
+                        <div class="allcontentwidth ie7float">
+<!--                            <input onclick="showHeader_click(this)" type="button" value="HideHeader " class="btn"/> -->
+                            <input id="btnSave" onclick="saveChannelBudget(this)" type="button" value="{!$Label.channel_budget_page_lab16}" class="btn"/>
+                            <input id="btnCancel" type="button" value="{!$Label.channel_budget_page_lab17}" class="btn" onclick="window.location.href='/{!$CurrentPage.parameters.id}';"/>
+                        </div>
+                    </div>
+                    
+                </div><!-- END -->  
+<!--                </apex:outputPanel> -->
+            </apex:form>
+            </apex:pageBlockSection><!-- END pageBlockSection -->
+            <span id="htmlEntity" style="display:none">&nbsp;</span>
+            <div id="cellPopup" style="display:none; text-align:center;"></div>
+        </apex:pageBlock> <!-- END pageBlock-->
+    <div id="loading-curtain-div" title="Please Waiting..." class="mask" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');"></div>
+    <!-- Pop up summary table -->
+    <div id="popUpWarning" title="WARNING !!!"></div>
+    </body>
+</apex:page>

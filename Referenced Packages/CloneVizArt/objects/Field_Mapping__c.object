@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomObject xmlns="http://soap.sforce.com/2006/04/metadata">
+    <actionOverrides>
+        <actionName>Accept</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Clone</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Delete</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Edit</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>List</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>New</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>Tab</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <actionOverrides>
+        <actionName>View</actionName>
+        <type>Default</type>
+    </actionOverrides>
+    <deploymentStatus>Deployed</deploymentStatus>
+    <deprecated>false</deprecated>
+    <description>Use this list of field mappings to define rules on clone process. Each entry is related to an object (defined by name field) as well as an identifying key. You may choose which type of key you use, e.g. source record type id or source record type id plus target record type id. Key field is not unique, which means you can define multiple rules by object and key. Typical use case if you want to map information from a set of fields for when you change from one record type to another.</description>
+    <enableActivities>false</enableActivities>
+    <enableFeeds>false</enableFeeds>
+    <enableHistory>false</enableHistory>
+    <enableReports>false</enableReports>
+    <fields>
+        <fullName>Active__c</fullName>
+        <defaultValue>true</defaultValue>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <inlineHelpText>Uncheck to deactivate field mapping rule</inlineHelpText>
+        <label>Active</label>
+        <type>Checkbox</type>
+    </fields>
+    <fields>
+        <fullName>Key__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <inlineHelpText>Identifier for a set of similar rules. This parameter gets passed in url by object.</inlineHelpText>
+        <label>Key</label>
+        <length>80</length>
+        <required>true</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Object_Key__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <label>Object_Key</label>
+        <length>161</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Source_Value__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <inlineHelpText>For field mapping enter the API field name of this object which should be the base value for this. For value mapping enter text literal, number, decimal with decimal point, date value in format YYYY-MM-DD or date time value in format YYYY-MM-DD hh:mm:ss</inlineHelpText>
+        <label>Value</label>
+        <length>255</length>
+        <required>false</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Target_Field__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <inlineHelpText>Define API field name of your target field you want to populate</inlineHelpText>
+        <label>API Field Name</label>
+        <length>45</length>
+        <required>true</required>
+        <type>Text</type>
+        <unique>false</unique>
+    </fields>
+    <fields>
+        <fullName>Type__c</fullName>
+        <deprecated>false</deprecated>
+        <externalId>false</externalId>
+        <inlineHelpText>Defines if you want to populate the target field with a literal value or from a source field of the same object. If you want to empty the field select Null.</inlineHelpText>
+        <label>Mapping Type</label>
+        <picklist>
+            <picklistValues>
+                <fullName>Field</fullName>
+                <default>true</default>
+            </picklistValues>
+            <picklistValues>
+                <fullName>Value</fullName>
+                <default>false</default>
+            </picklistValues>
+            <picklistValues>
+                <fullName>Null</fullName>
+                <default>false</default>
+            </picklistValues>
+            <sorted>false</sorted>
+        </picklist>
+        <type>Picklist</type>
+    </fields>
+    <label>Field Mapping</label>
+    <listViews>
+        <fullName>All</fullName>
+        <columns>Active__c</columns>
+        <columns>NAME</columns>
+        <columns>Key__c</columns>
+        <columns>Target_Field__c</columns>
+        <columns>Type__c</columns>
+        <columns>Source_Value__c</columns>
+        <filterScope>Everything</filterScope>
+        <label>All</label>
+    </listViews>
+    <nameField>
+        <label>API Object Name</label>
+        <type>Text</type>
+    </nameField>
+    <pluralLabel>Field Mappings</pluralLabel>
+    <searchLayouts>
+        <customTabListAdditionalFields>Active__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Target_Field__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Source_Value__c</customTabListAdditionalFields>
+        <customTabListAdditionalFields>Type__c</customTabListAdditionalFields>
+    </searchLayouts>
+    <sharingModel>ReadWrite</sharingModel>
+    <validationRules>
+        <fullName>Require_Source_Value</fullName>
+        <active>true</active>
+        <description>If mapping type not null, require source value</description>
+        <errorConditionFormula>AND(NOT(ISPICKVAL(Type__c, &quot;Null&quot;)), ISBLANK( Source_Value__c ))</errorConditionFormula>
+        <errorDisplayField>Source_Value__c</errorDisplayField>
+        <errorMessage>You need to enter a source value for field or value type mappings</errorMessage>
+    </validationRules>
+</CustomObject>

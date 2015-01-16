@@ -1,0 +1,176 @@
+<apex:page standardcontroller="Cycle_BI__c" showheader="true" sidebar="true" tabstyle="Cycle_BI__c" extensions="IMP_BI_DataDeletion">
+	
+	 <!-- style -->
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}"/>
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" />
+	
+	<apex:sectionHeader title="{!Cycle_BI__c.Name}" subtitle="Data Deletion"/>
+    <apex:stylesheet value="{!URLFOR($Resource.ITbTabStyle)}" />
+    
+    <style type="text/css">
+    	#progressbar {
+		    left: 20%;
+		    margin-left: -100px;
+		    position: relative;
+		    width: 70%;
+		    z-index: 8001;
+		}
+    	
+        #progressbar div{text-align:center;}
+        .ui-progressbar {
+			height: 2em;
+			overflow: hidden;
+			text-align: left;
+		}
+		.ui-progressbar .ui-progressbar-value {
+    		height: 100%;
+    		margin: -1px;
+		}
+		
+		.ui-widget-header {
+		    background: url("images/ui-bg_gloss-wave_35_f6a828_500x100.png") repeat-x scroll 50% 50% #F6A828;
+		    border: 1px solid #E78F08;
+		    color: #FFFFFF;
+		    font-weight: bold;
+		}
+		
+		span.title{font:italic bold 12px/20px arial,sans-serif;}
+    </style>
+    
+    <script type="text/javascript">
+ 		j$ = jQuery.noConflict();
+		var products = [];
+		        
+		/**
+        * Check all the products
+        */
+        function checkAll(isChecked){
+            var checklist = document.getElementsByTagName('input');
+            for(var i = 0; i < checklist.length; i++){
+                if(checklist[i].id != 'allCheck' && checklist[i].type == "checkbox"){
+                    checklist[i].checked = isChecked;
+                }
+            }
+        }
+        
+        /**
+        * Uncheck all the products
+        */
+        function checkIsAll(isChecked){
+            var allcheck = true;
+            j$("#itbtable").find(":checkbox").each(function(){
+                if(this.id != 'allCheck' && !this.checked){
+                    allcheck = false;
+                }
+            });
+            document.getElementById("allCheck").checked = allcheck;
+        }
+    	
+    	/**
+        * Show progress bar
+        */
+    	
+    	function checkSelection(){
+            var checkboxLength = j$('#tablebody').find( ":checked" ).length;
+            if(checkboxLength == 0){
+                alert('{!$Label.Select_Product}');
+                return false;
+            }
+            else{
+                if(confirm('{!$Label.Are_you_sure}')){startDeletionProcess();}
+            }
+        }
+        
+        function startDeletionProcess(){
+        	var list_prodId = [];
+            j$('#itbtable').find( ":checked" ).not("#allCheck").each(function(){
+                var $ck = j$(this);
+                var proId = $ck.parent('td').find('[type=hidden]').attr('value');
+                var proName =$ck.parent('td').find('[type=hidden].proName').attr('value');
+                //console.log(':: Name: ' + proName + ' - ' + proId);
+                if(proId){
+                    list_prodId.push(proId);
+                    products.push(proName);
+                }
+            });
+            
+            //set Id products to be deleted
+            j$("input[id$=products2Del]").attr('value',list_prodId);
+            showLoading();
+            runDeletionProcess();
+            //console.log(':: Products: ' + j$("input[id$=products2Del]").val());
+        }
+        
+        function showLoading(){
+        	j$('#loading-showing-div').html('<p style="font-size:16px;"><b> Deleting Products: <font color="red">'+products+'</font><b/><p/>');
+        	j$('#loading-curtain-div').show();
+            j$("#progressbar").hide().progressbar({ value: 1 }).children().text('0%');
+			j$('#progressbar').show();
+        }
+        
+        function syncProgressBar(progress){
+        	j$("#progressbar").hide().progressbar({ value: progress }).children().text(progress+'%');
+			j$('#progressbar').show();
+			
+			//Go back to cycle page layout if the process has been finished
+			deletionCompleted(progress);			
+		}
+		
+		//Go back to cycle page layout if the process has been finished
+		function deletionCompleted(progress){
+			if(progress != null && progress > 99){
+	            calculateCycleData();
+			}
+		}
+    </script>
+    
+    <apex:pageMessages id="msg" escape="false"/>
+   	<div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;"></div>
+	<div id="loading-showing-div" style="width: 80%; position: relative; z-index: 8001; left: 20%; margin-left: -160px; margin-top: 50px;"></div>
+	<div id="progressbar" ></div>
+    
+    <apex:form id="deletionProcess">
+		<apex:inputHidden value="{!products2Del}" id="products2Del" />
+		<apex:actionFunction name="runDeletionProcess" action="{!runDeletionProcess}" rerender="progressbar,syncProcess" onComplete="syncProgressBar({!progress});"/>
+		<apex:actionFunction name="calculateCycleData" action="{!calculateCycleData}" />
+		<apex:actionPoller Id="syncProcess" action="{!syncProgressBar}" reRender="progressbar,syncProcess" interval="5" onComplete="syncProgressBar({!progress});" enabled="{!enableSync}"/>
+		
+		<apex:pageBlock id="thePb" mode="maindetail">
+		    <div style="display:none" id="endMessage">
+		        <div id="summarymessage"/>
+		    </div>
+		    
+		    <apex:pageBlockButtons location="top">
+		        <input type="button" onclick="checkSelection();" class="btn" id="clearButton" value="{!$Label.Data_Clear}"></input>
+		        <apex:commandButton value="{!$Label.Cancel}" action="{!cancel}" id="cancelButton" status="theStatus" immediate="true"/>
+		    </apex:pageBlockButtons>
+		    <apex:outputPanel styleClass="title" id="titlePanel">{!$Label.Select_Products_To_Delete}:</apex:outputPanel>
+		    <table class="itb-table-style-01" id="itbtable">
+		        <thead>
+	            	<tr>
+	                	<th><input type="checkbox" id="allCheck" onclick="checkAll(this.checked)"></input></th>
+	                    <th>{!$ObjectType.Product_vod__c.Fields.Name.Label}</th>
+	                    <th>{!$ObjectType.Cycle_Data_Overview_BI__c.Fields.Count_BI__c.Label}</th>
+	                    <th>{!$ObjectType.Product_vod__c.Fields.Id.Label}</th>
+	                </tr>
+                </thead>
+	                <tbody id="tablebody">
+		                <apex:repeat value="{!products}" var="item">
+			                <tr class="dataRow">
+		                    	<td><input type="checkbox" onclick="checkIsAll()"></input>
+		                        	<input type="hidden" value="{!item.Product_Catalog_BI__c}"></input>
+		                        	<input type="hidden" class="proName" value="{!item.Product_Catalog_BI__r.Name}"></input>
+								</td>
+		                        <td><span>{!item.Product_Catalog_BI__r.Name}</span></td>
+		                      	<td><span><apex:outputField value="{!item.Count_BI__c}"/></span></td>
+		                      	<td><span>{!item.Product_Catalog_BI__c}</span></td>
+			               	</tr>
+		               </apex:repeat>
+	               </tbody>
+	        </table>
+	        <input type="hidden" id="cycId" value="{!cycId}"/>
+	    </apex:pageBlock>
+	</apex:form>
+</apex:page>

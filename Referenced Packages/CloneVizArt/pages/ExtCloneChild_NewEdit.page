@@ -1,0 +1,59 @@
+<apex:page standardController="ITBclone__Clone_Child__c"
+    extensions="ITBclone.ExtCloneChild"
+    title="{!$ObjectType.ITBclone__Clone_Child__c.label} {!$Label.itbclone__EditButton}: {!IF(ISBLANK(ITBclone__Clone_Child__c.Id), $Label.itbclone__NewButton + ' ' + $ObjectType.ITBclone__Clone_Child__c.label, ITBclone__Clone_Child__c.Name)}">
+    <apex:sectionHeader title="{!$ObjectType.ITBclone__Clone_Child__c.label} {!$Label.itbclone__EditButton}"
+        subtitle="{!IF(ISBLANK(ITBclone__Clone_Child__c.Id), $Label.itbclone__NewButton + ' ' + $ObjectType.ITBclone__Clone_Child__c.label, ITBclone__Clone_Child__c.Name)}" />
+
+    <apex:includeScript value="{!URLFOR($Resource.ITBclone__MultiSelectListBox)}" />
+
+    <apex:form id="topForm">
+        <apex:pageBlock >
+            <apex:pageMessages id="messages" />
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!Save}" value="{!$Label.itbclone__SaveButton}" />
+                <apex:commandButton action="{!Cancel}"
+                    value="{!$Label.itbclone__CancelButton}" />
+            </apex:pageBlockButtons>
+
+            <apex:pageBlockSection title="{!$Label.itbclone__Information}">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.ITBclone__Clone_Child__c.fields.ITBclone__Root_Object__c.label}" />
+                    <apex:outputpanel layout="block" styleClass="requiredInput">
+                        <apex:outputpanel layout="block" styleClass="requiredBlock" />
+                        <apex:actionRegion >
+                            <apex:selectList value="{!cloneChild.ITBclone__Root_Object__c}" size="1" rendered="{!isNew}">
+                                <apex:selectOptions value="{!rootObjectOptions}" />
+                                <apex:actionSupport event="onchange" rerender="relationShip"
+                                    status="childStatus" />
+                            </apex:selectList>
+                            <apex:actionStatus startText=" Loading... " stopText=""
+                                id="childStatus">
+                                <apex:facet name="start">
+                                    <img src="/img/loading.gif" />
+                                    <span class="waitingDescription">{!$Label.Loading}...</span>
+                                </apex:facet>
+                            </apex:actionStatus>
+                        </apex:actionRegion>
+                        <apex:outputText value="{!cloneChild.ITBclone__Root_Object__c}"
+                            rendered="{!(!isNew)}" />
+                    </apex:outputpanel>
+
+                </apex:pageBlockSectionItem>
+
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="{!$ObjectType.ITBclone__Clone_Child__c.fields.ITBclone__Child_Relationships__c.label}" />
+                    <apex:outputPanel id="relationShip">
+                        <c:Comp_MultiPickList selectedFields="{!selectedChildRelationships}" 
+                            unselectedFields="{!unselectedChildRelationships}" 
+                            inputHiddenId="{!$Component.childRelationships}" sortable="true" />
+                        <apex:inputHidden id="childRelationships"
+                            value="{!pageChildRelationships}" />
+                    </apex:outputPanel>
+                </apex:pageBlockSectionItem>
+
+                <apex:inputField value="{!cloneChild.ITBclone__Active__c}" required="true" />
+
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

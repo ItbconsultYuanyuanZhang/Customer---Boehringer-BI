@@ -1,0 +1,145 @@
+<apex:page standardcontroller="My_Setup_Products_vod__c"  extensions="CustomMySetupController" id="thePage">
+	<apex:includeScript value="{!URLFOR($Resource.jQuery, 'jquery-1.9.1.min.js')}"/>
+		
+	<script type="text/javascript">
+		var j$ = jQuery.noConflict();
+		var userInputId;
+		var lookupButtonId;
+		
+		function fixId(id) {
+			return '#' + id.replace(/(:|\.)/g,'\\\$1');
+		}
+		
+		var includedClick = function() {
+			if (!this.checked) {
+				var favouriteId = fixId(this.id.replace("included", "favourite"));
+				j$(favouriteId).prop("checked", false);
+			}
+		};
+		
+		var favouriteClick = function() {
+			if (this.checked) {
+				var includedId = fixId(this.id.replace("favourite", "included"));
+				j$(includedId).prop("checked", true);
+			}
+		};
+		
+		var userVisibility = function() {
+			if ({!pageBlockMode=='edit'}) {
+				j$(userInputId).attr("disabled", "disabled");
+				j$(lookupButtonId).hide();
+			} else {
+				j$(userInputId).removeAttr("disabled")
+				j$(lookupButtonId).show();
+			}			
+		};
+		
+				
+		var userSearch = function() {
+			
+			searchOwner();
+		}
+			
+		
+	    function checkAll(cb,cbid)
+	        {
+	            var inputElem = document.getElementsByTagName("input");                     
+	            for(var i=0; i<inputElem.length; i++)
+	            {             
+	                 if(inputElem[i].id.indexOf(cbid)!=-1){                                        
+	                    inputElem[i].checked = cb.checked;
+	                }
+	            }
+	        }
+	</script>
+	
+	<!--
+		j$(document).ready(function() {
+			userInputId = fixId('thePage:theForm:pbConfigure:bsUser:OwnerID');
+			lookupButtonId = fixId('thePage:theForm:pbConfigure:bsUser:OwnerID_lkwgt');
+			
+			j$(".included").click(includedClick);
+			j$(".favourite").click(favouriteClick);
+			userVisibility();
+			var checkAllId = fixId('#' + 'thePage:theForm:pbConfigure:btProducts:include_all');
+			j$(checkAllId).click(includedCheckAll);
+			
+			// Prevent the enter key being used on the user lookup
+			j$(userInputId).keypress(function(e) {
+				if (e.keyCode == 10 || e.keyCode == 13) {
+					e.preventDefault();
+					//openLookup('/_ui/common/data/LookupPage?lkfm=thePage%3AtheForm&lknm=thePage%3AtheForm%3ApbConfigure%3AbsUser%3AOwnerID&lktp=' + getElementByIdCS('thePage:theForm:pbConfigure:bsUser:OwnerID_lktp').value,670,'1','&lksrch=' + escapeUTF(getElementByIdCS('thePage:theForm:pbConfigure:bsUser:OwnerID').value.substring(0, 80)));
+				}
+			});
+			
+			//j$(userInputId).prop('disabled', true);
+		});
+		-->
+	
+	  
+	<apex:form id="theForm">
+		<apex:actionFunction name="searchOwner" action="{!searchOwner}" />
+		<apex:pageBlock title="Configure My Setup" id="pbConfigure">
+			<apex:pageMessages />
+			
+			<apex:pageBlockButtons id="pbbuttons">
+				<apex:commandButton value="Save" action="{!csave}" rendered="{!pageBlockMode=='edit'}" />
+				<apex:commandButton value="Cancel" action="{!searchOwner}" rendered="{!pageBlockMode=='edit'}" />
+				<apex:commandButton value="Edit"  action="{!cedit}"  rendered="{!pageBlockMode=='detail'}"/>   
+			</apex:pageBlockButtons>
+			
+			<apex:pageBlockSection title="User" id="bsUser">
+				<apex:inputField label="My Setup Products For" id="OwnerID" value="{!My_Setup_Products_vod__c.ownerid}" onchange="userSearch()" />
+			</apex:pageBlockSection>
+			<apex:pageBlockTable id="table1" value="{!products}" var="p" rendered="{!pageBlockMode=='detail'}">
+				<apex:column >
+					<apex:facet name="header">Product Name</apex:facet>
+					{!p.Name}
+				</apex:column>
+				<apex:column >
+					<apex:facet name="header">Country code</apex:facet>
+					{! IF(p.Region_BI__c == p.Country_Code_BI__c, p.Country_Code_BI__c, p.Country_Code_BI__c & ' (' & p.Region_BI__c & ')') }
+				</apex:column>
+				<apex:column >
+					<apex:facet name="header">External ID</apex:facet>
+					{!p.External_ID_vod__c}
+				</apex:column>
+				 
+				<apex:column >
+					<apex:facet name="header">Included</apex:facet>
+					<apex:inputCheckbox value="{!included[p.id]}" disabled="true" />
+				</apex:column>
+				<apex:column >
+					<apex:facet name="header">Favourite</apex:facet>
+					<apex:inputCheckbox value="{!favourite[p.id]}" disabled="true" />
+				</apex:column>
+				 
+			</apex:pageBlockTable>
+			<apex:pageBlockTable id="btProducts" value="{!products}" var="p" rendered="{!pageBlockMode=='edit'}">
+				<apex:column >
+					<apex:facet name="header">Product Name</apex:facet>
+					{!p.Name}
+				</apex:column>
+				<apex:column >
+					<apex:facet name="header">Country code</apex:facet>
+					{! IF(p.Region_BI__c == p.Country_Code_BI__c, p.Country_Code_BI__c, p.Country_Code_BI__c & ' (' & p.Region_BI__c & ')') }
+				</apex:column>
+				<apex:column >
+					<apex:facet name="header">External ID</apex:facet>
+					{!p.External_ID_vod__c}
+				</apex:column>
+				<apex:column >
+					
+					<apex:facet name="header">Included<apex:inputCheckbox id="included1" label="Included" onclick="checkAll(this,'included')"/> </apex:facet>
+					<apex:inputCheckbox styleClass="included" id="included" value="{!included[p.id]}" />
+				</apex:column>
+				<apex:column >
+					<!--  <apex:inputCheckbox label="Favourite" onclick="checkAll(this,'favourite'); checkAll(this,'included'); checkAll(this,'included1'); "/> -->
+					<apex:facet name="header">Favourite  </apex:facet>
+					<apex:inputCheckbox styleClass="favourite" id="favourite" value="{!favourite[p.id]}" />
+				</apex:column>
+			</apex:pageBlockTable>
+			
+		</apex:pageBlock>
+	</apex:form>
+</apex:page>

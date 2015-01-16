@@ -1,0 +1,81 @@
+<apex:page id="thePage" standardcontroller="Portfolio_BI__c" extensions="IMP_BI_ExtPortfolioReportList" tabStyle="Portfolio_BI__c" docType="html-5.0" showHeader="false" sidebar="false">
+    <!-- style -->
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}"/>
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" />
+    
+    <style type="text/css">
+		.labelCol {vertical-align:middle !important;}
+		.popupCloseBth {height:20px; width:20px; float:right; cursor:pointer;}
+		.tertiaryPalette {border-color:#FFF !important;}
+		.reportLinkBtn {height:24px; margin-left:5px;}
+    </style>
+    
+    <script type="text/javascript">
+        var j$ = jQuery.noConflict();
+        
+        function setFocus(){}
+        
+        function showLoading(){
+            j$('#loading-curtain-div').appendTo(j$('#bodyTable').parent()).show();           
+        }
+	    
+	    function openReportBtn(){
+	    	var reportUrl = j$('input[id="reportUrlHiddenId"]').val()
+        	
+        	if(reportUrl && j$.trim(reportUrl) != ''){
+	        	window.open(reportUrl);
+        	}
+	    }
+	    
+	    function stopRKey(evt) { 
+	        var evt = (evt) ? evt : ((event) ? event : null); 
+	        var node = (evt.target) ? evt.target : ((evt.srcElement) ? evt.srcElement : null); 
+	        if ((evt.keyCode == 13) && (node.type=="text"))  {return false;} 
+	    } 
+
+    	document.onkeypress = stopRKey; 
+    </script>
+    
+    <apex:pageMessages id="msg" escape="false"/>
+    <apex:form id="theTopForm">
+   	    <apex:actionStatus startText="" stopText="" id="theStatus" onstop="">
+	    	<apex:facet name="start">
+				<div id="pageLoading" class="mask" style="top:0px;left:0px;text-align:center;width:100%;height:100%;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');">
+				</div>
+			</apex:facet>
+		</apex:actionStatus>
+    
+    	<apex:actionFunction name="forceSimulationChanged" action="{!forceSimulationChanged}" status="theStatus" rerender="detailPageBlock"/>
+    	<apex:actionFunction name="reportListChanged" action="{!reportListChanged}" status="theStatus" rerender="detailPageBlock"/>
+    	
+    	
+    	<apex:pageBlock mode="maindetail" id="detailPageBlock">
+    		<input id="reportUrlHiddenId" type="hidden" value="{!reportUrl}" />
+    	
+			<apex:pageBlockSection title="" columns="2" collapsible="false">
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$ObjectType.Portfolio_Report_List_BI__c.fields.Name.label}" for="theReportList"/>
+					<apex:pageBlockSectionItem >
+						<apex:selectList value="{!reportId}" multiselect="false" size="1" id="theReportList" onchange="reportListChanged();">
+	                        <apex:selectOptions value="{!list_report}"/>
+	                    </apex:selectList>
+						<input type="button" id="reportLinkBth" class="btn reportLinkBtn" value="Open Report" onclick="openReportBtn();"></input>
+					</apex:pageBlockSectionItem>
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$ObjectType.Portfolio_BI__c.fields.FTEs_Field_Force_Simulation_BI__c.label}" for="pff"/>
+					<apex:inputField id="pff" value="{!portfolio.FTEs_Field_Force_Simulation_BI__c}" onchange="forceSimulationChanged();" onkeydown="if(event.keyCode==13) {forceSimulationChanged();}"/>
+				</apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem ></apex:pageBlockSectionItem>
+				<apex:pageBlockSectionItem >
+					<apex:outputLabel value="{!$ObjectType.Portfolio_BI__c.fields.Max_Number_SalesReps_BI__c.label}" for="pff"/>
+					<apex:outputField id="pmns" value="{!portfolio.Max_Number_SalesReps_BI__c}"/>
+				</apex:pageBlockSectionItem>
+			</apex:pageBlockSection>
+		
+		</apex:pageBlock>
+    </apex:form>
+    <div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');"></div>
+</apex:page>

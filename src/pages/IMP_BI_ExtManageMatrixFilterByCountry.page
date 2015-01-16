@@ -1,0 +1,218 @@
+<apex:page id="thePage" standardcontroller="Country_BI__c" extensions="IMP_BI_ExtManageMatrixFilterByCountry" sidebar="false" title="{!pageTitle}" tabStyle="Country_BI__c" docType="html-5.0">
+	<!-- style -->
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}"/>
+    <!-- <apex:stylesheet value="{!$Resource.IMP_BI_ExtManageMatrixFilter_style}" /> -->
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" />
+    <!-- <apex:includeScript value="{!$Resource.IMP_BI_ExtManageMatrixFilter_controller}" /> -->
+    
+    <style type="text/css">
+    	.ui-widget-content {
+		    background: #FFFFFF;
+		    border: 1px groove #AAAAAA;
+		    color: #222222;
+		}
+		.ui-dialog .ui-dialog-titlebar-close {
+		    height: 20px;
+		    margin: -10px 0 0;
+		    padding: 1px;
+		    position: absolute;
+		    right: 0.3em;
+		    top: 50%;
+		    width: 20px;
+		}
+		.ui-widget-header {
+    		background: #CCCCCC;
+    		border: 1px solid #AAAAAA;
+    		color: #222222;
+    		font-weight: bold;
+			}
+		
+    </style>
+    
+    <script type="text/javascript">
+    	var j$ = jQuery.noConflict();
+    	var __sfdcSessionId = '{!GETSESSIONID()}';
+    	var r;
+    	
+         
+        Visualforce.remoting.timeout = 120000; // Set timeout at page level
+		
+		j$(function(){
+			j$( "#summaryChannel" ).dialog({
+				autoOpen: false,
+				width: 450,
+				modal:false,
+				show:{
+					effect: "drop",
+					duration: 1000
+				},
+				hide:{
+					effect: "puff",
+					duration: 400
+				},
+				height: 200,
+			});
+		});
+		
+		function loadSummary(apiName,filterLabel){
+			showLoading();
+			var tableChannel = '<table id="tableChannels" class="list" border="0" cellpadding="0" cellspacing="0" style="width:100%;"> '+
+									'<thead class="rich-table-thead"> '+
+										'<tr class="headerRow"> '+
+											'<th class="headerRow  ">Channel</th> '+
+											'<th class="headerRow  ">Quantity</th> '+
+										'</tr> '+
+									'</thead> '+
+									'<tbody> ';
+			
+			var countryCode = '{!countryCode}';							
+			var params = countryCode+'-'+apiName;
+			
+			IMP_BI_ExtManageMatrixFilterByCountry.getSummarySpecialties(
+     			params, 
+	            function(result, event){
+	            	if (event.status) {
+	            		if(result.length!=null&&result.length>0){
+	            			for(var i=0;i<result.length;i++) {
+							  //console.log(result[i].channel + ': ' + result[i].quantity);
+							  tableChannel += 	'<tr class="dataRow even"> '+
+								  					'<td class="dataCell">'+ result[i].channel +'</td> '+
+													'<td class="dataCell">'+ result[i].quantity +'</td>'+
+												'</tr>';
+							}
+							
+							tableChannel += '</tr> </tbody> </table>';
+	            		
+	            		}else{
+	            			tableChannel='<span style="position:absolute; left:55px;top:70px;color:#FF0000; font-size:18px;"> NO RECORDS ASSOCIATED WITH THE FILTER </span>'
+	            		}
+	            		
+	            		//Show up popup
+	            		j$( "#summaryChannel" ).empty();
+						j$('#summaryChannel').append(tableChannel); 
+						showSummary(filterLabel);
+	            		
+	   		    	}else if (event.type === 'exception') {
+	   		    		j$("#errorMsg span").html('[ERROR] ' + event.message);
+					}
+				},{escape: true});
+		}
+		
+		/**
+		*Show popup summary channel profiles
+		*/
+		
+		function showSummary(filterName){
+			var popUpSummary = j$('#summaryChannel');
+			var title=filterName + ' Summary'; 
+			j$(popUpSummary).dialog( "option","title",title);
+			j$(popUpSummary).dialog( "open");
+			hideLoading(); 
+		}
+		
+		function delRecord(rId){
+			//console.log('In del record : ' + rId);
+			if(confirm("Are you sure?")){
+				//console.log('Delete');	
+				j$("input[id$=filterIdHidden]").val(rId);
+				delFilter();	
+			}
+			else{
+				//console.log('Cancel');
+			}
+		}
+		
+		function showLoading(){
+			j$('.pbBody').find('span').css('display','');
+		}
+		
+		function hideLoading(){
+			j$('.pbBody').find('span').css('display','none');
+		}
+    </script>
+
+
+    <apex:sectionHeader title="{!sectionHeaderTitle}" subtitle="{!sectionHeaderSubTitle}"/>
+    <apex:pageMessages id="msg" escape="false"/>
+    
+	<apex:form id="theTopForm">
+		<span id="errorMsg" style="color:#ff0000; font-size:14px;"><apex:pageMessages id="messages" /></span>
+		<apex:inputHidden id="filterIdHidden" value="{!delMfId}"></apex:inputHidden>
+		
+		<apex:actionFunction name="delFilter" action="{!delFilter}" status="tgsStatus" rerender="theMfSection" oncomplete="window.location.reload();"/>
+		<apex:actionFunction name="cancel" action="{!cancel}" />
+		           
+		<apex:pageBlock id="theMfSection">
+			<apex:pageBlockButtons location="top">
+				<apex:commandButton action="{!saveMatrixFilter}"  value="Save" status="status"/>
+				<apex:commandButton action="{!manageMatrixFilter}"  value="Manage Matrix Filter" />
+				<apex:commandButton action="{!cancel}"  value="Cancel" status="status"/>
+				<apex:actionStatus startText=" Loading... " stopText="" id="status" >
+				    <apex:facet name="start"><img src="/img/loading.gif"/><span class="waitingDescription"></span></apex:facet>
+				</apex:actionStatus>  
+			</apex:pageBlockButtons>
+             
+			<apex:actionStatus startText=" Loading... " stopText="" id="tgsStatus" >
+                <apex:facet name="start"><img src="/img/loading.gif"/><span class="waitingDescription">Loading...</span></apex:facet>
+            </apex:actionStatus>
+            
+            <apex:variable var="tgsIndex" value="{!0}" />
+            <apex:pageBlockTable value="{!list_cmf}" var="cmf" id="theCmfTable" rendered="{!list_cmf.size > 0}">
+            	<apex:column style="width:155px;">
+			        <apex:facet name="header">
+			        	<!-- <apex:commandLink action="{!addTgs}" rerender="theTgsSection" status="tgsStatus">
+			        		<img src="{!URLFOR($Resource.ITB_Images, 'round_plus16.png')}" />
+                        </apex:commandLink>
+                         -->
+                         Action
+			        </apex:facet>
+			        <!-- 
+			        <apex:commandLink action="{!delTgs}" rerender="theTgsSection" status="tgsStatus" immediate="true">
+                        <img src="{!URLFOR($Resource.ITB_Images, 'round_minus16.png')}" width="15px" height="15px"/>
+                        <apex:param name="indexParam" assignTo="{!currentIndex}" value="{!tgsIndex}" />
+                    </apex:commandLink>
+                     -->
+			        <apex:commandLink action="{!editFilter}" rerender="theMfSection" status="tgsStatus" immediate="true" styleClass="actionLink">
+                        Edit
+                        <apex:param name="indexParam" assignTo="{!mfId}" value="{!cmf.mf.Id}" />
+                    </apex:commandLink>
+                    <span>&nbsp;|&nbsp;</span>
+                    <a href="javascript:delRecord('{!cmf.mf.Id}')">Del</a>
+                    
+                    <span>&nbsp;|&nbsp;</span>
+                    <apex:commandLink styleClass="actionLink" onclick="loadSummary('{!cmf.mf.Filter_Field_BI__c}','{!cmf.lName}');" rerender="summaryChannel">
+                        View Summary
+                    </apex:commandLink>
+				</apex:column>
+            	<apex:column >
+			        <apex:facet name="header">{!$ObjectType.Matrix_Filter_BI__c.fields.Filter_Field_BI__c.label}</apex:facet>
+					<apex:outputText value="{!cmf.lName}"></apex:outputText>
+				</apex:column>
+				<apex:column >
+			        <apex:facet name="header">{!$ObjectType.Matrix_Filter_BI__c.fields.Filter_Label_BI__c.label}</apex:facet>
+					<apex:inputField value="{!cmf.mf.Filter_Label_BI__c}" required="true"></apex:inputField>
+				</apex:column>
+            	<apex:column >
+			        <apex:facet name="header">{!$ObjectType.Matrix_Filter_BI__c.fields.Active_BI__c.label}</apex:facet>
+					<apex:outputField value="{!cmf.mf.Active_BI__c}"></apex:outputField>
+					<apex:variable var="tgsIndex" value="{!tgsIndex+1}" />
+				</apex:column>
+				<!-- 
+				<apex:column rendered="{!IF(viewModel == 'edit' , true, false)}">
+			        <apex:facet name="header">{!$ObjectType.Target_Group_Survey__c.fields.Target_Group__c.label}</apex:facet>
+					<apex:inputField value="{!tgs.Target_Group__c}"></apex:inputField>
+				</apex:column>
+				 -->
+            </apex:pageBlockTable>
+            <apex:outputPanel id="productsNoRecords" rendered="{!list_cmf.size == 0}"> 
+                No records to display
+            </apex:outputPanel>
+		</apex:pageBlock>
+	</apex:form>
+
+	<!-- Pop up summary table -->
+	<div id="summaryChannel" title="Summary Channels">
+	</div>
+</apex:page>

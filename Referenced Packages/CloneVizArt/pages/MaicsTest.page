@@ -1,0 +1,26 @@
+<!--    1. Use this as example page, only copy paste the code and change the standardController property to your standard or custom object API name.
+        2. You'll need to create a custom Detail Page Button on the object with following details and put the button into the page layout:
+        - Display Type: Detail Page Button
+        - Content Source: Visualforce Page
+        - Visualforce Page: <Your page's name>
+        - Behavior: Display in existing window with sidebar
+        3. Define all relevant child objects to be cloned in the custom object Clone_Child__c
+ -->
+<apex:page standardController="Account" extensions="ITBclone.ExtClone" >
+    <apex:form >        
+        <apex:pageBlock >
+            <apex:pageMessages />
+            <apex:pageBlockButtons location="bottom">
+                <apex:commandButton action="{!cloneParent}" value="Confirm"/>
+                <apex:commandButton action="{!goBack}" value="Back"/>
+            </apex:pageBlockButtons>
+           <apex:pageBlockSection rendered="{!mode != 'edit'}" columns="1">
+                <apex:pageBlockSectionItem >
+                    <apex:outputLabel value="Name" />
+                    <apex:inputText value="{!newName}" />
+                    </apex:pageBlockSectionItem>
+                <apex:inputHidden value="{!Account.Name}" />
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>

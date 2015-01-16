@@ -1,0 +1,119 @@
+<apex:page standardController="Coaching_Report_vod__c"  extensions="VEEVA_CR_Extension" id="thePage"> 
+    <apex:includeScript value="{!URLFOR($Resource.jQuery, 'jquery-1.9.1.min.js')}"/>
+    
+    <script type="text/javascript">
+        var j$ = jQuery.noConflict();
+       
+        function checkAll(cb,cbid){
+                var inputElem = document.getElementsByTagName("input");                     
+                for(var i=0; i<inputElem.length; i++)
+                {             
+                     if(inputElem[i].id.indexOf(cbid)!=-1){                                        
+                        inputElem[i].checked = cb.checked;
+                     }
+                }
+         }
+        
+    </script>
+    <style type="text/css">
+        .td
+            {
+            
+            vertical-align: middle;
+            }
+    </style>
+<apex:form id="theForm">
+<apex:messages />
+<apex:outputPanel rendered="{!RegionalManagerDisable}">
+    <apex:OutputText >Non-Regional Managers may not add Behaviors to Coaching Reports created by Regional Managers.  Please click your browser Back button to return to the previous page.</apex:OutputText>
+</apex:outputPanel>
+<apex:outputPanel rendered="{!!RegionalManagerDisable}">
+<apex:outputText value="{!Coaching_Report_vod__c.Status__c}" rendered="false"/>
+
+<apex:pageBlock title="{!CR_APPROVED}" rendered="{!approved}">
+    <apex:outputLink value="/{!Coaching_Report_vod__c.id}">{!CR_RETURN} {!Coaching_Report_vod__c.name}</apex:outputLink> 
+</apex:pageBlock> 
+<apex:pageBlock title="{!CR_TITLE} {!ContextObject}" id="coachingReport" rendered="{!(!approved)}" >   
+   
+        <h2><apex:outputLabel value="{!CR_ADV} "/></h2>
+    <br/>    
+    <br/>
+    <apex:panelGrid columns="2" id="theGrid" styleClass="td" >
+        <apex:outputLabel value="{!CR_TEM}" /> 
+        <apex:selectList title="Filter 1" value="{!Selected_TemplateFilter}" size="1" multiselect="false"  id="ffilter1">
+            <apex:selectOptions value="{!ListTemplateItems}" />
+            <apex:actionSupport event="onchange" action="{!RefreshFfilterdList}" rerender="gridu,myButtons,theGrid" /> 
+        </apex:selectList> 
+        <apex:outputLabel value="{!CR_ACT}"  /> 
+        <apex:selectList id="ffilter2" value="{!Selected_ActivityFilter}" size="1">
+            <apex:selectOptions value="{!ListActivityItems}" />
+            <apex:actionSupport event="onchange" action="{!RefreshFfilterdList}" rerender="gridu,myButtons,theGrid" /> 
+        </apex:selectList>
+        <apex:outputLabel value="{!CR_COMP}" />
+        <apex:selectList id="ffilter3" value="{!Selected_CompetencyFilter}" size="1">
+            <apex:selectOptions value="{!ListCompetencyItems}" />
+            <apex:actionSupport event="onchange" action="{!RefreshFfilterdList}" rerender="gridu,myButtons,theGrid" /> 
+        </apex:selectList>   
+    </apex:panelGrid>
+    
+    <!--   apex:commandButton value="Apply filters" action="{!RefreshFfilterdList}"  rerender="gridu,myButtons" id="applyButton"/>  --> 
+        
+
+        <br />
+        <apex:outputLink value="/{!Coaching_Report_vod__c.id}">{!CR_RETURN} {!Coaching_Report_vod__c.name}</apex:outputLink> 
+        <br />
+        <br />
+ 
+        <apex:pageBlockTable value="{!ObjectsToDisplay}" var="item" id="gridu" >
+ 
+        <apex:column >
+        <apex:facet name="header">Select <apex:inputCheckbox id="selectAll" onclick="checkAll(this,'chkbox')"/></apex:facet>
+            <apex:inputCheckbox styleClass="itemSelect" value="{!item.IsSelected}" id="chkbox" />
+        </apex:column>
+         
+        <apex:column >
+            <apex:facet name="header">{!CR_COLBEH}</apex:facet>
+            <apex:outputText value="{!item.theBehaviour}"/>  
+        </apex:column>       
+
+        <apex:column >
+            <apex:facet name="header">{!CR_COLACT}</apex:facet>
+            <apex:outputText value="{!item.theActivity}"/>
+        </apex:column>
+                
+        <apex:column >
+            <apex:facet name="header">{!CR_COLCOMP}</apex:facet>
+            <apex:outputText value="{!item.theCompetency}"/>
+        </apex:column>
+        
+        <!-- Remove it. Its meaning is not defined yet.  apex:column >
+            <apex:facet name="header">Stage</apex:facet>
+            <apex:outputText value="stagele"/>
+        </apex:column -->
+        
+        <apex:facet name="footer">{!CR_TOTAL} {!pageNumber} / {!totalPages} 
+        
+            
+        </apex:facet>
+        
+    </apex:pageBlockTable>
+        <apex:outputPanel id="myButtons" layout="block" style="text-align: center;">
+               
+                    <apex:commandButton action="{!Beginning}" title="Beginning" value="<<" disabled="{!disablePrevious}" reRender="gridu,myButtons"/>
+                    <apex:commandButton action="{!Previous}" title="Previous" value="<" disabled="{!disablePrevious}" reRender="gridu,myButtons"/>        
+                    <apex:commandButton action="{!Next}" title="Next" value=">" disabled="{!disableNext}" reRender="gridu,myButtons"/>
+                    <apex:commandButton action="{!End}" title="End" value=">>" disabled="{!disableNext}" reRender="gridu,myButtons"/>        
+               
+        </apex:outputPanel>
+         
+    <apex:pageBlockButtons location="top">
+        <apex:commandButton value="{!CR_ADD}" action="{!CreateNewCoachingReportBehaviours}" />
+    </apex:pageBlockButtons>
+      
+        <br />
+    
+    <!-- apex:outputLink value="/{!Coaching_Report_vod__c.id}" location="top" >Return to {!Coaching_Report_vod__c.name}</apex:outputLink--> 
+ </apex:pageBlock>  
+</apex:outputPanel> 
+</apex:form>
+</apex:page>

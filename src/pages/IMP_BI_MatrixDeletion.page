@@ -1,0 +1,383 @@
+<apex:page standardcontroller="Matrix_BI__c" showheader="true" sidebar="true" tabstyle="Matrix_BI__c" extensions="IMP_BI_MatrixDeletion">
+    <!-- style -->
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}"/>
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" />
+    
+    <style type="text/css">
+    	#progressbar {
+		    left: 20%;
+		    margin-left: -100px;
+		    position: relative;
+		    width: 60%;
+		    z-index: 8001;
+		}
+    	
+        #progressbar div{text-align:center;}
+        .ui-progressbar {
+			height: 2em;
+			overflow: hidden;
+			text-align: left;
+		}
+		.ui-progressbar .ui-progressbar-value {
+    		height: 100%;
+    		margin: -1px;
+		}
+		
+		.ui-widget-header {
+		    background: url("images/ui-bg_gloss-wave_35_f6a828_500x100.png") repeat-x scroll 50% 50% #F6A828;
+		    border: 1px solid #E78F08;
+		    color: #FFFFFF;
+		    font-weight: bold;
+		}
+    </style>
+
+    <script type="text/javascript">
+        var __sfdcSessionId = '{!GETSESSIONID()}';
+        var totalRecords;
+        var currentRecords=0;
+        var progress = 0;
+        
+        if(typeof Visualforce != 'undefined' && Visualforce.remoting){
+             Visualforce.remoting.timeout = 320000;
+        }else if(typeof  _Visualforce != 'undefined' &&  _Visualforce.Ajax){
+             _Visualforce.Ajax.timeout=320000;
+        }
+        j$ = jQuery.noConflict();
+        
+        window.onload = function(){
+        	var errMsg = '{!errMsg}';
+        	
+        	if(errMsg==null||errMsg == ''){
+				j$( '#endMessage' ).hide();
+	            idMatrix = j$('#idMatrix').attr('value');
+	            matrixName = j$('#matrixName').attr('value');
+	            j$('#loading-showing-div').html('<p style="font-size:20px;"><b> Deleting Matrix: <font color="red">'+matrixName+' </font><b/><p/>'); 
+				showLoading();
+	            
+				//Get total of Records 
+				IMP_BI_MatrixDeletion.getTotalRecords(
+      			idMatrix, 
+	            function(result, event){
+	            	if (event.status) {
+	            		if(result && result.isException){
+	            			j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+result.message+'<b/><p/>');
+							j$( '#endMessage' ).show();
+							j$('#loading-curtain-div').hide();
+							j$('#loading-showing-div').hide();
+	            		}
+	            		else{//Starting deletion process
+	            			totalRecords = result.message;
+		            		dataclear();
+	            		}
+       		    	}else if (event.type === 'exception') {
+						j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+						j$( '#endMessage' ).show();
+						j$('#loading-curtain-div').hide();
+						j$('#loading-showing-div').hide();
+					}
+				});
+			}
+		}
+		
+		function dataclear(){
+            IMP_BI_MatrixDeletion.clearCycData(
+                idMatrix, 
+                function(result, event){
+                    if (event.status ) {
+                    	if (result && result.isException){
+                    		j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+result.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                    	}
+                    	else if(result && result.gotonext=='gonext'){
+                             clearcycdata(idMatrix);
+                             currentRecords+=result.delSize;
+                             syncProgressBar(currentRecords);
+                        }
+                        else{
+                        	clearPortfolioSimulation(idMatrix);
+                        }       
+                    }else if (event.type === 'exception') {
+                        if(event.message.indexOf('Unable to connect to the server') > -1){
+                            //Run again the deletion 
+                            clearcycdata(idMatrix);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                        
+                    } else {
+                        clearcycdata(idMatrix);
+                    }
+                }, 
+                {escape: true}
+            );
+        } 
+        
+        /**
+        * Clearing up Cycle data relationship to the Matrix record
+        */
+        function clearcycdata(matrixId){
+           //alert('Deleting cycle data...');
+            IMP_BI_MatrixDeletion.clearCycData(
+                matrixId, 
+                function(result, event){
+                    if (event.status) {
+                    	if(result && result.isException){  
+                    		j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+result.message+'<b/><p/>');
+							j$( '#endMessage' ).show();
+							j$('#loading-curtain-div').hide();
+							j$('#loading-showing-div').hide();
+	            		}
+                    	else if(result && result.gotonext=='gonext'){
+                       	    clearcycdata(matrixId);
+                           	currentRecords+=result.delSize;
+							syncProgressBar(currentRecords);
+                        }
+                        else{
+                        	clearPortfolioSimulation(matrixId);
+                        }       
+                    }else if (event.type === 'exception') {
+                        if(event.message.indexOf('Unable to connect to the server') > -1){
+                            //Run again deletion process
+                            clearcycdata(matrixId);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                    } else {
+                        //j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                        //j$( '#endMessage' ).show();
+                        //j$('#loading-curtain-div').hide();
+                        //j$('#loading-showing-div').hide();
+                        clearcycdata(matrixId);
+                    }
+                }, 
+                {escape: true}
+            );
+        }
+        
+        /**
+        * Clearing up Portfolio field force simulation  relationship to the Matrix record
+        */
+        function clearPortfolioSimulation(idMatrix){
+        	IMP_BI_MatrixDeletion.clearPortfolioSimulation(
+                idMatrix, 
+                function(result, event){
+                    if (event.status) {
+                    	if(result && result.isException){  
+                    		j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+result.message+'<b/><p/>');
+							j$( '#endMessage' ).show();
+							j$('#loading-curtain-div').hide();
+							j$('#loading-showing-div').hide();
+	            		}
+                    	else if(result && result.gotonext=='gonext'){
+                            clearPortfolioSimulation(idMatrix);
+							currentRecords+=result.delSize;
+							syncProgressBar(currentRecords);
+                        }
+                        else{
+                        	clearMatrixDetail(idMatrix);
+                        }       
+                    } else if (event.type === 'exception') {
+                        if(event.message.indexOf('Unable to connect to the server') > -1){ 
+                            //Run again the deletion process
+                            clearPortfolioSimulation(idMatrix);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                        
+                    } else {
+                        clearPortfolioSimulation(idMatrix);
+                    }
+                }, 
+                {escape: true}
+            );
+        }
+        
+        /**
+        * Delete Matrix Cell Details related to the Matrix
+        */
+        function clearMatrixDetail(item){
+        	//alert('Deleting Matrix cell detail...');
+            IMP_BI_MatrixDeletion.clearMatrixDetail(
+                item, 
+                function(result, event){
+                	//alert(':: clearMatrixDetail(item) ...');
+                    if (event.status) {
+						if(result && result.isException){  
+                    		j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+result.message+'<b/><p/>');
+							j$( '#endMessage' ).show();
+							j$('#loading-curtain-div').hide();
+							j$('#loading-showing-div').hide();
+	            		}                        
+                        else if(result && result.gotonext=='gonext'){
+                         	clearMatrixDetail(item);
+                         	currentRecords+=result.delSize;
+							syncProgressBar(currentRecords);
+                         }
+                         else{//If the matrix cells details are deleted go to delete Matrix cells
+                         	clearMatrixCell(idMatrix);
+                         }
+                    }else if (event.type === 'exception') {
+                        if(event.message.indexOf('Unable to connect to the server') > -1){
+                            //Run again process deletion
+                            clearMatrixDetail(item);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                        
+                    } else {
+                        clearMatrixDetail(item);
+                    }
+                }, 
+                {escape: true}
+            );
+        }
+        
+        /**
+        * Delete Matrix Celld  related to the Matrix
+        */
+        function clearMatrixCell(sache){
+        	//alert('Deleting Matrix cell...');
+        	IMP_BI_MatrixDeletion.clearMatrixCell(
+                sache, 
+                function(result, event){
+                    if (event.status) {
+                        if(result && result.isException){  
+                    		j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+result.message+'<b/><p/>');
+							j$( '#endMessage' ).show();
+							j$('#loading-curtain-div').hide();
+							j$('#loading-showing-div').hide();
+	            		}
+	            		else if(result && result.gotonext=='gonext'){
+	            			clearMatrixCell(sache);
+	            			currentRecords+=result.delSize;
+							syncProgressBar(currentRecords);
+	            		}
+	            		else{
+            				//alert('Deleting Matrix...');
+                           	deleteMatrix(sache);
+	            		}
+                    }else if (event.type === 'exception') {
+                        if(event.message.indexOf('Unable to connect to the server') > -1){
+                            //Run again deletion process
+                            clearMatrixCell(sache);
+                        }
+                        else{
+                            j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            j$( '#endMessage' ).show();
+                            j$('#loading-curtain-div').hide();
+                            j$('#loading-showing-div').hide();
+                        }
+                    } else {
+                        clearMatrixCell(sache);
+                    }
+                }, 
+                {escape: true}
+            );
+        }
+        
+        /**
+        * Delete Matrix record
+        */
+        function deleteMatrix(content){
+        	//alert('To delete Matrix...');
+			idCycle = j$('#idCycle').attr('value');
+        	IMP_BI_MatrixDeletion.clearMatrixData(
+                content, 
+                function(result, event){
+                    if (event.status) {
+                   		if(result.isException){
+                        	j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+result.message+'<b/><p/>');
+                           	j$( '#endMessage' ).show();
+                           	j$('#loading-curtain-div').hide();
+                           	j$('#loading-showing-div').hide();
+                       	}else{
+                        	//alert('Delete Matrix Success !!!');
+                        	//window.location.href = "/apex/IMP_BI_CtrlCalculateCycleDataOverview?cycid=" + idCycle + "&retUrl=/"+idCycle;
+                        	j$("#progressbar").hide().progressbar({ value: 100 }).children().text('100%');
+							j$('#progressbar').show();
+                        	window.location.href = "/" + idCycle;
+						}
+					}else if (event.type === 'exception') {
+							//alert('Delete Matrix Expcetion...');
+                        	if(event.message.indexOf('Unable to connect to the server') > -1){
+                            	//Run again deletion process
+                            	deleteMatrix(content);
+                            }
+                        	else{
+                            	j$( '[id$=summarymessage]' ).html('<p style="color:red"><b>'+event.message+'<b/><p/>');
+                            	j$( '#endMessage' ).show();
+                            	j$('#loading-curtain-div').hide();
+                            	j$('#loading-showing-div').hide();
+                        	}
+                    } else {
+                        deleteMatrix(content);
+                    }
+                }, 
+                {escape: true}
+            );
+        }
+        
+        /**
+        * Synchronizaed progress bar status
+        */
+        function syncProgressBar(currentRecords){
+			var progress = parseInt((currentRecords * 100) / totalRecords);
+			progress = (progress!=null&&progress>100) ? 99 : progress;
+			
+			if(progress==null||progress<=0){
+				progress = 1;
+			}
+			
+			console.log(':: Progress: ' + progress);	
+			j$("#progressbar").hide().progressbar({ value: progress }).children().text(progress+'%');
+			j$('#progressbar').show();
+		}
+         
+        /**
+        * Showing up components
+        */        
+        function showLoading(){
+            j$('#loading-curtain-div').show();
+            j$('#loading-showing-div').show();
+            j$("#progressbar").hide().progressbar({ value: 1 }).children().text('0%');
+			j$('#progressbar').show();
+        }
+    </script>
+    
+    <apex:pageMessages id="msg" escape="false"/>
+	 <apex:form >
+        <div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;"></div>
+        <div id="loading-showing-div" style="width: 80%; position: relative; z-index: 8001; left: 20%; margin-left: -160px; margin-top: 50px;"></div>
+        <div id="progressbar" ></div>
+        <apex:pageBlock id="thePb" mode="maindetail">
+        	<div style="display:none" id="endMessage">
+                <div id="summarymessage"></div>
+            </div>
+            <input type="hidden" id="idMatrix" value="{!matrix.Id}" />
+            <input type="hidden" id="idCycle" value="{!matrix.Cycle_BI__c}" />
+            <input type="hidden" id="matrixName" value="{!matrix.Name}" />
+        </apex:pageBlock>
+    </apex:form>
+    <div id="statusDiv"></div>
+    <span id="htmlEntity" style="display:none">&nbsp;</span>
+</apex:page>

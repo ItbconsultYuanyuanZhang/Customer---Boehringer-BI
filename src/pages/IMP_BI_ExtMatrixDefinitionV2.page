@@ -1,0 +1,1194 @@
+<apex:page id="thePage" standardcontroller="Matrix_BI__c" extensions="IMP_BI_ExtMatrixDefinitionV2" title="{!pageTitle}" tabStyle="Matrix_BI__c" docType="html-5.0">
+    <!-- style -->
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}"/>
+    <apex:stylesheet value="{!$Resource.IMP_BI_ExtMatrixDefinition_stylev2}" />
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" />
+    <apex:includeScript value="{!$Resource.IMP_BI_ExtMatrixDefinition_controllerv2}" />
+    
+       
+    <style type="text/css">
+        /* for solving the ie9 overflow bug*/
+        #matriDivId:hover {     
+            height:100%;
+        }
+        
+        /* for solving the ie9 overflow bug*/
+        #theTopDiv:hover {      
+            height:100%; 
+        }
+        
+        .matrixInnerTable .requiredInput .erMsg {white-space:normal; width:100px;}
+        
+        #specialDivId {overflow:hidden; min-width:250px; max-width:350px; padding-bottom:4px;height:700px;max-height:700px;}
+            
+        /*height: 60px; max-height: 120px;*/
+        div.heightCls{line-height: 60px;min-height: 60px; max-height: {!IF(specialCounter != null && specialCounter > 0, specialCounter*30, 120)}px;}
+        .overflowHidden {overflow:hidden !important;}
+        
+        .budgetHelpText{
+        	background-image:url(/img/help/helpOrbs.gif);
+        	background-position:top left;
+        	width:20px;
+        	height:15px;
+        	margin: -5px 5px;
+        }
+        
+        .budgetHelpTextOn{
+        	background-image:url(/img/help/helpOrbs.gif);
+        	background-position:top right;
+        	width:20px;
+        	height:15px;
+        	margin: -5px 5px;
+        }
+        .amtTD {
+        		visibility: hidden;
+        }
+        .bluetable{
+        		background: #053564;
+        }
+        .bluetable td{
+        		color: #fff;
+        }
+    </style>
+    
+    <script type="text/javascript">
+        var j$ = jQuery.noConflict();
+        
+        //Begin: define variables used in js
+        var specialCounter = '{!specialCounter}';
+        var cycleId = '{!cycle.Id}';
+        var mtSelectList = '{!mtSelectList}';
+        var jsonMTofLaunch = j$.parseJSON('{!jsonMTofLaunch}');
+        var matrixTemplateList;
+		var jsonMatrixTemplate;
+        var countryId = '{!cycle.Country_Lkp_BI__c}';
+        var countryCode = '{!countryCode}';
+        var countryCodeRegion = '{!countryCodeRegion}';
+        var countryTestId = '{!countryTest.Id}';//TODO:jescobar testing
+        //End: define variables used in js
+        
+        /*Begin: define the error message varibale*/
+        var errMsg_Null = '{!$Label.IMP_BI_ErrMsg_Matrix_Not_Null}';
+        var errMsg_Row = '{!$Label.IMP_BI_ErrMsg_Matrix_Row}';
+        var errMsg_Column = '{!$Label.IMP_BI_ErrMsg_Matrix_Column}';
+        var errMsg_Special = '{!$Label.IMP_BI_ErrMsg_Matrix_Special}';
+        var errMsg_Name_Null = '{!$Label.IMP_BI_ErrMsg_Matrix_Name_Not_Null}';
+        var errMsg_Row_Null = '{!$Label.IMP_BI_ErrMsg_Matrix_Row_Not_Null}';
+        var errMsg_Column_Null = '{!$Label.IMP_BI_ErrMsg_Matrix_Column_Not_Null}';
+        var errMsg_Launch = 'Columns cannot be changed when using a launch phase lifecycle template';
+        var msgSpecialtiesIncluded = '{!$Label.IMP_BI_Warning_Specialties_Included}';
+        var msgMatrix2CalculateWarn = '{!$Label.IMP_BI_Warning_Not_Matrix_To_Calculate}';
+        var msgSetMatrixTemplate = '{!$Label.IMP_BI_Set_Matrix_Template}';
+        var matrixTemplateInfo = '{!$Label.IMP_BI_Set_Matrix_Template_Info}';
+        
+        /*End: define the error message varibale*/
+        
+        //Begin: define the label for page
+        var label_Matrix = 'Matrix';
+        var label_Name = '{!$ObjectType.Matrix_BI__c.fields.Name_BI__c.label}';
+        var label_Rows = '{!$ObjectType.Matrix_BI__c.fields.Row_BI__c.label}';
+        var label_Column = '{!$ObjectType.Matrix_BI__c.fields.Column_BI__c.label}';
+        var label_Status = '{!$ObjectType.Matrix_BI__c.fields.Status_BI__c.label}';
+        var label_Dpa = '{!$ObjectType.Matrix_BI__c.fields.DPA_BI__c.label}';
+        var label_LaunchPhase = '{!$ObjectType.Matrix_BI__c.fields.isLaunch_Phase_BI__c.label}';
+        var label_AllCustomers = '{!$ObjectType.Matrix_BI__c.fields.All_Customers_BI__c.label}';
+        var selectMatrix_TextHelp = '{!$Label.IMP_BI_Select_Matrix}';
+        var label_Adoption = '{!$ObjectType.Matrix_BI__c.fields.Adoption_Data_Label_BI__c.label}';
+        var label_Potential = '{!$ObjectType.Matrix_BI__c.fields.Potential_data_Label_BI__c.label}';
+        
+        var label_Specialization ='{!$ObjectType.Matrix_BI__c.fields.Specialization_BI__c.label}';
+        var value_Draft = 'Draft';
+         
+        //End: define the label for page
+        
+        j$(function(){ 
+        		
+            var prodId = j$("select[id$='theProductList']").val();
+            
+            if(!prodId) prodId = '';
+            
+            if(parseInt(j$('#matrixIndex').val()) == 0 && j$.trim(prodId) != ''){
+                addMatrix();
+            }
+            register_event();
+            resetMatriDivIdSize();
+            
+            j$(window).resize(function(){
+                resetMatriDivIdSize();
+            });
+            
+            disableAllFinalMatrix();
+        });
+        
+        function initCompents(){
+            var prodId = j$("select[id$='theProductList']").val();
+            if(!prodId) prodId = '';
+            if(parseInt(j$('#matrixIndex').val()) == 0 && j$.trim(prodId) != ''){
+                addMatrix();
+            }
+            resetMatriDivIdSize();
+            register_event();
+        }
+       
+		function setMTByProduct(mt,jsonMT){
+			//Set values Matrix templates
+			var prodId = j$("select[id$='theProductList']").val();
+			if(j$.trim(prodId) != ''){
+				matrixTemplateList = mt;
+				jsonMatrixTemplate = j$.parseJSON(jsonMT);
+				//console.log(':: M Template: ' + matrixTemplateList + ' Json: ' + jsonMatrixTemplate);
+			}
+		}
+   
+        //function setFocusOnLoad(){}
+        function setFocus(){}
+        
+        function showLoading(){
+            j$('#loading-curtain-div').appendTo(j$('#bodyTable').parent()).show();           
+        }
+
+        function checkSizeInput(obj){
+            var j$this = j$(obj), id = j$this.attr('id'), errMsg = '', v = j$this.val();
+            
+            var rtValue = getLaunchTemplateValue(j$this);
+            if(typeof rtValue != 'undefined' && j$.trim(rtValue + '') != '') rtValue = parseInt(rtValue);
+            else rtValue = '';
+            
+            
+            if(typeof v == 'undefined') v = ''; 
+            v = j$.trim(v.replace(/[^\d]/g, ''));
+            
+            
+            if(typeof id != 'undefined'){
+                if(id.indexOf('theRowInput') > -1){
+                    id = 'theRowInput';
+                    errMsg = errMsg_Row;
+                }
+                else if(id.indexOf('theColumnInput') > -1){
+                    id = 'theColumnInput';
+                    errMsg = errMsg_Column;
+                }
+            }
+            
+            if(v != ''){
+                v = parseInt(v);
+                if(id == 'theColumnInput' && rtValue != '' && v && v != rtValue){
+                    j$this.siblings('.erMsg').find('font').text(errMsg_Launch).parent().show();
+                }
+                else if(v && ((id == 'theRowInput' && v > 0 && v <21) || (id == 'theColumnInput' && v > 1 && v <22))){
+                    j$this.siblings('.erMsg').hide();
+                }
+                else{
+                    j$this.siblings('.erMsg').find('font').text(errMsg).parent().show();
+                }
+            }
+            else{
+                if(id == 'theRowInput'){
+                    j$this.siblings('.erMsg').find('font').text(errMsg_Row_Null).parent().show();
+                }
+                else if(id == 'theColumnInput'){
+                    j$this.siblings('.erMsg').find('font').text(errMsg_Column_Null).parent().show();
+                }
+            }
+            
+            j$this.val(v);
+        }
+        
+        function checkAllRequiredFields(){
+            var isValid = true;
+            
+            j$("input[name='matrixName']").each(function(){
+				if(j$.trim(j$(this).val()) == ''){
+                    j$(this).siblings('.erMsg').find('font').text(errMsg_Name_Null).parent().show();
+                    isValid = false;
+                }
+                else{
+                	j$(this).siblings('.erMsg').hide();
+                }            	
+			});
+			
+            j$("input[id^='theRowInput']").each(function(){
+                   var v = j$(this).val();
+                
+                if(typeof v == 'undefined') v = ''; 
+                v = j$.trim(v.replace(/[^\d]/g, ''));
+                
+                if(v != ''){
+                    v = parseInt(v);
+                    if(v && v > 0 && v <21){
+                        j$(this).siblings('.erMsg').hide();
+                    }
+                    else{
+                        j$(this).siblings('.erMsg').find('font').text(errMsg_Row).parent().show();
+                        isValid = false;
+                    }
+                }
+                else{
+                    j$(this).siblings('.erMsg').find('font').text(errMsg_Row_Null).parent().show();
+                    isValid = false;
+                }
+                
+                j$(this).val(v);
+            });
+            
+            j$("input[id^='theColumnInput']").each(function(){
+                   if(!j$(this).is(':disabled')){
+                    var v = j$(this).val();
+                    
+                    var rtValue = getLaunchTemplateValue(j$(this));
+                    if(typeof rtValue != 'undefined' && j$.trim(rtValue + '') != '') rtValue = parseInt(rtValue);
+                    else rtValue = '';
+                    
+                    if(typeof v == 'undefined') v = ''; 
+                    v = j$.trim(v.replace(/[^\d]/g, ''));
+                    
+                    if(v != ''){
+                        v = parseInt(v);
+                        if(rtValue != '' && v && v != rtValue){
+                            j$this.siblings('.erMsg').find('font').text(errMsg_Launch).parent().show();
+                        }
+                        if(v && v > 1 && v <22){
+                            j$(this).siblings('.erMsg').hide();
+                        }
+                        else{
+                            j$(this).siblings('.erMsg').find('font').text(errMsg_Column).parent().show();
+                            isValid = false;
+                        }
+                    }
+                    else{
+                        j$(this).siblings('.erMsg').find('font').text(errMsg_Column_Null).parent().show();
+                        isValid = false;
+                    }
+                                    
+                    j$(this).val(v);
+                }
+            });
+            
+            //Check special div  name=matrixSpecial
+            j$("div[name='matrixSpecial']").not(".finalMatrix").each(function(){
+           	    var j$this = j$(this);
+                var isNull = true;
+                j$("li", j$this).each(function(){
+                    var liId = j$(this).attr('id');
+                    if(liId && j$.trim(liId) != '') isNull = false;
+                });
+                
+                //get DPA checkbox value
+                var j$table = j$(getParent(j$this.get(0), 'TABLE'));
+                var dpa = j$table.find("input[name$='matrixDPA']").get(0);
+                if(dpa && dpa.checked){
+                    isNull = false;
+                }
+                
+                if(isNull){
+                    j$this.siblings('.erMsg').find('font').text(errMsg_Special).parent().show();
+                    j$this.children('.erMsg').find('font').text(errMsg_Special).parent().show();
+                    isValid = false;
+                }else{
+                    j$this.siblings('.erMsg').hide();
+                    j$this.children('.erMsg').hide();
+                }
+            });
+            return isValid; 
+        }
+        
+        function checkMatrixName(obj){
+            if(j$.trim(j$(obj).val()) == ''){
+                j$(obj).siblings('.erMsg').find('font').text(errMsg_Name_Null).parent().show();
+            }
+            else{
+                j$(obj).siblings('.erMsg').hide();
+            }
+        }
+        
+        function cancelToBack(){
+            showLoading();
+            cancel();
+        }
+        
+        /**
+        *Redirect to Matrix Template form to set up a new template
+        *@param obj matrix definition
+        */
+        function openMatrixTemplate(obj){
+        	if(confirm(msgSetMatrixTemplate)){
+        		var j$divTarget = j$(getParent(obj, 'TBODY')).find('div.specialCls')
+        		var pIdFromMatrix = j$(getParent(obj, 'TBODY')).find("input[name$='pIdFromMatrix']").val();
+        		var pId = (typeof(pIdFromMatrix) != 'undefined' && pIdFromMatrix != '') ? pIdFromMatrix : j$("select[id$='theProductList']").val();
+        		var cycleTemplateId = j$(getParent(obj, 'TBODY')).find('select[name$=theMTSelecrList]').val();
+        		var ptLabel = j$(getParent(obj, 'TBODY')).find("input[name$='matrixPotentialLabel']").val();
+        		var adtpLabel = j$(getParent(obj, 'TBODY')).find("input[name$='matrixAdoptionLabel']").val();
+        		var row = j$(getParent(obj, 'TBODY')).find("input[id^='theRowInput']").val();
+        		var col = j$(getParent(obj, 'TBODY')).find("input[id^='theColumnInput']").val();
+        		var specialties='';
+        		var spIds='';
+        		
+        		//Get specialties to matrix template
+        		j$divTarget.find('li').each(function(){
+					var temp = j$.trim(j$(this).text());
+			       	if(typeof(temp) != 'undefined' && temp != ''){
+			           	specialties += temp + ';';
+			       	}
+			       	var sId = j$(this).attr('id');
+			       	if(sId && j$.trim(sId) != ''){
+						spIds += sId + ';';
+			       	}
+			    });
+        		
+        		if(typeof(specialties) != 'undefined' && specialties != ''){
+        			specialties=specialties.substring(0,specialties.length -1 );
+        		}
+        		
+        		specialties=specialties.replace(/&/g,'');
+        		//console.log(':: SP Ids: ' + spIds);
+        		var url ='/apex/IMP_BI_MatrixTemplateDefinition?cId='+countryId+'&pId='+pId+'&lctId='+cycleTemplateId+'&ptLabel='+ptLabel+'&adtpLabel='+adtpLabel+
+        					'&adtpLabel='+adtpLabel+'&row='+row+'&col='+col+'&specialties='+specialties;         		
+        		
+        		window.open(url,'_blank');	//console.log(':: URL: ' + url);
+        	}
+        }
+    </script>
+    
+    <apex:sectionHeader title="{!sectionHeaderTitle}" subtitle="{!sectionHeaderSubTitle}"/>
+    <apex:pageMessages id="msg" escape="false"/>
+    
+    <!--@jescobar: Enable edit for Matrix description weather it is already calculated -->
+    <apex:form id="formDescription" rendered="{!showDescription}">
+            <apex:pageBlock id="thePb" mode="maindetail" tabStyle="Matrix_BI__c">
+                <apex:pageBlockButtons location="bottom">
+                    <apex:commandButton action="{!save}" value="Save"/>
+                    <apex:commandButton action="{!cancel}" value="Cancel"/>
+                </apex:pageBlockButtons>
+                <apex:pageBlockSection title="Matrix Data Section" columns="1" collapsible="true" id="pbsect">
+                    <apex:inputField value="{!matrixDescription.Matrix_Description_BI__c}" style="width: 500px;"/>
+                </apex:pageBlockSection>
+            </apex:pageBlock>   
+    </apex:form>
+    
+    <apex:form id="theTopForm" rendered="{!!hasError}">
+    <apex:actionStatus startText="" stopText="" id="theStatus" onstop="initCompents();">
+        <apex:facet name="start">
+            <div id="pageLoading" class="mask" style="top:0px;left:0px;text-align:center;width:100%;height:100%;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');">
+            </div>
+        </apex:facet>
+    </apex:actionStatus>
+        <input id="matrixIndex" type="hidden" value="{!matrixIndex}" />
+        <div id="theTopDiv" class="theTopDivCls">
+            <div id="errorMsg" style="color:#ff0000;margin-left:60px;display:none;"></div>
+            
+            <div class="matrixOuterTable">
+            		<table style="width: 100%;border-bottom: 1px solid #dbdbdb;">
+            			<tr>
+            				<td>
+            					<apex:outputLabel value="Select Product:" for="theProductList"/>
+		            			<span class="requiredInput">
+			                     <div class="requiredBlock" style="bottom: -2px;"></div>
+		                     		<apex:actionFunction name="rerenderEditMatrix" action="{!rerenderEditMatrix}" status="theStatus" rerender="theTopForm" oncomplete="disableAllFinalMatrix();setMTByProduct('{!matrixTemplateList}','{!jsonMatrixTemplate}');"/>
+		                     
+		                         <apex:selectList value="{!productId}" multiselect="false" size="1" id="theProductList" onchange="rerenderEditMatrix();">
+		                             <apex:selectOptions value="{!list_prods}"/>
+		                         </apex:selectList>
+			                     <div class="erMsg" style="display:none; font-size:12px;">
+			                         <font color="#C00 !important"><strong>Error: </strong>You must select one Product!</font>
+			                     </div>
+			                 </span>
+			                 </td>
+			                 <td>
+			                 	<label>Account Matrix:</label>
+			                 	<!-- <input type="checkbox"  id="AccountMatrixCK"  value="{!accountMatrix}"/>  -->
+			                 	<apex:inputCheckbox id="AccountMatrixCK" value="{!accountMatrix}"/>
+			                 	<script>
+			                 		//--begin: add by leijun
+						        		j$("[id$='AccountMatrixCK']").on("click",function( event ) {
+						        			rerenderEditMatrix();
+						        			if( j$("[id$='AccountMatrixCK']").prop('checked') )  label_Specialization ='{!$ObjectType.Matrix_BI__c.fields.Account_Matrix_Split_BI__c.label}';
+						        			else  label_Specialization ='{!$ObjectType.Matrix_BI__c.fields.Specialization_BI__c.label}';
+						        		});
+						        		//--end
+			                 	</script>
+			                 </td>
+			                 <td class="amtTD" style="{!IF(accountMatrix == false, 'visibility : hidden;', 'visibility : visible;')}">
+			                 	<label>Account Matrix Type:</label>
+			                 	<select id="AMTSelect"> 
+			                 		<option value="hco">HCO only</option>
+			                 	</select>
+			                 </td>
+		               </tr>
+            		</table>
+            		<div>
+            			<table style="margin-top: 15px;">
+            				<tr>
+            					<td style="">
+            						<div title="add a Matrix" onclick="addMatrix();register_event();"  
+                   					style="{!IF(productId == NULL || productId == '', 'display:none;', '')} cursor:pointer; height:15px; width:15px; 
+                   					float:left; background:transparent url(/img/feeds/follow_sprite.png) no-repeat 0 0;margin: 3px 10px;" >
+                   				</div>
+            						<span style="{!IF(productId == NULL || productId == '', 'display:none;', '')}">
+									<input type="checkbox" name="chkAllMatrices" style="" onclick="checkAllMatrices(this);"/>
+									<span style="">
+										<apex:outputLabel value="Check Matrix to Calculate"/>
+									</span>
+									<img src="/s.gif" class="budgetHelpText" title="{!$Label.IMP_BI_Select_All_Matrix}" />
+								</span>
+            					</td>
+            					<td>
+            						<span style="">
+            							<label style="{!IF(accountMatrix == true, 'display:none;', '')}">Select Speciality</label>
+            							<label style="{!IF(accountMatrix == false, 'display:none;', '')}">Select Account Matrix Split</label>
+            						</span>
+            					</td>
+            				</tr>
+            				<tr>
+            					<td>
+            						<div id="matriDivId" style="overflow:auto;">
+		                            <apex:variable var="matrixEditIndex" value="{!1}" /> 
+		<!-------------------------- Begin: calculted or final -->
+		                            
+		                            <apex:repeat value="{!list_cmeFinal}" var="m">
+		                            <!-- begin table -->
+		                            <table style="display:inline-block;" class="matrixInnerTable finalMatrix " id="mit-{!m.matrix.Id}">
+		                                <tr>
+		                                    <td>
+		                                    	<img src="/img/icon/service_contracts24.png" title="{!$Label.IMP_BI_Set_Matrix_Template_Info}" style="cursor: pointer; float: right;" onclick="openMatrixTemplate(this);"/>
+		                                    	<input name="pIdFromMatrix" type="hidden" value="{!m.matrix.Product_Catalog_BI__c}" />
+		                                    	Matrix<span class="matrixIndexSpan">{!matrixEditIndex}</span>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">Matrix Template:&nbsp;</span>
+		                                        <span style="float:right;">
+			                                        <!-- <div class="requiredBlock"></div> -->
+			                                        <apex:selectList disabled="true" value="{!m.matrix.Matrix_Template_BI__c}" multiselect="false" size="1" id="matrixTemplate" style="width:104px; ">
+			                                            <apex:selectOptions value="{!matrixTemplates}"/>
+			                                        </apex:selectList>
+		                                        </span>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Name_BI__c.label}:&nbsp;</span><span style="float:right;">
+		                                        <div class="requiredInput"><!-- <div class="requiredBlock"></div> -->
+		                                            <input name="matrixName" type="text" style="width:100px;" disabled="disabled" onchange="checkMatrixName(this);" value="{!m.matrix.Name_BI__c}"/>
+		                                            <div class="erMsg" style="display:none; font-size:12px;">
+		                                                <font color="#C00 !important">Must not be null</font>
+		                                            </div>
+		                                        </div></span></td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.DPA_BI__c.label}:&nbsp;</span>
+		                                        <span style="float:right;">
+		                                            <apex:inputField id="matrixDPA" style="width:100px;" value="{!m.matrix.DPA_BI__c}"></apex:inputField>
+		                                        </span></td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.isLaunch_Phase_BI__c.label}:&nbsp;</span>
+		                                        <span style="float:right;">
+		                                            <input id="matrixLaunchPhase" type="checkbox" disabled="true" style="width:100px;" />
+		                                        </span></td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">
+		                                        	{!$ObjectType.Matrix_BI__c.fields.All_Customers_BI__c.label}:&nbsp;
+		                                        </span>
+												<span style="float:right;">
+		                                            <apex:inputField id="matrixAllCustomers" style="width:100px;" value="{!m.matrix.All_Customers_BI__c}"></apex:inputField>
+		                                        </span></td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Status_BI__c.label}:&nbsp;</span><span style="float:right;">
+		                                        <div class="requiredInput"><!-- <div class="requiredBlock"></div> -->
+		                                            <input name="matrixStatus" type="text" style="width:100px;" disabled="disabled" value="{!m.matrix.Status_BI__c}"/>
+		                                            <div class="erMsg" style="display:none; font-size:12px;">
+		                                                <font color="#C00 !important"></font>
+		                                            </div>
+		                                        </div></span></td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">Template: </span>
+		                                        <span style="float:right;">
+		                                            <div class="requiredInput">
+		                                                <!-- <div class="requiredBlock"></div> -->
+		                                                <apex:selectList disabled="true" value="{!m.matrix.Lifecycle_Template_BI__c}" multiselect="false" size="1" id="theMTSelecrList" style="width:104px; ">
+		                                                    <apex:selectOptions value="{!templatesByCountry}"/>
+		                                                </apex:selectList>
+		                                                <div class="erMsg" style="display:none; font-size:12px;">
+		                                                    <font color="#C00 !important"><strong>Error: </strong>You must select one Product!</font>
+		                                                </div>
+		                                            </div>
+		                                        </span>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Potential_data_Label_BI__c.label}: </span>
+		                                        <span style="float:right;">
+		                                            <div class="requiredInput">
+		                                                <!-- <div class="requiredBlock"></div> -->
+		                                                <span style="float:right;">
+		                                                    <!--apex:inputField id="matrixPotentialLabel"  style="width:100px;" value="{!m.matrix.Potential_data_Label_BI__c}"></apex:inputField-->
+		                                                    <input type="text" value="{!m.matrix.Potential_data_Label_BI__c}" style="width:100px;" size="20"  maxlength="25" name="matrixPotentialLabel" placeholder="Market Rx" />
+		                                                </span>
+		                                                <div class="erMsg" style="display:none; font-size:12px;">
+		                                                    <font color="#C00 !important"><strong>Error: </strong>Must not be null!</font>
+		                                                </div>
+		                                            </div>
+		                                        </span>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Adoption_Data_Label_BI__c.label}: </span>
+		                                        <span style="float:right;">
+		                                            <div class="requiredInput">
+		                                                <!-- <div class="requiredBlock"></div> -->
+		                                                <span style="float:right;">
+		                                                    <!--apex:inputField id="matrixAdoptionLabel"  style="width:100px;" value="{!m.matrix.Adoption_Data_Label_BI__c}"></apex:inputField-->
+		                                                    <input type="text" value="{!m.matrix.Adoption_Data_Label_BI__c}" style="width:100px;" size="20" name="matrixAdoptionLabel" maxlength="25" placeholder="Prod RX"/>
+		                                                </span>
+		                                                <div class="erMsg" style="display:none; font-size:12px;">
+		                                                    <font color="#C00 !important"><strong>Error: </strong>Must not be null!</font>
+		                                                </div>
+		                                            </div>
+		                                        </span>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align:left;">
+		                                        <span style="float:left;">
+		                                        <label for="theRowInput{!matrixEditIndex}">{!$ObjectType.Matrix_BI__c.fields.Row_BI__c.label}:</label></span>
+		                                        <div class="requiredInput" style="float:right;">
+		                                            <!-- <div class="requiredBlock"></div> -->
+		                                            <input id="theRowInput{!matrixEditIndex}" type="text" style="width:100px" disabled="disabled" maxlength="2" value="{!m.matrix.Row_BI__c}" onchange="checkSizeInput(this);" onkeyup="checkSizeInput(this);" onpaste="checkSizeInput(this);" ondragenter="checkSizeInput(this);" oncontextmenu="return false;"/>
+		                                            <div class="erMsg" style="display:none; font-size:12px;">
+		                                                <font color="#C00 !important">Must not be null</font>
+		                                            </div>
+		                                        </div>
+		                                    </td>
+		                                 </tr>
+		                                 <tr>
+		                                    <td style="text-align:left;">
+		                                        <span style="float:left;">
+		                                        <label for="theColumnInput{!matrixEditIndex}">{!$ObjectType.Matrix_BI__c.fields.Column_BI__c.label}:</label></span>
+		                                        <div class="requiredInput" style="float:right;">
+		                                            <!-- <div class="requiredBlock"></div> -->
+		                                            <input id="theColumnInput{!matrixEditIndex}" type="text" style="width:100px;" disabled="disabled" maxlength="2" value="{!m.matrix.Column_BI__c}" onchange="checkSizeInput(this);" onkeyup="checkSizeInput(this);" onpaste="checkSizeInput(this);" ondragenter="checkSizeInput(this);" oncontextmenu="return false;"/>
+		                                            <div class="erMsg" style="display:none; font-size:12px;">
+		                                                <font color="#C00 !important">Must not be null</font>
+		                                            </div>
+		                                        </div>
+		                                    </td>
+		                                </tr> 
+		                                <tr>
+		                                    <td >
+		                                    	<div style="text-align:left;{!IF(accountMatrix == true, 'display:none;', '')}"> {!$ObjectType.Matrix_BI__c.fields.Specialization_BI__c.label}:</div>
+		                                    	<div style="text-align:left;{!IF(accountMatrix == false, 'display:none;', '')}"> {!$ObjectType.Matrix_BI__c.fields.Account_Matrix_Split_BI__c.label}:</div>
+		                                        <div id="matrix{!matrixEditIndex}" name="matrixSpecial" style=" height: 300px; width: 250px; border: 1px solid #C9C4C4; overflow:auto;background: #fff;" 
+		                                        	class="specialCls heightCls ui-droppable finalMatrix">
+		                                            <div class="erMsg" style="display:none; font-size:12px;"><font color="#C00 !important">Must not be null</font></div>
+		                                            <ul class="targerDropUlCls matrixDropUlCls ui-sortable">
+		                                            <apex:repeat value="{!m.list_cms}" var="cms">
+		                                                <li id="{!cms.sId}" class="matrixDraggable {!IF(cms.sId != NULL && cms.sId != '' , 'finalpgover', 'ui-state-disabled')}">{!cms.sName}</li>
+		                                            </apex:repeat>
+		                                            </ul>
+		                                            
+		                                        </div>
+		                                        
+		                                    </td>
+		                                </tr>
+		                            </table>
+		                            <!-- End table -->
+		                                <apex:variable var="matrixEditIndex" value="{!matrixEditIndex+1}"/>
+		                            </apex:repeat>
+		<!-------------------------- End: calculted or final -->
+		                            
+		                            <apex:repeat value="{!list_cme}" var="m">
+		                            <!-- begin table -->
+		                            <table style="display:inline-block;" class="matrixInnerTable " id="mit-{!m.matrix.Id}">
+		                                <tr>
+		                                    <td>
+		                                    	<span id="chkMatrixToCalc" style="float:left;">
+		                                    		<input type="checkbox" value="1" id="matrixChecked-{!matrixEditIndex}" title="{!$Label.IMP_BI_Select_Matrix}" name="matrixChecked"/>
+		                                    	</span>
+		                                    	<img src="/s.gif" class="budgetHelpText" title="{!$Label.IMP_BI_Select_Matrix}"  style="float: left;margin: 3px 5px;" />
+		                                    	<img src="/img/icon/service_contracts24.png" title="{!$Label.IMP_BI_Set_Matrix_Template_Info}" style="cursor: pointer; float: right;" onclick="openMatrixTemplate(this);"/>
+		                                    	<input name="pIdFromMatrix" type="hidden" value="{!m.matrix.Product_Catalog_BI__c}" />
+		                                   		Matrix<span class="matrixIndexSpan" style="margin-right: 33px; ">{!matrixEditIndex}</span>
+		                                    	<!-- img title="delete this Matrix" class="deleteMatrixImg" style="cursor:pointer; margin-left:5px; vertical-align:middle; height:15px; width:15px;" onclick="removeGivenMatrix(this);" src="/img/func_icons/util/recycle.gif"></img-->
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">Matrix Template:&nbsp;</span>
+		                                        <span style="float:right;">
+			                                        <!-- <div class="requiredBlock"></div> -->
+			                                        <apex:selectList value="{!m.matrix.Matrix_Template_BI__c}" multiselect="false" size="1" id="matrixTemplate" style="width:104px;" disabled="{!IF(productId ==  '', true,false)}" onchange="setMatrixTemplateInfo(this);">
+			                                            <apex:selectOptions value="{!matrixTemplates}"/>
+			                                        </apex:selectList>
+		                                        </span>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Name_BI__c.label}:&nbsp;</span>
+		                                        <span style="float:right;">
+			                                       	<div class="requiredInput">
+			                                       		<div class="requiredBlock"></div> 
+			                                            <input name="matrixName" type="text" style="width:100px;" onchange="checkMatrixName(this);" value="{!m.matrix.Name_BI__c}" onkeyup="if(this.value.match(/\'/)) this.value=this.value.replace(/[\']/g,'');"/>
+			                                            <div class="erMsg" style="display:none; font-size:12px;">
+			                                                <font color="#C00 !important">Must not be null</font>
+			                                            </div>
+			                                        </div>
+		                                        </span>
+		                                      </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.DPA_BI__c.label}:&nbsp;</span>
+		                                        <span style="float:right;">
+		                                            <apex:inputField id="matrixDPA" style="width:100px;" value="{!m.matrix.DPA_BI__c}" onclick="checkAllMatrixSpecialDiv();checkDpaForAllCustomer(this);"></apex:inputField>
+		                                        </span>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.isLaunch_Phase_BI__c.label}:&nbsp;</span>
+		                                        <span style="float:right;">
+		                                            <input id="matrixLaunchPhase" type="checkbox" disabled="true" style="width:100px;" />
+		                                        </span>
+											</td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">
+		                                        	{!$ObjectType.Matrix_BI__c.fields.All_Customers_BI__c.label}:&nbsp;
+		                                        </span>
+		                                        <span style="float:right;">
+		                                            <apex:inputField id="matrixAllCustomers" style="width:100px;" value="{!m.matrix.All_Customers_BI__c}" onclick="checkAllCustomers(this);"></apex:inputField>
+		                                        </span></td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Status_BI__c.label}:&nbsp;</span><span style="float:right;">
+		                                        <div class="requiredInput"><div class="requiredBlock"></div> 
+		                                            <input name="matrixStatus" type="text" style="width:100px;" disabled="disabled" value="{!m.matrix.Status_BI__c}"/>
+		                                            <div class="erMsg" style="display:none; font-size:12px;">
+		                                                <font color="#C00 !important"></font>
+		                                            </div>
+		                                        </div></span></td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">Template: </span>
+		                                        <span style="float:right;">
+		                                            <div class="requiredInput">
+		                                                <div class="requiredBlock">
+		                                                </div>
+		                                                <apex:selectList value="{!m.matrix.Lifecycle_Template_BI__c}" multiselect="false" size="1" id="theMTSelecrList" style="width:104px;">
+		                                                    <apex:selectOptions value="{!templatesByCountry}"/>
+		                                                </apex:selectList>
+		                                                <div class="erMsg" style="display:none; font-size:12px;">
+		                                                    <font color="#C00 !important"><strong>Error: </strong>You must select one Product!</font>
+		                                                </div>
+		                                            </div>
+		                                        </span>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Potential_data_Label_BI__c.label} </span>
+		                                        <span style="float:right;">
+		                                            <div class="requiredInput">
+		                                                <!-- <div class="requiredBlock"></div> -->
+		                                                <span style="float:right;">
+		                                                    <!--apex:inputField id="matrixPotentialLabel"  style="width:100px;" value="{!m.matrix.Potential_data_Label_BI__c}"></apex:inputField-->
+		                                                    <input type="text" value="{!m.matrix.Potential_data_Label_BI__c}" style="width:100px;" size="20"  maxlength="25" name="matrixPotentialLabel" placeholder="Market Rx" />
+		                                                </span>
+		                                                <div class="erMsg" style="display:none; font-size:12px;">
+		                                                    <font color="#C00 !important"><strong>Error: </strong>Must not be null!</font>
+		                                                </div>
+		                                            </div>
+		                                        </span>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align: left;">
+		                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Adoption_Data_Label_BI__c.label} </span>
+		                                        <span style="float:right;">
+		                                            <div class="requiredInput">
+		                                                <!-- <div class="requiredBlock"></div> -->
+		                                                <span style="float:right;">
+		                                                    <!-- apex:inputField id="matrixAdoptionLabel"  style="width:100px;" value="{!m.matrix.Adoption_Data_Label_BI__c}"></apex:inputField-->
+		                                                    <input type="text" value="{!m.matrix.Adoption_Data_Label_BI__c}" style="width:100px;" size="20" name="matrixAdoptionLabel" maxlength="25" placeholder="Prod RX"/>
+		                                                </span>
+		                                                <div class="erMsg" style="display:none; font-size:12px;">
+		                                                    <font color="#C00 !important"><strong>Error: </strong>Must not be null!</font>
+		                                                </div>
+		                                            </div>
+		                                        </span>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <td style="text-align:left;">
+		                                        <span style="float:left;">
+		                                        <label for="theRowInput{!matrixEditIndex}">{!$ObjectType.Matrix_BI__c.fields.Row_BI__c.label}:</label></span>
+		                                        <div class="requiredInput" style="float:right;"><div class="requiredBlock"></div>
+		                                            <input id="theRowInput{!matrixEditIndex}" type="text" style="width:100px" maxlength="2" value="{!m.matrix.Row_BI__c}" onchange="checkSizeInput(this);" onkeyup="checkSizeInput(this);" onpaste="checkSizeInput(this);" ondragenter="checkSizeInput(this);" oncontextmenu="return false;"/>
+		                                            <div class="erMsg" style="display:none; font-size:12px;">
+		                                                <font color="#C00 !important">Must not be null</font>
+		                                            </div>
+		                                        </div>
+		                                    </td>
+		                                 </tr>
+		                                 <tr>
+		                                    <td style="text-align:left;">
+		                                        <span style="float:left;">
+		                                        <label for="theColumnInput{!matrixEditIndex}">{!$ObjectType.Matrix_BI__c.fields.Column_BI__c.label}:</label></span>
+		                                        <div class="requiredInput" style="float:right;"><div class="requiredBlock"></div>
+		                                            <input id="theColumnInput{!matrixEditIndex}" type="text" style="width:100px;" maxlength="2" value="{!m.matrix.Column_BI__c}" onchange="checkSizeInput(this);" onkeyup="checkSizeInput(this);" onpaste="checkSizeInput(this);" ondragenter="checkSizeInput(this);" oncontextmenu="return false;"/>
+		                                            <div class="erMsg" style="display:none; font-size:12px;">
+		                                                <font color="#C00 !important">Must not be null</font>
+		                                            </div>
+		                                        </div>
+		                                    </td>
+		                                </tr> 
+		                                <tr>
+		                                    <td >
+		                                       <div style="text-align:left;{!IF(accountMatrix == true, 'display:none;', '')}"> {!$ObjectType.Matrix_BI__c.fields.Specialization_BI__c.label}:</div>
+		                                    	<div style="text-align:left;{!IF(accountMatrix == false, 'display:none;', '')}"> {!$ObjectType.Matrix_BI__c.fields.Account_Matrix_Split_BI__c.label}:</div>
+		                                        <div id="matrix{!matrixEditIndex}" name="matrixSpecial" style=" height: 300px; width: 250px; border: 1px solid #000; overflow:auto;background: #fff;" class="specialCls heightCls ui-droppable">
+		                                            <div class="erMsg" style="display:none; font-size:12px;"><font color="#C00 !important">Must not be null</font></div>
+		                                            <ul class="targerDropUlCls matrixDropUlCls ui-sortable">
+		                                            <apex:repeat value="{!m.list_cms}" var="cms">
+		                                                <li id="{!cms.sId}" class="matrixDraggable {!IF(cms.sId != NULL && cms.sId != '' , 'pgover', 'ui-state-disabled')}">{!cms.sName}</li>
+		                                            </apex:repeat>
+		                                            </ul>
+		                                        </div>
+		                                        
+		                                    </td>
+		                                </tr>
+		                                <!-- 
+		                                <tr>
+		                                    <td>
+		                                        <input type="checkbox" name="isChangeToFinal" disabled="{!IF(m.isCalculated, '', 'disabled')}">Change to Final</input> 
+		                                    </td>
+		                                </tr>
+		                                 -->
+		                            </table>
+		                            <!-- End table -->
+		                                <apex:variable var="matrixEditIndex" value="{!matrixEditIndex+1}"/>
+		                            </apex:repeat>
+		                        </div>
+            					</td>
+            					<td>
+            						 <div id="specialDivId" class="specialCls heightCls ui-droppable">
+			                            <ul class="dropUlCls ui-sortable">
+			                                <apex:repeat value="{!list_clsSpcial}" var="ls">
+			                                    <li class="draggable {!IF(ls.isAssigned , 'ui-state-disabled special-state-disabled', '')}" id="{!ls.Id}" style="{!IF(ls.isAssigned, 'opacity: 1; z-index: 50;', '')}">
+			                                        <span style="padding: 5px; padding-left: 10px; padding-right: 10px;" title="{!ls.sName}">{!ls.sName}&nbsp; <b>{!ls.specialtiesAccount}</b></span>
+			                                    </li>
+			                                </apex:repeat>
+			                            </ul>
+			                        </div>
+            					</td>
+            				</tr>
+            			</table>
+            		</div>
+            		<div style="text-align: center;">
+            			 <input type="button" onclick="savaMatrixsInPage();" value="{!$Label.Btn_Save_Matrix_Creation}" class="btn runMatrixCreationBtn"/>
+                        <input type="button" onclick="savaAndCalMatrixsInPage();" value="{!$Label.Btn_Cal_all_Matrices}" class="btn runMatrixCreationBtn"/>
+
+                        <apex:actionFunction name="calculateMatrixInPage" action="{!calculationMatrix}"/>
+                        <apex:actionFunction name="cancel" action="{!cancel}"/>
+                        <input type="button" value="{!$Label.Cancel}" class="btn cancelBtn" onclick="cancelToBack();"/>
+            		</div>
+            		
+            </div>
+            <!--   
+            <table class="matrixOuterTable">
+                <tr>
+                    <td> 
+                        <apex:outputLabel value="Select Product:" for="theProductList"/>
+                    </td>
+                    <td>
+                        <div class="requiredInput">
+                            <div class="requiredBlock">
+                            </div>
+                                <apex:actionFunction name="rerenderEditMatrix" action="{!rerenderEditMatrix}" status="theStatus" rerender="theTopForm" oncomplete="disableAllFinalMatrix();setMTByProduct('{!matrixTemplateList}','{!jsonMatrixTemplate}');"/>
+                            
+                                <apex:selectList value="{!productId}" multiselect="false" size="1" id="theProductList" onchange="rerenderEditMatrix();">
+                                    <apex:selectOptions value="{!list_prods}"/>
+                                </apex:selectList>
+                            <div class="erMsg" style="display:none; font-size:12px;">
+                                <font color="#C00 !important"><strong>Error: </strong>You must select one Product!</font>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <apex:outputLabel value="Select Speciality:"/>
+                    </td>
+                    <td>
+                        <div id="specialDivId" class="specialCls heightCls ui-droppable">
+                            <ul class="dropUlCls ui-sortable">
+                                <apex:repeat value="{!list_clsSpcial}" var="ls">
+                                    <li class="draggable {!IF(ls.isAssigned , 'ui-state-disabled special-state-disabled', '')}" id="{!ls.Id}" style="{!IF(ls.isAssigned, 'opacity: 1; z-index: 50;', '')}">
+                                        <span style="padding: 5px; padding-left: 10px; padding-right: 10px;" title="{!ls.sName}">{!ls.sName}&nbsp; <b>{!ls.specialtiesAccount}</b></span>
+                                    </li>
+                                </apex:repeat>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                	
+                <tr>
+                    <td style="vertical-align:top !important; padding-top:14px; padding-right:5px;">
+						<span style="{!IF(productId == NULL || productId == '', 'display:none;', '')}">
+							<span style="float:left;">
+								<apex:outputLabel value="Check Matrix to Calculate:"/>
+							</span>
+							<img src="/s.gif" class="budgetHelpText" title="{!$Label.IMP_BI_Select_All_Matrix}" />
+							<input type="checkbox" name="chkAllMatrices" style="margin-left:8%;" onclick="checkAllMatrices(this);"/>
+						</span>
+                   		<div title="add a Matrix" onclick="addMatrix();register_event();" style="{!IF(productId == NULL || productId == '', 'display:none;', '')} cursor:pointer; height:15px; width:15px; float:right; background:transparent url(/img/feeds/follow_sprite.png) no-repeat 0 0;margin-top:6%;" ></div>
+					</td>
+                    <td>
+                        <div id="matriDivId" style="overflow:auto;">
+                            <apex:variable var="matrixEditIndex" value="{!1}" /> 
+
+                            <apex:repeat value="{!list_cmeFinal}" var="m">
+
+                            <table style="display:inline-block;" class="matrixInnerTable finalMatrix" id="mit-{!m.matrix.Id}">
+                                <tr>
+                                    <td>
+                                    	<img src="/img/icon/service_contracts24.png" title="{!$Label.IMP_BI_Set_Matrix_Template_Info}" style="cursor: pointer; float: right;" onclick="openMatrixTemplate(this);"/>
+                                    	<input name="pIdFromMatrix" type="hidden" value="{!m.matrix.Product_Catalog_BI__c}" />
+                                    	Matrix<span class="matrixIndexSpan">{!matrixEditIndex}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">Matrix Template:&nbsp;</span>
+                                        <span style="float:right;">
+	                                        <apex:selectList disabled="true" value="{!m.matrix.Matrix_Template_BI__c}" multiselect="false" size="1" id="matrixTemplate" style="width:104px; ">
+	                                            <apex:selectOptions value="{!matrixTemplates}"/>
+	                                        </apex:selectList>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Name_BI__c.label}:&nbsp;</span><span style="float:right;">
+                                        <div class="requiredInput">
+                                            <input name="matrixName" type="text" style="width:100px;" disabled="disabled" onchange="checkMatrixName(this);" value="{!m.matrix.Name_BI__c}"/>
+                                            <div class="erMsg" style="display:none; font-size:12px;">
+                                                <font color="#C00 !important">Must not be null</font>
+                                            </div>
+                                        </div></span></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.DPA_BI__c.label}:&nbsp;</span>
+                                        <span style="float:right;">
+                                            <apex:inputField id="matrixDPA" style="width:100px;" value="{!m.matrix.DPA_BI__c}"></apex:inputField>
+                                        </span></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.isLaunch_Phase_BI__c.label}:&nbsp;</span>
+                                        <span style="float:right;">
+                                            <input id="matrixLaunchPhase" type="checkbox" disabled="true" style="width:100px;" />
+                                        </span></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">
+                                        	{!$ObjectType.Matrix_BI__c.fields.All_Customers_BI__c.label}:&nbsp;
+                                        </span>
+										<span style="float:right;">
+                                            <apex:inputField id="matrixAllCustomers" style="width:100px;" value="{!m.matrix.All_Customers_BI__c}"></apex:inputField>
+                                        </span></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Status_BI__c.label}:&nbsp;</span><span style="float:right;">
+                                        <div class="requiredInput">
+                                            <input name="matrixStatus" type="text" style="width:100px;" disabled="disabled" value="{!m.matrix.Status_BI__c}"/>
+                                            <div class="erMsg" style="display:none; font-size:12px;">
+                                                <font color="#C00 !important"></font>
+                                            </div>
+                                        </div></span></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">Template: </span>
+                                        <span style="float:right;">
+                                            <div class="requiredInput">
+                                                <apex:selectList disabled="true" value="{!m.matrix.Lifecycle_Template_BI__c}" multiselect="false" size="1" id="theMTSelecrList" style="width:104px; ">
+                                                    <apex:selectOptions value="{!templatesByCountry}"/>
+                                                </apex:selectList>
+                                                <div class="erMsg" style="display:none; font-size:12px;">
+                                                    <font color="#C00 !important"><strong>Error: </strong>You must select one Product!</font>
+                                                </div>
+                                            </div>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Potential_data_Label_BI__c.label}: </span>
+                                        <span style="float:right;">
+                                            <div class="requiredInput">
+                                                <span style="float:right;">
+                                                    <input type="text" value="{!m.matrix.Potential_data_Label_BI__c}" style="width:100px;" size="20"  maxlength="25" name="matrixPotentialLabel" placeholder="Market Rx" />
+                                                </span>
+                                                <div class="erMsg" style="display:none; font-size:12px;">
+                                                    <font color="#C00 !important"><strong>Error: </strong>Must not be null!</font>
+                                                </div>
+                                            </div>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Adoption_Data_Label_BI__c.label}: </span>
+                                        <span style="float:right;">
+                                            <div class="requiredInput">
+                                                <span style="float:right;">
+                                                    <input type="text" value="{!m.matrix.Adoption_Data_Label_BI__c}" style="width:100px;" size="20" name="matrixAdoptionLabel" maxlength="25" placeholder="Prod RX"/>
+                                                </span>
+                                                <div class="erMsg" style="display:none; font-size:12px;">
+                                                    <font color="#C00 !important"><strong>Error: </strong>Must not be null!</font>
+                                                </div>
+                                            </div>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align:left;">
+                                        <span style="float:left;">
+                                        <label for="theRowInput{!matrixEditIndex}">{!$ObjectType.Matrix_BI__c.fields.Row_BI__c.label}:</label></span>
+                                        <div class="requiredInput" style="float:right;">
+                                            <input id="theRowInput{!matrixEditIndex}" type="text" style="width:100px" disabled="disabled" maxlength="2" value="{!m.matrix.Row_BI__c}" onchange="checkSizeInput(this);" onkeyup="checkSizeInput(this);" onpaste="checkSizeInput(this);" ondragenter="checkSizeInput(this);" oncontextmenu="return false;"/>
+                                            <div class="erMsg" style="display:none; font-size:12px;">
+                                                <font color="#C00 !important">Must not be null</font>
+                                            </div>
+                                        </div>
+                                    </td>
+                                 </tr>
+                                 <tr>
+                                    <td style="text-align:left;">
+                                        <span style="float:left;">
+                                        <label for="theColumnInput{!matrixEditIndex}">{!$ObjectType.Matrix_BI__c.fields.Column_BI__c.label}:</label></span>
+                                        <div class="requiredInput" style="float:right;">
+                                            <input id="theColumnInput{!matrixEditIndex}" type="text" style="width:100px;" disabled="disabled" maxlength="2" value="{!m.matrix.Column_BI__c}" onchange="checkSizeInput(this);" onkeyup="checkSizeInput(this);" onpaste="checkSizeInput(this);" ondragenter="checkSizeInput(this);" oncontextmenu="return false;"/>
+                                            <div class="erMsg" style="display:none; font-size:12px;">
+                                                <font color="#C00 !important">Must not be null</font>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr> 
+                                <tr>
+                                    <td>
+                                        <div id="matrix{!matrixEditIndex}" name="matrixSpecial" style=" height: 300px; width: 250px; border: 1px solid #C9C4C4; overflow:auto;" class="specialCls heightCls ui-droppable finalMatrix">
+                                            <ul class="targerDropUlCls matrixDropUlCls ui-sortable">
+                                            <apex:repeat value="{!m.list_cms}" var="cms">
+                                                <li id="{!cms.sId}" class="matrixDraggable {!IF(cms.sId != NULL && cms.sId != '' , 'finalpgover', 'ui-state-disabled')}">{!cms.sName}</li>
+                                            </apex:repeat>
+                                            </ul>
+                                        </div>
+                                        <div class="erMsg" style="display:none; font-size:12px;"><font color="#C00 !important">Must not be null</font></div>
+                                    </td>
+                                </tr>
+                            </table>
+                                <apex:variable var="matrixEditIndex" value="{!matrixEditIndex+1}"/>
+                            </apex:repeat>
+                            
+                            <apex:repeat value="{!list_cme}" var="m">
+                            <table style="display:inline-block;" class="matrixInnerTable" id="mit-{!m.matrix.Id}">
+                                <tr>
+                                    <td>
+                                    	<span id="chkMatrixToCalc" style="float:left;">
+                                    		<input type="checkbox" value="1" id="matrixChecked-{!matrixEditIndex}" title="{!$Label.IMP_BI_Select_Matrix}" name="matrixChecked"/>
+                                    	</span>
+                                    	<img src="/s.gif" class="budgetHelpText" title="{!$Label.IMP_BI_Select_Matrix}" />
+                                    	<img src="/img/icon/service_contracts24.png" title="{!$Label.IMP_BI_Set_Matrix_Template_Info}" style="cursor: pointer; float: right;" onclick="openMatrixTemplate(this);"/>
+                                    	<input name="pIdFromMatrix" type="hidden" value="{!m.matrix.Product_Catalog_BI__c}" />
+                                   		Matrix<span class="matrixIndexSpan">{!matrixEditIndex}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">Matrix Template:&nbsp;</span>
+                                        <span style="float:right;">
+	                                        <apex:selectList value="{!m.matrix.Matrix_Template_BI__c}" multiselect="false" size="1" id="matrixTemplate" style="width:104px;" disabled="{!IF(productId ==  '', true,false)}" onchange="setMatrixTemplateInfo(this);">
+	                                            <apex:selectOptions value="{!matrixTemplates}"/>
+	                                        </apex:selectList>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Name_BI__c.label}:&nbsp;</span>
+                                        <span style="float:right;">
+	                                       	<div class="requiredInput">
+	                                       		<div class="requiredBlock"></div> 
+	                                            <input name="matrixName" type="text" style="width:100px;" onchange="checkMatrixName(this);" value="{!m.matrix.Name_BI__c}" onkeyup="if(this.value.match(/\'/)) this.value=this.value.replace(/[\']/g,'');"/>
+	                                            <div class="erMsg" style="display:none; font-size:12px;">
+	                                                <font color="#C00 !important">Must not be null</font>
+	                                            </div>
+	                                        </div>
+                                        </span>
+                                      </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.DPA_BI__c.label}:&nbsp;</span>
+                                        <span style="float:right;">
+                                            <apex:inputField id="matrixDPA" style="width:100px;" value="{!m.matrix.DPA_BI__c}" onclick="checkAllMatrixSpecialDiv();checkDpaForAllCustomer(this);"></apex:inputField>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.isLaunch_Phase_BI__c.label}:&nbsp;</span>
+                                        <span style="float:right;">
+                                            <input id="matrixLaunchPhase" type="checkbox" disabled="true" style="width:100px;" />
+                                        </span>
+									</td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">
+                                        	{!$ObjectType.Matrix_BI__c.fields.All_Customers_BI__c.label}:&nbsp;
+                                        </span>
+                                        <span style="float:right;">
+                                            <apex:inputField id="matrixAllCustomers" style="width:100px;" value="{!m.matrix.All_Customers_BI__c}" onclick="checkAllCustomers(this);"></apex:inputField>
+                                        </span></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Status_BI__c.label}:&nbsp;</span><span style="float:right;">
+                                        <div class="requiredInput"><div class="requiredBlock"></div> 
+                                            <input name="matrixStatus" type="text" style="width:100px;" disabled="disabled" value="{!m.matrix.Status_BI__c}"/>
+                                            <div class="erMsg" style="display:none; font-size:12px;">
+                                                <font color="#C00 !important"></font>
+                                            </div>
+                                        </div></span></td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">Template: </span>
+                                        <span style="float:right;">
+                                            <div class="requiredInput">
+                                                <div class="requiredBlock">
+                                                </div>
+                                                <apex:selectList value="{!m.matrix.Lifecycle_Template_BI__c}" multiselect="false" size="1" id="theMTSelecrList" style="width:104px;">
+                                                    <apex:selectOptions value="{!templatesByCountry}"/>
+                                                </apex:selectList>
+                                                <div class="erMsg" style="display:none; font-size:12px;">
+                                                    <font color="#C00 !important"><strong>Error: </strong>You must select one Product!</font>
+                                                </div>
+                                            </div>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Potential_data_Label_BI__c.label} </span>
+                                        <span style="float:right;">
+                                            <div class="requiredInput">
+                                                <span style="float:right;">
+                                                    <input type="text" value="{!m.matrix.Potential_data_Label_BI__c}" style="width:100px;" size="20"  maxlength="25" name="matrixPotentialLabel" placeholder="Market Rx" />
+                                                </span>
+                                                <div class="erMsg" style="display:none; font-size:12px;">
+                                                    <font color="#C00 !important"><strong>Error: </strong>Must not be null!</font>
+                                                </div>
+                                            </div>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: left;">
+                                        <span class="matrixTableLabel">{!$ObjectType.Matrix_BI__c.fields.Adoption_Data_Label_BI__c.label} </span>
+                                        <span style="float:right;">
+                                            <div class="requiredInput">
+                                                <span style="float:right;">
+                                                    <input type="text" value="{!m.matrix.Adoption_Data_Label_BI__c}" style="width:100px;" size="20" name="matrixAdoptionLabel" maxlength="25" placeholder="Prod RX"/>
+                                                </span>
+                                                <div class="erMsg" style="display:none; font-size:12px;">
+                                                    <font color="#C00 !important"><strong>Error: </strong>Must not be null!</font>
+                                                </div>
+                                            </div>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align:left;">
+                                        <span style="float:left;">
+                                        <label for="theRowInput{!matrixEditIndex}">{!$ObjectType.Matrix_BI__c.fields.Row_BI__c.label}:</label></span>
+                                        <div class="requiredInput" style="float:right;"><div class="requiredBlock"></div>
+                                            <input id="theRowInput{!matrixEditIndex}" type="text" style="width:100px" maxlength="2" value="{!m.matrix.Row_BI__c}" onchange="checkSizeInput(this);" onkeyup="checkSizeInput(this);" onpaste="checkSizeInput(this);" ondragenter="checkSizeInput(this);" oncontextmenu="return false;"/>
+                                            <div class="erMsg" style="display:none; font-size:12px;">
+                                                <font color="#C00 !important">Must not be null</font>
+                                            </div>
+                                        </div>
+                                    </td>
+                                 </tr>
+                                 <tr>
+                                    <td style="text-align:left;">
+                                        <span style="float:left;">
+                                        <label for="theColumnInput{!matrixEditIndex}">{!$ObjectType.Matrix_BI__c.fields.Column_BI__c.label}:</label></span>
+                                        <div class="requiredInput" style="float:right;"><div class="requiredBlock"></div>
+                                            <input id="theColumnInput{!matrixEditIndex}" type="text" style="width:100px;" maxlength="2" value="{!m.matrix.Column_BI__c}" onchange="checkSizeInput(this);" onkeyup="checkSizeInput(this);" onpaste="checkSizeInput(this);" ondragenter="checkSizeInput(this);" oncontextmenu="return false;"/>
+                                            <div class="erMsg" style="display:none; font-size:12px;">
+                                                <font color="#C00 !important">Must not be null</font>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr> 
+                                <tr>
+                                    <td>
+                                        <div id="matrix{!matrixEditIndex}" name="matrixSpecial" style=" height: 300px; width: 250px; border: 1px solid #000; overflow:auto;" class="specialCls heightCls ui-droppable">
+                                            <ul class="targerDropUlCls matrixDropUlCls ui-sortable">
+                                            <apex:repeat value="{!m.list_cms}" var="cms">
+                                                <li id="{!cms.sId}" class="matrixDraggable {!IF(cms.sId != NULL && cms.sId != '' , 'pgover', 'ui-state-disabled')}">{!cms.sName}</li>
+                                            </apex:repeat>
+                                            </ul>
+                                        </div>
+                                        <div class="erMsg" style="display:none; font-size:12px;"><font color="#C00 !important">Must not be null</font></div>
+                                    </td>
+                                </tr>
+
+                            </table>
+                                <apex:variable var="matrixEditIndex" value="{!matrixEditIndex+1}"/>
+                            </apex:repeat>
+                        </div>
+                    </td>
+                </tr>
+                <tr style="background:#FFF">
+                    <td colspan="2" style="text-align:center;">
+                        <input type="button" onclick="savaMatrixsInPage();" value="{!$Label.Btn_Save_Matrix_Creation}" class="btn runMatrixCreationBtn"/>
+                        <input type="button" onclick="savaAndCalMatrixsInPage();" value="{!$Label.Btn_Cal_all_Matrices}" class="btn runMatrixCreationBtn"/>
+
+                        <apex:actionFunction name="calculateMatrixInPage" action="{!calculationMatrix}"/>
+                        <apex:actionFunction name="cancel" action="{!cancel}"/>
+                        <input type="button" value="{!$Label.Cancel}" class="btn cancelBtn" onclick="cancelToBack();"/>
+                    </td>
+                </tr>
+            </table>
+            -->
+        </div>
+        <span id="htmlEntity" style="display:none">&nbsp;</span>
+       <!--  <apex:inputText id="calcuInfoHiddenId" value="{!jsonOfCalcuInfo}" style="display:none;"></apex:inputText> -->
+    </apex:form>
+    <div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');"></div>
+</apex:page>

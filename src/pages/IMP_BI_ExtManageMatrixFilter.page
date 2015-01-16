@@ -1,0 +1,225 @@
+<apex:page id="thePage" standardcontroller="Matrix_Filter_BI__c" extensions="IMP_BI_ExtManageMatrixFilter" sidebar="false" title="{!pageTitle}" tabStyle="Matrix_Filter_BI__c" docType="html-5.0">
+	<!-- style -->
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}"/>
+    <apex:stylesheet value="{!$Resource.IMP_BI_ExtManageMatrixFilter_style}" />
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" />
+    <apex:includeScript value="{!$Resource.IMP_BI_ExtManageMatrixFilter_controller}" />
+    
+    <script type="text/javascript">
+    	var j$ = jQuery.noConflict();
+    	var specialIndex = 0;
+    	var maxDivHeight = 90;
+    	var countryId = '{!countryId}';
+    	
+    	j$(function(){
+    		register_event();
+    		resetGroupDivWidth();
+    		
+ 			j$(window).resize(function(){
+				resetGroupDivWidth();
+            });
+    	});
+    	
+    	function setFocus(){}
+    	
+ 		function showLoading(){
+            j$('#loading-curtain-div').appendTo(j$('#bodyTable').parent()).show();           
+        }
+    	
+    	
+ 		function cancelToBack(){
+            showLoading();
+            cancel();
+        }
+    	
+    	function resetGroupDivWidth(){
+			var windowWidth = 0;
+                
+            if (window.innerWidth)
+                windowWidth = window.innerWidth;
+            else if ((document.body) && (document.body.clientWidth))
+                windowWidth = document.body.clientWidth;
+            else windowWidth = window.screen.width;
+            
+            if(windowWidth < 800) windowWidth = 800;
+            
+            var mainDivWidth = parseInt(windowWidth*0.8);
+            
+            j$('#matriDivId').css("max-width", mainDivWidth);
+		}
+		
+		function saveMatrixFilterInJs(){
+			//Show up loading div	
+			showLoading();
+			
+			IMP_BI_ExtManageMatrixFilter.saveMatrixFilter(collectMatrixFilterData(), function(data){
+				j$('#htmlEntity').html(data);
+				data = j$('#htmlEntity').text();
+				data = j$.parseJSON(data);
+				if(data && !data.success){
+					j$("#errorMsg span").html(data.message);
+					j$('#loading-curtain-div').hide();
+				}
+				else{
+					cancel();
+				}
+			});
+		}
+		
+		function collectMatrixFilterData(){
+			var matrixFilterReq = {}, filterName = [];
+			matrixFilterReq.cid = countryId;
+		
+			var j$table = j$("#matriDivId table.groupTable").get(0);
+			
+			j$("div[id^='divMatrixFilters'] li").each(function(){
+				var liId = j$(this).attr('Id');
+				if(liId){
+					filterName.push(liId);
+					//console.log(':: Filter Name:' + filterName);
+				}
+		    });
+		    
+		    matrixFilterReq.set_filter = filterName;
+		    
+		    return JSON.stringify(matrixFilterReq);
+		}
+		
+		function resetDivHeight(){
+			j$("#matriDivId table div.specialCls").each(function(){
+				var height = j$(this).height;
+				
+				if(height > maxDivHeight) maxDivHeight = height;
+			});
+			
+			j$("#matriDivId table div.specialCls").each(function(){
+				j$(this).height(maxDivHeight);
+			});
+		}
+		
+		function addFilter(){
+			var j$matrixFilters = j$("div[id^='divMatrixFilters']");
+			var showEffect = false;
+			
+			//Add filters to matrix filter div from filter field div
+       		j$("div[id^='divFilterFields'] li").each(function(){
+       			var j$filter = j$(this);
+       			if(j$filter.hasClass('ui-selected')){
+	       			//console.log(':: Filter: ' + j$.trim(j$filter.attr('id')) +'-'+ j$.trim(j$filter.text()));
+	       			//console.log(':: UL: ' + j$(j$matrixFilters).find('ul').html());
+	       			showEffect=true;
+	       			j$matrixFilters.find('ul').append('<li id="'+j$filter.attr('id')+'" class="csNameSpan">'+j$filter.text()+'</li>');
+	       			j$filter.remove();
+       			}
+       		});
+       		
+       		//show effect whether a element has been added
+       		if(showEffect){
+       			j$("#matrixFilters li").sort(asc_sort).appendTo(j$("#matrixFilters"));
+       			j$matrixFilters.effect("highlight", {color: '#E27168'}, 400);
+     		}
+		}
+		
+		function removeFilter(){
+			var j$filterFields = j$("div[id^='divFilterFields']");
+			var showEffect = false;
+			
+			//Remove filters from matrix filter div to filter field
+       		j$("div[id^='divMatrixFilters'] li").each(function(){
+       			var j$filter = j$(this);
+       			if(j$filter.hasClass('ui-selected')){
+       				showEffect = true;
+       				j$filterFields.find('ul').append('<li id="'+j$filter.attr('id')+'" class="csNameSpan">'+j$filter.text()+'</li>');
+	       			j$filter.remove();
+       			}
+       		});
+       		
+       		//show effect whether a element has been added
+       		if(showEffect){
+       			j$("#filterFields li").sort(asc_sort).appendTo(j$("#filterFields"));
+       			j$filterFields.effect("highlight", {color: '#ACE788'}, 400);
+       		}
+		}
+		
+		// asccending sort to UL lists
+		function asc_sort(a, b){
+			return (j$(b).text()) < (j$(a).text()) ? 1 : -1;     
+		}
+    </script>
+    
+    <apex:sectionHeader title="{!sectionHeaderTitle}" subtitle="{!sectionHeaderSubTitle}"/>
+    <apex:pageMessages id="msg" escape="false"/>
+    
+    <apex:form id="theTopForm">
+   	    <apex:actionStatus startText="" stopText="" id="theStatus" onstart="" onstop="">
+	    	<apex:facet name="start">
+				<div id="pageLoading" class="mask" style="top:0px;left:0px;text-align:center;width:100%;height:100%;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');">
+				</div>
+			</apex:facet>
+		</apex:actionStatus>
+		
+		<apex:actionFunction name="cancel" action="{!cancel}"/>
+    
+    	<div id="theTopDivId">
+	    	<apex:pageBlock mode="maindetail" id="detailPageBlock" tabStyle="Matrix_Filter_BI__c">
+	    		<span id="errorMsg" style="color:#ff0000;"><apex:pageMessages id="messages" /></span>
+	    		
+	    		<table id="pfOuterTable" class="pfOuterTable pbSubheader tertiaryPalette" style="width:100%;">
+					<tr>
+						<td class="dataCol" colspan="4" style="font-size:12px;">Add/Remove Filters:<br/>(Select the filter fields to assign them to this Country)</td>
+					</tr>
+					<tr>
+						<td class="labelCol" colspan="4"></td>
+					</tr>
+					<tr>
+						<td class="labelCol" style="width:5%;"></td>
+						<td class="dataCol" style="font-size:16px;width:30%;">Filter Fields</td>
+						<td class="labelCol" style="width: 30%;"></td>
+						<td class="dataCol" style="font-size:16px;">Matrix Fields</td>
+					</tr>
+					<tr>
+						<td class="labelCol"></td>
+						<td>
+	                   		<div id="divFilterFields" style=" height: 335px; width: 350px; overflow-y:auto; border-radius: 10px; border: 2px solid #E0E3E5;">
+								<ul id="filterFields" class="selectable">
+									<apex:repeat value="{!list_cff}" var="cff">
+										<li id="{!cff.id}" class="csNameSpan" title="{!cff.apiName}">{!cff.name}</li>
+									</apex:repeat>
+								</ul>
+							</div>
+	                   	</td>
+	                   	<td style="vertical-align:top;">
+	                   		<div style="font-size:12px;">Add/Remove Filters:<br/>(Select the filter fields to assign them to this Country)</div>
+                   			<div id="addRemove">
+                   				<div style="font-size:16px;">Add</div>
+		                   		<div id="plus"><apex:image url="{!$Resource.IMP_add_icon}" onclick="addFilter();"/></div>
+		                   		<div id="minus"><apex:image url="{!$Resource.IMP_remove_icon}" onclick="removeFilter();"/></div>
+		                   		<div style="font-size:16px;">Remove</div>
+                   			</div>
+               			</td>
+	                   	<td>
+	                   		<div id="divMatrixFilters" style=" height: 335px; width: 350px; overflow-y:auto; border-radius: 10px; border: 2px solid #E0E3E5;">
+								<ul id="matrixFilters" class="selectable">
+									<apex:repeat value="{!list_cmf}" var="cmf">
+										<li id="{!cmf.id}" class="csNameSpan" title="{!cmf.label}">{!cmf.name}</li>
+									</apex:repeat>
+								</ul>
+							</div>
+	                   	</td>
+					</tr>
+					<tr>
+						<td class="labelCol"></td>
+						<td class="dataCol" colspan="3" style="text-align:center;">
+							<input type="button" value="Save" class="btn okBtn" onclick="saveMatrixFilterInJs();"/>
+							<input type="button" value="Cancel" class="btn" onclick="cancelToBack();" style="margin-left:10px;"/>
+						</td>
+					</tr>
+				</table>
+	    	</apex:pageBlock>
+    	</div>
+    	<span id="htmlEntity" style="display:none">&nbsp;</span>
+    </apex:form>
+    <div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');"></div>
+</apex:page>

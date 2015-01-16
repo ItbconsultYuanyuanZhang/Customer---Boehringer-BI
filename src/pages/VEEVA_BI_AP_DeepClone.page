@@ -1,0 +1,5 @@
+<apex:page standardController="Account_Plan_vod__c"
+     extensions="Veeva_BI_AP_DeepClone_Extension"
+     action="{!cloneWithItems}">
+<apex:pageMessages />
+</apex:page>

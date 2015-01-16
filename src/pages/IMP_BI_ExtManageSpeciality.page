@@ -1,0 +1,279 @@
+<apex:page id="thePage" standardcontroller="Customer_Attribute_BI__c" extensions="IMP_BI_ExtManageSpeciality" sidebar="false" title="{!pageTitle}" tabStyle="Customer_Attribute_BI__c" docType="html-5.0">
+    <!-- style -->
+    <apex:stylesheet value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/css/pepper-grinder/jquery-ui-1.10.2.custom.min.css')}"/>
+    <apex:stylesheet value="{!$Resource.IMP_BI_ExtManageSpeciality_style}" />
+    <!-- library -->    
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-1.9.1.js')}" />
+    <apex:includeScript value="{!URLFOR($Resource.jQueryUI_1_10_2,'jquery-ui-1.10.2.custom/js/jquery-ui-1.10.2.custom.min.js')}" />
+    <apex:includeScript value="{!$Resource.IMP_BI_ExtManageSpeciality_controller}" />
+    
+    <style type="text/css">
+        /* for solving the ie9 overflow bug*/
+        #matriDivId:hover {     
+            height:100%;
+        }
+        
+        #groupOuterDivId:hover {        
+            height:100%;
+        }
+        
+        /* for solving the ie9 overflow bug*/
+        #theTopDiv:hover {      
+            height:100%;
+        }
+        
+        /* for solving the ie9 overflow bug*/
+        #specialSeletorDivId:hover {        
+            height:100%;
+        }
+    </style>
+    
+    <script type="text/javascript">
+        var j$ = jQuery.noConflict();
+        var specialIndex = 0;
+        var maxDivHeight = 90;
+        var countryId = '{!countryId}';
+        var countryCode = '{!countryCode}';
+        var qSpecialties = '{!qSpecialties}';
+        
+         var __sfdcSessionId = '{!GETSESSIONID()}';
+         
+        if(typeof Visualforce != 'undefined' && Visualforce.remoting){
+             Visualforce.remoting.timeout = 320000;
+        }else if(typeof  _Visualforce != 'undefined' &&  _Visualforce.Ajax){
+             _Visualforce.Ajax.timeout=320000;
+        }
+        
+        //Begin: define the label for page
+        var label_allSpecialties = '{!$Label.IMP_BI_All_Unselected_Specialties}';
+        
+        j$(function(){
+		    register_event();
+            resetGroupDivWidth();
+            
+            //Set clickable specialSeletorDivId 
+            j$('.dropUlCls').on('click', 'li', function () {
+       			if(!j$(this).hasClass('ui-state-disabled'))
+       				j$(this).toggleClass('clicked');
+    		});
+            
+            j$(window).resize(function(){
+                resetGroupDivWidth();
+            });
+        });
+        
+        function setFocus(){}
+        
+        function showLoading(){
+            j$('#loading-curtain-div').appendTo(j$('#bodyTable').parent()).show();           
+        }
+        
+        
+        function cancelToBack(){
+            showLoading();
+            cancel();
+        }
+        function addSpecialityInJs(){
+            var specialityName = j$("input[id=theSpecialityName]").val();
+            
+            if(typeof specialityName != 'undefined' && specialityName != null && j$.trim(specialityName) != ''){
+                var liEl =  j$('<li class="draggable sli newli" id="specialityId' + specialIndex + '"><span id="csNameSpan" style="padding: 0px 2px;" title="' + specialityName + '">' + specialityName + '</span></li>');
+                
+                j$("#specialSeletorDivId ul").append(liEl);
+                
+                j$("input[id=theSpecialityName]").val('');
+                
+                register_event();
+                
+                specialIndex++;
+            }
+        }
+        
+        function resetGroupDivWidth(){
+            var windowWidth = 0;
+                
+            if (window.innerWidth)
+                windowWidth = window.innerWidth;
+            else if ((document.body) && (document.body.clientWidth))
+                windowWidth = document.body.clientWidth;
+            else windowWidth = window.screen.width;
+            
+            if(windowWidth < 800) windowWidth = 800;
+            
+            var mainDivWidth = parseInt(windowWidth*0.8);
+            
+            //j$('#matriDivId').css("max-width", mainDivWidth);
+            j$('#groupOuterDivId').css("max-width", mainDivWidth);
+        }
+        
+        function savaSpecialityDataInJs(){
+            showLoading();
+            
+            j$("#errorMsg span").html('');
+            
+            if(!checkAllGroupName()){
+                IMP_BI_ExtManageSpeciality.saveSpecialityData(collectSpecialityValue(), function(data){
+                    j$('#htmlEntity').html(data);
+                    data = j$('#htmlEntity').text();
+                    data = j$.parseJSON(data);
+                    if(data && !data.success){
+                        j$("#errorMsg span").html(data.message);
+                        j$('#loading-curtain-div').hide();
+                    }
+                    else{
+                        cancel();
+                    }
+    
+                });
+            }
+            else{
+                j$('#loading-curtain-div').hide();
+            }
+        }
+        
+        function resetDivHeight(){
+            j$("#matriDivId table div.specialCls").each(function(){
+                var height = j$(this).height;
+                
+                if(height > maxDivHeight) maxDivHeight = height;
+            });
+            
+            j$("#matriDivId table div.specialCls").each(function(){
+                j$(this).height(maxDivHeight);
+            });
+        }
+    </script>
+    
+    <apex:sectionHeader title="{!sectionHeaderTitle}" subtitle="{!sectionHeaderSubTitle}"/>
+    <apex:pageMessages id="msg" escape="false"/>
+    
+    <apex:form id="theTopForm">
+        <input id="groupIndex" type="hidden" value="{!groupIndex}" />
+    
+        <apex:actionStatus startText="" stopText="" id="theStatus" onstart="" onstop="">
+            <apex:facet name="start">
+                <div id="pageLoading" class="mask" style="top:0px;left:0px;text-align:center;width:100%;height:100%;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');">
+                </div>
+            </apex:facet>
+        </apex:actionStatus>
+        
+        <apex:actionFunction name="cancel" action="{!cancel}"/>
+    
+        <div id="theTopDivId">
+            <apex:pageBlock mode="maindetail" id="detailPageBlock" tabStyle="Customer_Attribute_BI__c">
+                <span id="errorMsg" style="color:#ff0000;"><apex:pageMessages id="messages" /></span>
+            
+                <table id="pfOuterTable" class="pfOuterTable pbSubheader tertiaryPalette" style="width:100%;">
+                    <tr>
+                        <td class="labelCol" style="width:5%;"></td>
+                        <td class="dataCol" style="width:45%;">Specialities</td>
+                        <td class="labelCol" style="width:15%;"></td>
+                        <td class="dataCol" style="width:35%;"></td>
+                    </tr>
+                    <!-- 
+                    <tr>
+                        <td class="labelCol" style="width:5%;"></td>
+                        <td class="dataCol" style="width:45%;"><input type="text" id="theSpecialityName"></input><input type="button" id="sAdd" class="btn" onclick="addSpecialityInJs();" value="Add"/></td>
+                        <td class="labelCol" style="width:15%;"></td>
+                        <td class="dataCol" style="width:35%;"></td>
+                    </tr>
+                     -->
+                    <tr>
+                        <td class="labelCol"></td>
+                        <td class="dataCol" colspan="3">
+                            <apex:outputPanel id="theSpecialPanel" layout="block">
+                                <div id="specialSeletorDivId" class="ui-droppable" style="width:90%;">
+                                    <ul id="specialSeletorUlId" class="dropUlCls ui-sortable sul specialSeletorUl">
+                                        <apex:repeat value="{!list_cs}" var="cs">
+                                            <li class="draggable sli {!IF(cs.hasGroup, 'ui-state-disabled special-state-disabled', '')}" id="{!cs.sId}">
+                                                <span id="csNameSpan" class="csNameSpan" title="{!cs.sName}">{!cs.sName}&nbsp;<b>{!cs.specialtiesAccount}</b></span>
+                                            </li>
+                                        </apex:repeat>
+                                    </ul>
+                                </div>
+                            </apex:outputPanel>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="labelCol"></td>
+                        <td class="dataCol" colspan="3">Add Group:<br/>(drag and drop specialities to assign them to a group)</td>
+                    </tr>
+                    <tr>
+                        <td class="labelCol" style="vertical-align:top !important; padding-top:45px;">
+                            <div title="add a Group" onclick="addGroup();register_event();" style="cursor:pointer; height:15px; width:15px; float:right; background:transparent url(/img/feeds/follow_sprite.png) no-repeat 0 0;" ></div>
+                        </td>
+                        <td class="dataCol" colspan="3" style="white-space:nowrap;">
+                            <div id="groupOuterDivId" style="overflow:auto; border:1px solid #EEE; padding-bottom:5px; overflow-y:hidden; border-radius: 8px;">
+                            <div id="matriDivId" class="groupTabelOuterDiv" style="width:{!groupIndex*233}px;">
+                                <apex:variable var="groupIndexV" value="{!1}" /> 
+                                <apex:repeat value="{!list_cg}" var="g">
+                                    <!-- begin table -->
+                                    <table class="groupTable">
+                                        <tr>
+                                            <td style="display:block;">
+                                                <div class="groupNameDiv">
+                                                    <span>Group </span><span class="groupIndexSpan">{!groupIndexV}</span>
+                                                </div>
+                                                <div class="groupSpecialOuterDiv">
+                                                <div class="requiredInput">
+                                                    <div class="requiredBlock"></div>
+                                                    <input type="text" class="groupNameInput" name="groupNameInput" value="{!g.gName}" onchange="checkSingleGroupName(this);"/>
+                                                    <img title="delete this Group" class="deleteMatrixImg" style="cursor:pointer; margin-left:5px; vertical-align:middle; height:15px; width:15px;" onclick="removeGivenTable(this);" src="/img/func_icons/util/recycle.gif"></img>
+                                                </div>
+                                                </div>
+                                                <div style="clear:both;"></div>
+                                                <div name="erMsg" class="errorMsg groupErrMsg" style="display:none;">
+                                                    <span style="color:#C00;"><strong>Error: </strong>Group name can not be the same with other speciality name which do not belong to it.</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+		                                    <td style="text-align: left;">
+	                                        	<span class="matrixTableLabel">
+	                                        		{!$Label.IMP_BI_All_Unselected_Specialties}:&nbsp;
+	                                        		<input type="checkbox"  class="chkAllSpecialty" id="chkAllSpecialty" name="chkAllSpecialty"  onclick="checkAllSpecialties(this);" />
+	                                        	</span>
+		                                     </td>
+		                                </tr>
+                                        <!-- 
+                                        <tr>
+                                            <td>
+                                                Group <span class="groupIndexSpan">{!groupIndexV}</span>
+                                                <input type="text" class="groupNameInput" name="groupNameInput" value="{!g.gName}"/>
+                                                <img title="delete this Group" class="deleteMatrixImg" style="cursor:pointer; margin-left:5px; vertical-align:middle; height:15px; width:15px;" onclick="removeGivenTable(this);" src="/img/func_icons/util/recycle.gif"></img>
+                                            </td>
+                                        </tr>
+                                         -->
+                                        <tr>
+                                            <td>
+                                                <div id="groupSpecial{!groupIndexV}" name="groupSpecial" style=" height: 300px; width: 200px; border: 1px solid #000; overflow:auto;" class="specialCls ui-droppable" >
+                                                    <ul class="targerDropUlCls matrixDropUlCls ui-sortable">
+                                                        <apex:repeat value="{!g.list_cs}" var="s">
+                                                            <li id="{!s.sId}" class="matrixDraggable {!IF(s.sId != NULL && s.sId != '' , 'pgover', 'ui-state-disabled')}">{!s.sName}</li>
+                                                        </apex:repeat>
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <!-- End table -->
+                                    <apex:variable var="groupIndexV" value="{!groupIndexV+1}"/>
+                                </apex:repeat>
+                            </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="labelCol"></td>
+                        <td class="dataCol" colspan="3" style="text-align:center;">
+                            <input type="button" value="OK" class="btn okBtn" onclick="savaSpecialityDataInJs();"/>
+                            <input type="button" value="Cancel" class="btn" onclick="cancelToBack();" style="margin-left:10px;"/>
+                        </td>
+                    </tr>
+                </table>        
+            </apex:pageBlock>
+        </div>
+        <span id="htmlEntity" style="display:none">&nbsp;</span>
+    </apex:form>
+    <div id="loading-curtain-div" style="top:0px;left:0px;text-align:center;width:100%;height:100%;display:none;background-color:#FFF;opacity:0.85;position:absolute;z-index:8000;filter:alpha(opacity=85);background-repeat:no-repeat;background-position:center center;background-image:url('/img/loading.gif');"></div>
+</apex:page>
